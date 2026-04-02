@@ -1,0 +1,88 @@
+<nav class="navbar">
+
+  <a routerLink="/feed" class="navbar__logo">
+    <div class="navbar__logo-icon">
+      <span class="material-icons">code</span>
+    </div>
+    <span class="navbar__logo-text">KonKat</span>
+  </a>
+
+  <ul class="navbar__links">
+    @for (link of navLinks; track link.route) {
+      <li
+        class="navbar__link"
+        [routerLink]="link.route"
+        routerLinkActive="navbar__link--active"
+      >
+        <span class="material-icons-outlined">{{ link.icon }}</span>
+        {{ link.label }}
+      </li>
+    }
+  </ul>
+
+  <div class="navbar__actions">
+
+    <div
+      class="navbar__search"
+      [class.navbar__search--focused]="isSearchFocused()"
+    >
+      <span class="material-icons-outlined navbar__search-icon">search</span>
+
+      <input
+        class="navbar__search-input"
+        type="text"
+        placeholder="Search..."
+        [value]="searchQuery()"
+        (input)="onSearchInput($event)"
+        (focus)="onSearchFocus()"
+        (blur)="onSearchBlur()"
+      />
+
+      @if (hasSearchQuery()) {
+        <button class="navbar__search-clear" (click)="clearSearch()">
+          <span class="material-icons">close</span>
+        </button>
+      }
+    </div>
+
+    <button class="navbar__icon-btn" routerLink="/notifications">
+      <span class="material-icons-outlined">notifications</span>
+
+      @if (notificationLabel()) {
+        <span class="navbar__badge">
+          {{ notificationLabel() }}
+        </span>
+      }
+    </button>
+
+    <button class="navbar__avatar">
+      <span class="material-icons">account_circle</span>
+    </button>
+
+    <button
+      class="navbar__mobile-toggle"
+      (click)="toggleMobileMenu()"
+    >
+      @if (isMobileMenuOpen()) {
+        <span class="material-icons">close</span>
+      } @else {
+        <span class="material-icons">menu</span>
+      }
+    </button>
+
+  </div>
+</nav>
+
+@if (isMobileMenuOpen()) {
+  <div class="navbar__mobile-menu">
+    @for (link of navLinks; track link.route) {
+      <a
+        [routerLink]="link.route"
+        (click)="toggleMobileMenu()"
+      >
+        <span class="material-icons-outlined">{{ link.icon }}</span>
+        {{ link.label }}
+      </a>
+    }
+  </div>
+}

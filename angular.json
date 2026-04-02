@@ -25,7 +25,9 @@
               }
             ],
             "styles": [
-              "src/styles.css"
+              "src/styles.css",
+              "node_modules/aos/dist/aos.css",
+              "node_modules/highlight.js/styles/github-dark.css"
             ]
           },
           "configurations": {
