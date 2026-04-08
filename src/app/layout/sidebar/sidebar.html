@@ -1,1 +1,29 @@
-<p>sidebar works!</p>
+<aside class="sticky top-[60px] h-[calc(100vh-60px)] w-[240px] flex flex-col overflow-y-auto border-r border-[#2a2a2a] bg-[#111111] p-3">
+  <nav class="flex flex-col gap-1">
+
+    @for (link of navLinks; track $index) {
+
+      @if (link.type === 'divider') {
+        <div class="my-2 h-px bg-[#2a2a2a]"></div>
+      } @else {
+        <div
+          [routerLink]="link.route"
+          routerLinkActive="sidebar__link--active"
+          class="sidebar__link flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#888888] no-underline transition-all duration-200 hover:bg-[#1e1e1e] hover:text-[#f0f0f0] cursor-pointer"
+        >
+          <div class="relative flex w-6 flex-shrink-0 items-center justify-center">
+            <span class="material-icons-outlined" style="font-size: 20px;">{{ link.icon }}</span>
+            @if (link.badge) {
+              <span class="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E8593C] px-1 text-[10px] font-semibold text-white">
+                {{ link.badge }}
+              </span>
+            }
+          </div>
+          <span class="flex-1">{{ link.label }}</span>
+        </div>
+      }
+
+    }
+
+  </nav>
+</aside>

@@ -1,0 +1,18 @@
+aside::-webkit-scrollbar {
+  width: 4px;
+}
+
+aside::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+aside::-webkit-scrollbar-thumb {
+  background-color: #2a2a2a;
+  border-radius: 4px;
+}
+
+@media (max-width: 1024px) {
+  aside {
+    display: none;
+  }
+}

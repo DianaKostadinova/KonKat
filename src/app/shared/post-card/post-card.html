@@ -1,0 +1,96 @@
+<div class="flex flex-col gap-3 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4 transition-all duration-200 hover:border-[#3a3a3a]">
+
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full bg-[#2a2a2a] border border-[#3a3a3a] flex items-center justify-center flex-shrink-0">
+        <span class="material-icons text-[#888888]" style="font-size: 26px;">account_circle</span>
+      </div>
+      <div class="flex flex-col">
+        <div class="flex items-center gap-2">
+          <span class="text-[#f0f0f0] text-sm font-semibold cursor-pointer hover:underline">
+            {{ post.author.name }}
+          </span>
+          @if (post.author.badge) {
+            <span class="rounded px-1.5 py-0.5 text-[10px] font-bold bg-[#E8593C] text-white">
+              {{ post.author.badge }}
+            </span>
+          }
+        </div>
+        <span class="text-[#888888] text-xs">
+          {{ post.author.role }} • {{ post.author.location }} • {{ post.author.time }}
+        </span>
+      </div>
+    </div>
+    <button class="flex items-center justify-center w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all">
+      <span class="material-icons" style="font-size: 18px;">more_horiz</span>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <p class="text-[#d0d0d0] text-sm leading-relaxed m-0">{{ post.content }}</p>
+
+  <!-- Code block -->
+  @if (post.type === 'code' && post.code) {
+    <div class="rounded-lg border border-[#2a2a2a] overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-2 bg-[#111111] border-b border-[#2a2a2a]">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-[#ff5f57]"></span>
+          <span class="w-3 h-3 rounded-full bg-[#febc2e]"></span>
+          <span class="w-3 h-3 rounded-full bg-[#28c840]"></span>
+          <span class="text-[#888888] text-xs font-mono ml-2">{{ post.code.language }}</span>
+        </div>
+        <button
+          class="flex items-center gap-1.5 text-xs border-none cursor-pointer rounded-lg px-2 py-1 transition-all duration-200 bg-transparent"
+          [style.color]="copied() ? '#28c840' : '#888888'"
+          (click)="copyCode()"
+        >
+          <span class="material-icons" style="font-size: 14px;">
+            {{ copied() ? 'check' : 'content_copy' }}
+          </span>
+          {{ copied() ? 'Copied!' : 'Copy' }}
+        </button>
+      </div>
+      <pre class="m-0 p-4 bg-[#0d0d0d] overflow-x-auto text-xs leading-relaxed text-[#a0c4ff] font-mono whitespace-pre">{{ post.code.snippet }}</pre>
+    </div>
+  }
+
+  <!-- Tags -->
+  @if (post.tags && post.tags.length > 0) {
+    <div class="flex flex-wrap gap-2">
+      @for (tag of post.tags; track tag) {
+        <span class="text-[#E8593C] text-xs cursor-pointer hover:underline">{{ tag }}</span>
+      }
+    </div>
+  }
+
+  <!-- Reaction bar -->
+  <div class="flex items-center gap-1 border-t border-[#2a2a2a] pt-3">
+    <button
+      class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium border-none cursor-pointer transition-all duration-200"
+      [style.color]="liked() ? '#E8593C' : '#888888'"
+      [style.background]="liked() ? '#2a1010' : 'transparent'"
+      (click)="toggleLike()"
+    >
+      <span class="material-icons" style="font-size: 16px;">
+        {{ liked() ? 'favorite' : 'favorite_border' }}
+      </span>
+      {{ likeCount() }}
+    </button>
+
+    <button class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all duration-200">
+      <span class="material-icons-outlined" style="font-size: 16px;">chat_bubble_outline</span>
+      {{ post.reactions.comments }}
+    </button>
+
+    <button class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all duration-200">
+      <span class="material-icons-outlined" style="font-size: 16px;">share</span>
+      {{ post.reactions.shares }}
+    </button>
+
+    <button class="flex items-center justify-center ml-auto w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all duration-200">
+      <span class="material-icons-outlined" style="font-size: 18px;">bookmark_border</span>
+    </button>
+  </div>
+
+</div>

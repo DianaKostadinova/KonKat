@@ -3,8 +3,5 @@ import {HomeFeed} from './features/home-feed/home-feed';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'feed', pathMatch: 'full' },
-  { path: 'feed', component: HomeFeed },
-  { path: 'feed', component: HomeFeed },
-  { path: 'feed', component: HomeFeed },
   { path: 'feed', component: HomeFeed }
 ];
