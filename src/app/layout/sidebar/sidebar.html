@@ -1,8 +1,7 @@
-<aside class="sticky top-[60px] h-[calc(100vh-60px)] w-[240px] flex flex-col overflow-y-auto border-r border-[#2a2a2a] bg-[#111111] p-3">
+<!-- Desktop sidebar -->
+<aside class="desktop-sidebar">
   <nav class="flex flex-col gap-1">
-
     @for (link of navLinks; track $index) {
-
       @if (link.type === 'divider') {
         <div class="my-2 h-px bg-[#2a2a2a]"></div>
       } @else {
@@ -22,8 +21,28 @@
           <span class="flex-1">{{ link.label }}</span>
         </div>
       }
-
     }
-
   </nav>
 </aside>
+
+<nav class="mobile-bottom-nav">
+  @for (link of navLinks; track $index) {
+    @if (link.type !== 'divider') {
+      <div
+        [routerLink]="link.route"
+        routerLinkActive="mobile-nav__item--active"
+        class="mobile-nav__item"
+      >
+        <div class="relative">
+          <span class="material-icons-outlined" style="font-size: 22px;">{{ link.icon }}</span>
+          @if (link.badge) {
+            <span class="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E8593C] px-1 text-[10px] font-semibold text-white">
+              {{ link.badge }}
+            </span>
+          }
+        </div>
+        <span class="text-[10px] mt-0.5">{{ link.label }}</span>
+      </div>
+    }
+  }
+</nav>

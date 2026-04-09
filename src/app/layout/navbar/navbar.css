@@ -267,3 +267,42 @@
     display: flex;
   }
 }
+
+.navbar__links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .navbar__links {
+    display: none;
+  }
+
+  .navbar__search {
+    display: none;
+  }
+
+  .navbar__mobile-toggle {
+    display: flex !important;
+  }
+
+  .navbar__logo-text {
+    display: none;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  .navbar__link span.material-icons-outlined {
+    display: flex;
+  }
+
+  .navbar__search {
+    width: 160px;
+  }
+}

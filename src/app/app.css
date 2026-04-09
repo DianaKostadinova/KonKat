@@ -8,16 +8,27 @@
 .app-shell {
   display: grid;
   grid-template-columns: 240px 1fr 300px;
-  flex: 1;
-  max-width: 1440px;
-  width: 100%;
-  margin: 0 auto;
   padding-top: 60px;
+  height: 100vh;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 240px 1fr;
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    padding-bottom: 60px; // space for bottom nav
+  }
 }
 
 .main-content {
-  min-height: calc(100vh - 60px);
-  border-left: 1px solid var(--color-border);
-  border-right: 1px solid var(--color-border);
+  height: calc(100vh - 60px);
   overflow-y: auto;
+  border-left: 1px solid #2a2a2a;
+  border-right: 1px solid #2a2a2a;
+
+  @media (max-width: 768px) {
+    border: none;
+    height: calc(100vh - 120px); // 60px navbar + 60px bottom nav
+  }
 }

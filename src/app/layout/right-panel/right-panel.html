@@ -1,16 +1,15 @@
-<aside class="sticky top-[60px] h-[calc(100vh-60px)] w-[300px] flex flex-col overflow-y-auto border-l border-[#2a2a2a] bg-[#111111] p-4 gap-4">
+<!-- Desktop: само на >1024px -->
+<aside class="desktop-panel">
 
+  <!-- Profile Card -->
   <div class="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4 flex flex-col items-center gap-3">
-
     <div class="w-16 h-16 rounded-full border-2 border-[#E8593C] bg-[#2a2a2a] flex items-center justify-center">
       <span class="material-icons text-[#888888]" style="font-size: 40px;">account_circle</span>
     </div>
-
     <div class="text-center">
       <p class="text-[#f0f0f0] font-semibold text-sm m-0">{{ currentUser().name }}</p>
       <p class="text-[#888888] text-xs mt-1 m-0">{{ currentUser().role }} • {{ currentUser().location }}</p>
     </div>
-
     <div class="w-full grid grid-cols-3 gap-2 border-t border-[#2a2a2a] pt-3">
       <div class="flex flex-col items-center gap-0.5">
         <span class="text-[#f0f0f0] font-bold text-sm">{{ currentUser().projects }}</span>
@@ -25,7 +24,6 @@
         <span class="text-[#888888] text-[11px]">Rep</span>
       </div>
     </div>
-
     <div class="w-full flex items-center justify-between rounded-lg border border-[#2a2a2a] px-3 py-2">
       <div class="flex items-center gap-2">
         <span class="material-icons-outlined text-[#888888]" style="font-size: 16px;">code</span>
@@ -33,16 +31,14 @@
       </div>
       <span class="text-[#E8593C] text-xs font-medium cursor-pointer hover:underline">Connected</span>
     </div>
-
   </div>
 
+  <!-- Upcoming Hackathons -->
   <div class="flex flex-col gap-3">
-
     <div class="flex items-center justify-between">
       <span class="text-[#f0f0f0] text-sm font-semibold">Upcoming Hackathons</span>
       <span class="text-[#E8593C] text-xs cursor-pointer hover:underline">View All</span>
     </div>
-
     @for (hackathon of hackathons(); track hackathon.title) {
       <div class="flex flex-col gap-1.5 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-3">
         <span class="text-[#E8593C] text-[11px] font-semibold tracking-wide">
@@ -58,20 +54,90 @@
         </button>
       </div>
     }
-
   </div>
 
+  <!-- Trending -->
   <div class="flex flex-col gap-3">
-
     <span class="text-[#f0f0f0] text-sm font-semibold">Trending in MK</span>
-
     @for (item of trending(); track item.tag) {
       <div class="flex items-center justify-between cursor-pointer group">
         <span class="text-[#E8593C] text-sm font-medium group-hover:underline">{{ item.tag }}</span>
         <span class="text-[#888888] text-xs">{{ item.posts }}</span>
       </div>
     }
-
   </div>
 
 </aside>
+
+<!-- Mobile: floating button + slideup -->
+<div class="mobile-panel">
+
+  <button class="mobile-panel__btn" (click)="toggle()">
+    <span class="material-icons" style="font-size: 20px;">
+      {{ isOpen() ? 'close' : 'info' }}
+    </span>
+  </button>
+
+  @if (isOpen()) {
+    <div class="fixed inset-0 bg-black/50 z-40" (click)="toggle()"></div>
+  }
+
+  <div class="mobile-panel__sheet" [class.mobile-panel__sheet--open]="isOpen()">
+    <div class="mobile-panel__handle"></div>
+    <div class="overflow-y-auto flex flex-col gap-4 pb-8 px-2">
+
+      <!-- Profile Card -->
+      <div class="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4 flex flex-col items-center gap-3">
+        <div class="w-16 h-16 rounded-full border-2 border-[#E8593C] bg-[#2a2a2a] flex items-center justify-center">
+          <span class="material-icons text-[#888888]" style="font-size: 40px;">account_circle</span>
+        </div>
+        <div class="text-center">
+          <p class="text-[#f0f0f0] font-semibold text-sm m-0">{{ currentUser().name }}</p>
+          <p class="text-[#888888] text-xs mt-1 m-0">{{ currentUser().role }} • {{ currentUser().location }}</p>
+        </div>
+        <div class="w-full grid grid-cols-3 gap-2 border-t border-[#2a2a2a] pt-3">
+          <div class="flex flex-col items-center gap-0.5">
+            <span class="text-[#f0f0f0] font-bold text-sm">{{ currentUser().projects }}</span>
+            <span class="text-[#888888] text-[11px]">Projects</span>
+          </div>
+          <div class="flex flex-col items-center gap-0.5 border-x border-[#2a2a2a]">
+            <span class="text-[#f0f0f0] font-bold text-sm">{{ currentUser().hackathons }}</span>
+            <span class="text-[#888888] text-[11px]">Hackathons</span>
+          </div>
+          <div class="flex flex-col items-center gap-0.5">
+            <span class="text-[#f0f0f0] font-bold text-sm">{{ currentUser().rep }}</span>
+            <span class="text-[#888888] text-[11px]">Rep</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hackathons -->
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <span class="text-[#f0f0f0] text-sm font-semibold">Upcoming Hackathons</span>
+          <span class="text-[#E8593C] text-xs cursor-pointer hover:underline">View All</span>
+        </div>
+        @for (hackathon of hackathons(); track hackathon.title) {
+          <div class="flex flex-col gap-1.5 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-3">
+            <span class="text-[#E8593C] text-[11px] font-semibold">{{ hackathon.dateRange }} • {{ hackathon.location }}</span>
+            <span class="text-[#f0f0f0] text-sm font-medium">{{ hackathon.title }}</span>
+            <span class="text-[#888888] text-xs">{{ hackathon.teams }} teams looking for members</span>
+          </div>
+        }
+      </div>
+
+      <!-- Trending -->
+      <div class="flex flex-col gap-3">
+        <span class="text-[#f0f0f0] text-sm font-semibold">Trending in MK</span>
+        @for (item of trending(); track item.tag) {
+          <div class="flex items-center justify-between cursor-pointer">
+            <span class="text-[#E8593C] text-sm font-medium hover:underline">{{ item.tag }}</span>
+            <span class="text-[#888888] text-xs">{{ item.posts }}</span>
+          </div>
+        }
+      </div>
+
+    </div>
+  </div>
+
+</div>
