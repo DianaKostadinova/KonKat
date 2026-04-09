@@ -1,0 +1,96 @@
+<div class="project-card flex flex-col rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] overflow-hidden transition-all duration-200 hover:border-[#3a3a3a] cursor-pointer"
+     [class.project-card--featured]="featured">
+
+  <!-- Thumbnail -->
+  <div class="w-full bg-[#0d0d0d] flex items-center justify-center border-b border-[#2a2a2a] relative"
+       [class.h-48]="featured"
+       [class.h-32]="!featured">
+    <span class="material-icons text-[#2a2a2a]" style="font-size: 48px;">code</span>
+    @if (featured) {
+      <span class="absolute top-3 left-3 rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-[#E8593C] text-white">
+        FEATURED
+      </span>
+    }
+  </div>
+
+  <!-- Content -->
+  <div class="flex flex-col gap-3 p-4 flex-1">
+
+    <!-- Title + Star -->
+    <div class="flex items-start justify-between gap-2">
+      <h3 class="text-[#f0f0f0] text-sm font-semibold m-0 leading-snug">
+        {{ project.title }}
+      </h3>
+      <button
+        class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg border-none bg-transparent cursor-pointer transition-all duration-200"
+        [style.color]="starred() ? '#febc2e' : '#888888'"
+        (click)="toggleStar()"
+      >
+        <span class="material-icons" style="font-size: 18px;">
+          {{ starred() ? 'star' : 'star_border' }}
+        </span>
+      </button>
+    </div>
+
+    <!-- Description -->
+    <p class="text-[#888888] text-xs leading-relaxed m-0 line-clamp-2">
+      {{ project.description }}
+    </p>
+
+    <!-- Tech stack -->
+    <div class="flex flex-wrap gap-1.5">
+      @for (tech of project.techStack; track tech) {
+        <span class="rounded-md px-2 py-0.5 text-[11px] font-medium bg-[#2a2a2a] text-[#888888] border border-[#3a3a3a]">
+          {{ tech }}
+        </span>
+      }
+    </div>
+
+    <!-- Author -->
+    <div class="flex items-center gap-2 mt-auto pt-3 border-t border-[#2a2a2a]">
+      <div class="w-6 h-6 rounded-full bg-[#2a2a2a] flex items-center justify-center flex-shrink-0">
+        <span class="material-icons text-[#888888]" style="font-size: 16px;">account_circle</span>
+      </div>
+      <span class="text-[#888888] text-xs flex-1">{{ project.author.name }}</span>
+      <span class="text-[#888888] text-xs">{{ project.createdAt }}</span>
+    </div>
+
+    <!-- Stats + Links -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-1 text-[#888888] text-xs">
+        <span class="material-icons" style="font-size: 14px; color: #febc2e;">star</span>
+        {{ project.stars }}
+      </div>
+      <div class="flex items-center gap-1 text-[#888888] text-xs">
+        <span class="material-icons-outlined" style="font-size: 14px;">fork_right</span>
+        {{ project.forks }}
+      </div>
+      <div class="flex items-center gap-1 text-[#888888] text-xs">
+        <span class="material-icons-outlined" style="font-size: 14px;">chat_bubble_outline</span>
+        {{ project.comments }}
+      </div>
+
+      <div class="flex items-center gap-2 ml-auto">
+        @if (project.githubUrl) {
+          <button
+            class="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs text-[#888888] border border-[#2a2a2a] bg-transparent cursor-pointer hover:border-[#E8593C] hover:text-[#E8593C] transition-all duration-200"
+            (click)="openGithub()"
+          >
+            <span class="material-icons-outlined" style="font-size: 14px;">code</span>
+            GitHub
+          </button>
+        }
+        @if (project.liveUrl) {
+          <button
+            class="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs text-white border border-[#E8593C] bg-[#E8593C] cursor-pointer hover:bg-[#d04a2e] transition-all duration-200"
+            (click)="openLive()"
+          >
+            <span class="material-icons-outlined" style="font-size: 14px;">open_in_new</span>
+            Live
+          </button>
+        }
+      </div>
+    </div>
+
+  </div>
+</div>

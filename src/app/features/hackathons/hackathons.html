@@ -1,0 +1,28 @@
+<div class="flex flex-col gap-6 p-4 max-w-4xl mx-auto w-full">
+
+  <div class="flex items-center justify-between">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-[#f0f0f0] text-xl font-bold m-0">Hackathons</h1>
+      <p class="text-[#888888] text-sm m-0">Compete, build, and win with developers across Macedonia</p>
+    </div>
+    <span class="text-[#888888] text-xs rounded-full px-3 py-1 border border-[#2a2a2a]">
+      {{ hackathons().length }} upcoming
+    </span>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    @for (hackathon of hackathons(); track hackathon.id) {
+      <app-hackathon-card
+        [hackathon]="hackathon"
+        (register)="onRegister($event)"
+      />
+    }
+  </div>
+
+  <!-- Calendar -->
+  <div class="flex flex-col gap-3">
+    <h2 class="text-[#f0f0f0] text-sm font-semibold m-0">Event Calendar</h2>
+    <app-hackathon-calendar [hackathons]="hackathons()" />
+  </div>
+
+</div>

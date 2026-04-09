@@ -1,0 +1,87 @@
+<div class="flex flex-col gap-4 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-5">
+
+  <!-- Calendar header -->
+  <div class="flex items-center justify-between">
+    <h2 class="text-[#f0f0f0] font-semibold text-sm m-0">
+      {{ monthNames[currentMonth()] }} {{ currentYear() }}
+    </h2>
+    <div class="flex items-center gap-2">
+      <button
+        class="flex items-center justify-center w-8 h-8 rounded-lg border border-[#2a2a2a] bg-transparent text-[#888888] cursor-pointer hover:border-[#3a3a3a] hover:text-[#f0f0f0] transition-all"
+        (click)="prevMonth()"
+      >
+        <span class="material-icons" style="font-size: 18px;">chevron_left</span>
+      </button>
+      <button
+        class="flex items-center justify-center w-8 h-8 rounded-lg border border-[#2a2a2a] bg-transparent text-[#888888] cursor-pointer hover:border-[#3a3a3a] hover:text-[#f0f0f0] transition-all"
+        (click)="nextMonth()"
+      >
+        <span class="material-icons" style="font-size: 18px;">chevron_right</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Day names -->
+  <div class="grid grid-cols-7 gap-1">
+    @for (day of dayNames; track day) {
+      <div class="text-center text-[#888888] text-[11px] font-medium py-1">{{ day }}</div>
+    }
+  </div>
+
+  <!-- Calendar grid -->
+  <div class="grid grid-cols-7 gap-1">
+    @for (day of calendarDays(); track $index) {
+      <div
+        class="calendar-day relative flex flex-col items-center rounded-lg py-1.5 cursor-pointer transition-all duration-150"
+        [class.opacity-30]="!day.currentMonth"
+        [class.today]="isToday(day.date)"
+        [class.selected]="selectedDay() === day.day && day.currentMonth"
+        [class.has-event]="getEventsForDate(day.date).length > 0 && day.currentMonth"
+        (click)="selectDay(day)"
+      >
+        <span class="text-xs font-medium"
+              [class.text-[#f0f0f0]]="day.currentMonth"
+              [class.text-[#888888]]="!day.currentMonth">
+          {{ day.day }}
+        </span>
+
+        <!-- Event dots -->
+        @if (getEventsForDate(day.date).length > 0 && day.currentMonth) {
+          <div class="flex gap-0.5 mt-0.5">
+            @for (event of getEventsForDate(day.date).slice(0, 3); track event.id) {
+              <span class="w-1 h-1 rounded-full bg-[#E8593C]"></span>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Selected day events -->
+  @if (selectedDay() && selectedDayEvents().length > 0) {
+    <div class="flex flex-col gap-2 border-t border-[#2a2a2a] pt-4">
+      <span class="text-[#888888] text-xs">
+        Events on {{ selectedDay() }} {{ monthNames[currentMonth()] }}
+      </span>
+      @for (event of selectedDayEvents(); track event.id) {
+        <div class="flex items-start gap-3 rounded-lg bg-[#111111] border border-[#2a2a2a] p-3">
+          <div class="w-2 h-2 rounded-full bg-[#E8593C] mt-1 flex-shrink-0"></div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-[#f0f0f0] text-xs font-medium">{{ event.title }}</span>
+            <span class="text-[#888888] text-[11px]">{{ event.city }} • {{ formatDate(event.startDate) }}</span>
+          </div>
+          @if (event.registered) {
+            <span class="ml-auto text-[#28c840] text-[10px] font-medium flex-shrink-0">✓ Registered</span>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (selectedDay() && selectedDayEvents().length === 0) {
+    <div class="border-t border-[#2a2a2a] pt-4 text-center">
+      <span class="text-[#888888] text-xs">No events on {{ selectedDay() }} {{ monthNames[currentMonth()] }}</span>
+    </div>
+  }
+
+</div>

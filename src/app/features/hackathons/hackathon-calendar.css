@@ -1,0 +1,28 @@
+.calendar-day {
+  min-height: 44px;
+}
+
+.calendar-day.today span {
+  color: #E8593C !important;
+  font-weight: 700;
+}
+
+.calendar-day.today {
+  border: 1px solid #E8593C33;
+}
+
+.calendar-day.selected {
+  background-color: #E8593C !important;
+}
+
+.calendar-day.selected span {
+  color: white !important;
+}
+
+.calendar-day.has-event:not(.selected) {
+  background-color: #1e1e1e;
+}
+
+.calendar-day:hover:not(.selected) {
+  background-color: #2a2a2a;
+}

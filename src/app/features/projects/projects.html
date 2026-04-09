@@ -1,1 +1,156 @@
-<p>projects works!</p>
+<div class="flex flex-col gap-6 p-4 max-w-4xl mx-auto w-full">
+
+  <!-- Header -->
+  <div class="flex flex-col gap-1">
+    <h1 class="text-[#f0f0f0] text-xl font-bold m-0">Projects</h1>
+    <p class="text-[#888888] text-sm m-0">Discover what developers in MK are building</p>
+  </div>
+
+  <!-- Search + Sort -->
+  <div class="flex items-center gap-3 flex-wrap">
+
+    <!-- Search with suggestions -->
+    <div class="relative flex-1 min-w-[200px]">
+      <div class="flex items-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 h-9 transition-colors"
+           [class.border-[#E8593C]]="showSuggestions() && searchQuery().length > 1">
+        <span class="material-icons-outlined text-[#888888]" style="font-size: 18px;">search</span>
+        <input
+          class="flex-1 bg-transparent border-none outline-none text-sm text-[#f0f0f0] placeholder-[#888888]"
+          placeholder="Search by title, author, or tech..."
+          [value]="searchQuery()"
+          (input)="onSearch($event)"
+          (focus)="onSearchFocus()"
+          (blur)="onSearchBlur()"
+        />
+        @if (searchQuery()) {
+          <button
+            class="flex items-center text-[#888888] bg-transparent border-none cursor-pointer hover:text-[#f0f0f0] p-0"
+            (click)="clearSearch()"
+          >
+            <span class="material-icons" style="font-size: 16px;">close</span>
+          </button>
+        }
+      </div>
+
+      <!-- Suggestions dropdown -->
+      @if (showSuggestions() && suggestions().length > 0) {
+        <div class="absolute top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg overflow-hidden z-50 shadow-lg">
+          @for (suggestion of suggestions(); track suggestion.value) {
+            <div
+              class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-[#2a2a2a] transition-colors"
+              (mousedown)="selectSuggestion(suggestion)"
+            >
+              <span class="material-icons-outlined text-[#888888]" style="font-size: 16px;">
+                {{ suggestionIcon(suggestion.type) }}
+              </span>
+              <span class="text-[#f0f0f0] text-sm flex-1">{{ suggestion.value }}</span>
+              <span class="text-[#888888] text-[10px] rounded-full px-2 py-0.5 border border-[#3a3a3a]"
+                    [class.text-[#E8593C]]="suggestion.type === 'tech'"
+                    [class.border-[#E8593C]]="suggestion.type === 'tech'">
+                {{ suggestion.type }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- No results suggestion -->
+      @if (showSuggestions() && searchQuery().length > 1 && suggestions().length === 0) {
+        <div class="absolute top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg overflow-hidden z-50">
+          <div class="flex items-center gap-3 px-3 py-3">
+            <span class="material-icons-outlined text-[#888888]" style="font-size: 16px;">search_off</span>
+            <span class="text-[#888888] text-sm">No matches for "{{ searchQuery() }}"</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Sort -->
+    <select
+      class="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 h-9 text-sm text-[#888888] outline-none cursor-pointer hover:border-[#3a3a3a] transition-colors"
+      (change)="setSort($event)"
+    >
+      @for (opt of sortOptions; track opt.value) {
+        <option [value]="opt.value" class="bg-[#1a1a1a]">{{ opt.label }}</option>
+      }
+    </select>
+  </div>
+
+  <!-- Tech filters -->
+  <div class="flex items-center gap-2 flex-wrap">
+    @for (tech of techFilters; track tech) {
+      <button
+        class="rounded-full px-3 py-1 text-xs font-medium border transition-all duration-200 cursor-pointer"
+        [style.background]="(selectedTech() === tech) || (tech === 'All' && !selectedTech()) ? '#E8593C' : 'transparent'"
+        [style.color]="(selectedTech() === tech) || (tech === 'All' && !selectedTech()) ? 'white' : '#888888'"
+        [style.border-color]="(selectedTech() === tech) || (tech === 'All' && !selectedTech()) ? '#E8593C' : '#2a2a2a'"
+        (click)="setTech(tech)"
+      >
+        {{ tech }}
+      </button>
+    }
+  </div>
+
+  <!-- Active filters indicator -->
+  @if (searchQuery() || selectedTech()) {
+    <div class="flex items-center gap-2 text-xs text-[#888888]">
+      <span>Showing {{ filteredProjects().length }} results</span>
+      @if (searchQuery()) {
+        <span class="flex items-center gap-1 rounded-full px-2 py-0.5 bg-[#2a2a2a] border border-[#3a3a3a]">
+          "{{ searchQuery() }}"
+          <button class="text-[#888888] hover:text-[#f0f0f0] bg-transparent border-none cursor-pointer p-0 ml-1" (click)="clearSearch()">
+            <span class="material-icons" style="font-size: 12px;">close</span>
+          </button>
+        </span>
+      }
+      @if (selectedTech()) {
+        <span class="flex items-center gap-1 rounded-full px-2 py-0.5 bg-[#2a2a2a] border border-[#E8593C] text-[#E8593C]">
+          {{ selectedTech() }}
+          <button class="text-[#E8593C] hover:text-white bg-transparent border-none cursor-pointer p-0 ml-1" (click)="setTech('All')">
+            <span class="material-icons" style="font-size: 12px;">close</span>
+          </button>
+        </span>
+      }
+    </div>
+  }
+
+  <!-- Featured -->
+  @if (!selectedTech() && !searchQuery()) {
+    <div class="flex flex-col gap-3">
+      <span class="text-[#f0f0f0] text-sm font-semibold">Featured Projects</span>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        @for (project of featured(); track project.id) {
+          <app-project-card [project]="project" [featured]="true" />
+        }
+      </div>
+    </div>
+  }
+
+  <!-- All projects grid -->
+  <div class="flex flex-col gap-3">
+    <span class="text-[#f0f0f0] text-sm font-semibold">
+      All Projects
+      <span class="text-[#888888] font-normal ml-1">({{ filteredProjects().length }})</span>
+    </span>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (project of filteredProjects(); track project.id) {
+        <app-project-card [project]="project" />
+      }
+    </div>
+
+    @if (filteredProjects().length === 0) {
+      <div class="flex flex-col items-center gap-3 py-16 text-center">
+        <span class="material-icons text-[#2a2a2a]" style="font-size: 48px;">search_off</span>
+        <p class="text-[#888888] text-sm m-0">No projects match your search</p>
+        <button
+          class="text-[#E8593C] text-xs hover:underline bg-transparent border-none cursor-pointer"
+          (click)="clearSearch()"
+        >
+          Clear all filters
+        </button>
+      </div>
+    }
+  </div>
+
+</div>
