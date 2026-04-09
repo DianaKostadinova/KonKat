@@ -1,11 +1,11 @@
 import { Component, Input, signal, OnInit } from '@angular/core';
 import { Post } from './post.model';
 import { PostService } from './post.service';
-
+import { HighlightModule } from 'ngx-highlightjs';
 @Component({
   selector: 'app-post-card',
   standalone: true,
-  imports: [],
+  imports: [HighlightModule],
   templateUrl: './post-card.html',
   styleUrl: './post-card.css',
 })

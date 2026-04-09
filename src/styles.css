@@ -1,7 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+@import 'highlight.js/styles/github-dark.css';
 :root {
   --color-primary: #E8593C;
   --color-bg: #0f0f0f;

@@ -30,10 +30,11 @@
   <!-- Content -->
   <p class="text-[#d0d0d0] text-sm leading-relaxed m-0">{{ post.content }}</p>
 
-  <!-- Code block -->
   @if (post.type === 'code' && post.code) {
     <div class="rounded-lg border border-[#2a2a2a] overflow-hidden">
-      <div class="flex items-center justify-between px-3 sm:px-4 py-2 bg-[#111111] border-b border-[#2a2a2a]">
+
+
+      <div class="flex items-center justify-between px-4 py-2 bg-[#111111] border-b border-[#2a2a2a]">
         <div class="flex items-center gap-2">
           <span class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"></span>
           <span class="w-2.5 h-2.5 rounded-full bg-[#febc2e]"></span>
@@ -45,13 +46,16 @@
           [style.color]="copied() ? '#28c840' : '#888888'"
           (click)="copyCode()"
         >
-          <span class="material-icons" style="font-size: 14px;">
-            {{ copied() ? 'check' : 'content_copy' }}
-          </span>
-          <span class="hidden sm:inline">{{ copied() ? 'Copied!' : 'Copy' }}</span>
+        <span class="material-icons" style="font-size: 14px;">
+          {{ copied() ? 'check' : 'content_copy' }}
+        </span>
+          {{ copied() ? 'Copied!' : 'Copy' }}
         </button>
       </div>
-      <pre class="m-0 p-3 sm:p-4 bg-[#0d0d0d] overflow-x-auto text-xs leading-relaxed text-[#a0c4ff] font-mono whitespace-pre">{{ post.code.snippet }}</pre>
+
+
+      <pre class="m-0 p-0 bg-[#0d0d0d] overflow-x-auto"><code [highlight]="post.code.snippet" [language]="post.code.language"></code></pre>
+
     </div>
   }
 
