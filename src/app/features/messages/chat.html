@@ -1,0 +1,203 @@
+<div class="chat-layout">
+
+  <!-- Left: Conversations list -->
+  <div class="conv-list" [class.conv-list--hidden]="activeId()">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-4 py-3 border-b border-[#2a2a2a]">
+      <div>
+        <h2 class="text-[#f0f0f0] text-sm font-semibold m-0">Messages</h2>
+        @if (totalUnread() > 0) {
+          <span class="text-[#888888] text-xs">{{ totalUnread() }} unread</span>
+        }
+      </div>
+      <button class="flex items-center justify-center w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all">
+        <span class="material-icons-outlined" style="font-size: 20px;">edit</span>
+      </button>
+    </div>
+
+    <!-- Search -->
+    <div class="px-3 py-2 border-b border-[#2a2a2a]">
+      <div class="flex items-center gap-2 bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 h-8">
+        <span class="material-icons-outlined text-[#888888]" style="font-size: 16px;">search</span>
+        <input
+          class="flex-1 bg-transparent border-none outline-none text-xs text-[#f0f0f0] placeholder-[#888888]"
+          placeholder="Search conversations..."
+          (input)="onSearch($event)"
+        />
+      </div>
+    </div>
+
+    <!-- Conversation items -->
+    <div class="flex flex-col overflow-y-auto flex-1">
+      @for (conv of conversations(); track conv.id) {
+        <div
+          class="flex items-center gap-3 px-4 py-3 cursor-pointer transition-all border-b border-[#1e1e1e] hover:bg-[#1e1e1e]"
+          [class.bg-[#1e1e1e]]="activeId() === conv.id"
+          [class.border-l-2]="activeId() === conv.id"
+          [class.border-l-[#E8593C]]="activeId() === conv.id"
+          (click)="openConversation(conv.id)"
+        >
+          <!-- Avatar -->
+          <div class="relative flex-shrink-0">
+            <div class="w-10 h-10 rounded-full bg-[#2a2a2a] flex items-center justify-center">
+              @if (conv.type === 'group') {
+                <span class="material-icons text-[#888888]" style="font-size: 20px;">group</span>
+              } @else {
+                <span class="material-icons text-[#888888]" style="font-size: 24px;">account_circle</span>
+              }
+            </div>
+            @if (conv.online && conv.type === 'dm') {
+              <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#28c840] border-2 border-[#111111]"></span>
+            }
+          </div>
+
+          <!-- Info -->
+          <div class="flex flex-col flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <span class="text-[#f0f0f0] text-sm font-medium truncate">{{ conv.name }}</span>
+              <span class="text-[#888888] text-[11px] flex-shrink-0 ml-2">
+                {{ conv.messages.at(-1)?.createdAt }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#888888] text-xs truncate">
+                {{ chatService.getLastMessage(conv) }}
+              </span>
+              @if (conv.unread > 0) {
+                <span class="flex-shrink-0 flex items-center justify-center min-w-5 h-5 rounded-full bg-[#E8593C] text-white text-[10px] font-bold px-1 ml-2">
+                  {{ conv.unread }}
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+  </div>
+
+  <!-- Right: Active conversation -->
+  @if (activeConv()) {
+    <div class="chat-window">
+
+      <!-- Chat header -->
+      <div class="flex items-center gap-3 px-4 py-3 border-b border-[#2a2a2a] bg-[#111111]">
+        <!-- Back button mobile -->
+        <button
+          class="mobile-back flex items-center justify-center w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] transition-all"
+          (click)="activeId.set(null)"
+        >
+          <span class="material-icons" style="font-size: 20px;">arrow_back</span>
+        </button>
+
+        <div class="relative flex-shrink-0">
+          <div class="w-9 h-9 rounded-full bg-[#2a2a2a] flex items-center justify-center">
+            @if (activeConv()!.type === 'group') {
+              <span class="material-icons text-[#888888]" style="font-size: 18px;">group</span>
+            } @else {
+              <span class="material-icons text-[#888888]" style="font-size: 22px;">account_circle</span>
+            }
+          </div>
+          @if (activeConv()!.online && activeConv()!.type === 'dm') {
+            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#28c840] border-2 border-[#111111]"></span>
+          }
+        </div>
+
+        <div class="flex flex-col flex-1">
+          <span class="text-[#f0f0f0] text-sm font-semibold">{{ activeConv()!.name }}</span>
+          @if (activeConv()!.type === 'group') {
+            <span class="text-[#888888] text-xs">{{ activeConv()!.members.length }} members</span>
+          } @else {
+            <span class="text-[#28c840] text-xs" *ngIf="activeConv()!.online">Online</span>
+          }
+        </div>
+
+        <button class="flex items-center justify-center w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] transition-all">
+          <span class="material-icons-outlined" style="font-size: 20px;">info</span>
+        </button>
+      </div>
+
+      <!-- Messages -->
+      <div class="messages-container" #messageContainer>
+        @for (msg of activeConv()!.messages; track msg.id) {
+          <div class="flex flex-col mb-3"
+               [class.items-end]="isMe(msg.senderId)"
+               [class.items-start]="!isMe(msg.senderId)">
+
+            @if (!isMe(msg.senderId) && activeConv()!.type === 'group') {
+              <span class="text-[#888888] text-[11px] ml-1 mb-0.5">
+                {{ chatService.getMemberName(activeConv()!, msg.senderId) }}
+              </span>
+            }
+
+            <div class="flex items-end gap-2"
+                 [class.flex-row-reverse]="isMe(msg.senderId)">
+
+              @if (!isMe(msg.senderId)) {
+                <div class="w-7 h-7 rounded-full bg-[#2a2a2a] flex items-center justify-center flex-shrink-0 mb-1">
+                  <span class="material-icons text-[#888888]" style="font-size: 16px;">account_circle</span>
+                </div>
+              }
+
+              <div
+                class="max-w-xs px-3 py-2 rounded-2xl text-sm leading-relaxed"
+                [class.rounded-br-sm]="isMe(msg.senderId)"
+                [class.rounded-bl-sm]="!isMe(msg.senderId)"
+                [style.background]="isMe(msg.senderId) ? '#E8593C' : '#2a2a2a'"
+                [style.color]="isMe(msg.senderId) ? 'white' : '#f0f0f0'"
+              >
+                {{ msg.content }}
+              </div>
+
+            </div>
+
+            <span class="text-[#888888] text-[10px] mt-0.5"
+                  [class.mr-1]="isMe(msg.senderId)"
+                  [class.ml-9]="!isMe(msg.senderId)">
+              {{ msg.createdAt }}
+              @if (isMe(msg.senderId)) {
+                <span class="ml-1">{{ msg.read ? '✓✓' : '✓' }}</span>
+              }
+            </span>
+
+          </div>
+        }
+      </div>
+
+      <!-- Input -->
+      <div class="flex items-end gap-2 px-4 py-3 border-t border-[#2a2a2a] bg-[#111111]">
+        <button class="flex items-center justify-center w-9 h-9 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all flex-shrink-0">
+          <span class="material-icons-outlined" style="font-size: 20px;">attach_file</span>
+        </button>
+
+        <textarea
+          class="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-sm text-[#f0f0f0] outline-none resize-none focus:border-[#E8593C] transition-colors placeholder-[#888888] max-h-32"
+          placeholder="Type a message... (Enter to send)"
+          rows="1"
+          [value]="newMessage()"
+          (input)="onMessageInput($event)"
+          (keydown)="onKeydown($event)"
+        ></textarea>
+
+        <button
+          class="flex items-center justify-center w-9 h-9 rounded-lg border-none cursor-pointer transition-all flex-shrink-0"
+          [style.background]="newMessage().trim() ? '#E8593C' : '#2a2a2a'"
+          [style.color]="newMessage().trim() ? 'white' : '#888888'"
+          [disabled]="!newMessage().trim()"
+          (click)="sendMessage()"
+        >
+          <span class="material-icons" style="font-size: 20px;">send</span>
+        </button>
+      </div>
+
+    </div>
+  } @else {
+    <!-- Empty state -->
+    <div class="chat-empty">
+      <span class="material-icons text-[#2a2a2a]" style="font-size: 64px;">chat_bubble_outline</span>
+      <p class="text-[#888888] text-sm m-0">Select a conversation to start chatting</p>
+    </div>
+  }
+
+</div>
