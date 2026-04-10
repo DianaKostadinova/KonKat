@@ -1,0 +1,139 @@
+<!-- Backdrop -->
+<div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+     (click)="close.emit()">
+
+  <!-- Modal -->
+  <div class="w-full max-w-lg bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl overflow-hidden"
+       (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-5 py-4 border-b border-[#2a2a2a]">
+      <div>
+        <h2 class="text-[#f0f0f0] font-semibold text-base m-0">Create Team Post</h2>
+        <p class="text-[#888888] text-xs mt-0.5 m-0">Find teammates for your next hackathon</p>
+      </div>
+      <button class="flex items-center justify-center w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all"
+              (click)="close.emit()">
+        <span class="material-icons" style="font-size: 18px;">close</span>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="flex flex-col gap-4 p-5 max-h-[70vh] overflow-y-auto">
+
+      <!-- Title -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[#888888] text-xs font-medium">Project Title</label>
+        <input
+          class="bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#f0f0f0] outline-none focus:border-[#E8593C] transition-colors placeholder-[#888888]"
+          placeholder="e.g. AI-powered accessibility tool..."
+          [value]="title()"
+          (input)="onTitleInput($event)"
+        />
+      </div>
+
+      <!-- Description -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[#888888] text-xs font-medium">Description</label>
+        <textarea
+          class="bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#f0f0f0] outline-none focus:border-[#E8593C] transition-colors placeholder-[#888888] resize-none"
+          placeholder="Describe your project idea and what you're building..."
+          rows="3"
+          [value]="description()"
+          (input)="onDescInput($event)"
+        ></textarea>
+      </div>
+
+      <!-- Tech Stack -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[#888888] text-xs font-medium">Tech Stack</label>
+        <div class="flex items-center gap-2">
+          <input
+            class="flex-1 bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#f0f0f0] outline-none focus:border-[#E8593C] transition-colors placeholder-[#888888]"
+            placeholder="e.g. React, Node.js..."
+            [value]="techInput()"
+            (input)="onTechInput($event)"
+            (keydown)="onTechKeydown($event)"
+          />
+          <button
+            class="rounded-lg px-3 py-2 text-xs text-white bg-[#E8593C] border-none cursor-pointer hover:bg-[#d04a2e] transition-all"
+            (click)="addTech()"
+          >Add</button>
+        </div>
+        @if (techStack().length > 0) {
+          <div class="flex flex-wrap gap-1.5 mt-1">
+            @for (tech of techStack(); track tech) {
+              <span class="flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] bg-[#2a2a2a] text-[#888888] border border-[#3a3a3a]">
+                {{ tech }}
+                <button class="text-[#888888] hover:text-[#f0f0f0] bg-transparent border-none cursor-pointer p-0"
+                        (click)="removeTech(tech)">
+                  <span class="material-icons" style="font-size: 12px;">close</span>
+                </button>
+              </span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Looking For -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[#888888] text-xs font-medium">Looking For</label>
+        <div class="flex items-center gap-2">
+          <input
+            class="flex-1 bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#f0f0f0] outline-none focus:border-[#E8593C] transition-colors placeholder-[#888888]"
+            placeholder="e.g. Frontend Dev, UX Designer..."
+            [value]="lookingForInput()"
+            (input)="onRoleInput($event)"
+            (keydown)="onRoleKeydown($event)"
+          />
+          <button
+            class="rounded-lg px-3 py-2 text-xs text-white bg-[#E8593C] border-none cursor-pointer hover:bg-[#d04a2e] transition-all"
+            (click)="addRole()"
+          >Add</button>
+        </div>
+        @if (lookingFor().length > 0) {
+          <div class="flex flex-wrap gap-1.5 mt-1">
+            @for (role of lookingFor(); track role) {
+              <span class="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] bg-[#E8593C]/10 text-[#E8593C] border border-[#E8593C]/30">
+                {{ role }}
+                <button class="text-[#E8593C] hover:text-white bg-transparent border-none cursor-pointer p-0"
+                        (click)="removeRole(role)">
+                  <span class="material-icons" style="font-size: 12px;">close</span>
+                </button>
+              </span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Max Members -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[#888888] text-xs font-medium">Max Team Size: {{ maxMembers() }}</label>
+        <input
+          type="range"
+          min="2" max="6"
+          [value]="maxMembers()"
+          (input)="onMaxInput($event)"
+          class="accent-[#E8593C] w-full"
+        />
+        <div class="flex justify-between text-[#888888] text-[10px]">
+          <span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-[#2a2a2a]">
+      <button
+        class="rounded-lg px-4 py-2 text-sm text-[#888888] bg-transparent border border-[#2a2a2a] cursor-pointer hover:border-[#3a3a3a] hover:text-[#f0f0f0] transition-all"
+        (click)="close.emit()"
+      >Cancel</button>
+      <button
+        class="rounded-lg px-4 py-2 text-sm text-white bg-[#E8593C] border-none cursor-pointer hover:bg-[#d04a2e] transition-all font-medium"
+        (click)="submit()"
+      >Post Team</button>
+    </div>
+
+  </div>
+</div>

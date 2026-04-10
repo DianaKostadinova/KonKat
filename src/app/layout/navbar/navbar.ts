@@ -48,6 +48,6 @@ export class Navbar {
     { label: 'Feed',       icon: 'home',             route: '/feed' },
     { label: 'Projects',   icon: 'folder_copy',      route: '/projects' },
     { label: 'Hackathons', icon: 'calendar_month',   route: '/hackathons' },
-    { label: 'Teammates',  icon: 'group',            route: '/teammates' },
+    { label: 'Find Team',  icon: 'group',            route: '/find-team' },
   ]
 }

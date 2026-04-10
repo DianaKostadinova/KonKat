@@ -1,0 +1,9 @@
+:host {
+  display: block;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+:host::-webkit-scrollbar { width: 4px; }
+:host::-webkit-scrollbar-track { background: transparent; }
+:host::-webkit-scrollbar-thumb { background-color: #2a2a2a; border-radius: 4px; }

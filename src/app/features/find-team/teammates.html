@@ -1,0 +1,98 @@
+<div class="flex flex-col gap-5 p-4 max-w-2xl mx-auto w-full">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-[#f0f0f0] text-xl font-bold m-0">Find Teammates</h1>
+      <p class="text-[#888888] text-sm m-0">Join a team or post your own for upcoming hackathons</p>
+    </div>
+    <button
+      class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white bg-[#E8593C] border-none cursor-pointer hover:bg-[#d04a2e] transition-all"
+      (click)="showCreateModal.set(true)"
+    >
+      <span class="material-icons-outlined" style="font-size: 16px;">add</span>
+      Post Team
+    </button>
+  </div>
+
+  <!-- Search -->
+  <div class="flex items-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 h-9">
+    <span class="material-icons-outlined text-[#888888]" style="font-size: 18px;">search</span>
+    <input
+      class="flex-1 bg-transparent border-none outline-none text-sm text-[#f0f0f0] placeholder-[#888888]"
+      placeholder="Search by title, tech, or author..."
+      (input)="onSearch($event)"
+    />
+  </div>
+
+  <!-- Filters -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <select
+      class="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 h-9 text-sm text-[#888888] outline-none cursor-pointer hover:border-[#3a3a3a] transition-colors"
+      (change)="setHackathon($event)"
+    >
+      @for (opt of hackathonOptions(); track opt) {
+        <option [value]="opt" class="bg-[#1a1a1a]">{{ opt }}</option>
+      }
+    </select>
+
+    <select
+      class="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 h-9 text-sm text-[#888888] outline-none cursor-pointer hover:border-[#3a3a3a] transition-colors"
+      (change)="setTech($event)"
+    >
+      @for (opt of techOptions(); track opt) {
+        <option [value]="opt" class="bg-[#1a1a1a]">{{ opt }}</option>
+      }
+    </select>
+
+    <select
+      class="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 h-9 text-sm text-[#888888] outline-none cursor-pointer hover:border-[#3a3a3a] transition-colors"
+      (change)="setLocation($event)"
+    >
+      @for (opt of locationOptions(); track opt) {
+        <option [value]="opt" class="bg-[#1a1a1a]">{{ opt }}</option>
+      }
+    </select>
+  </div>
+
+  <!-- Results count -->
+  <div class="flex items-center justify-between">
+    <span class="text-[#888888] text-xs">
+      {{ filteredTeams().length }} team posts
+    </span>
+    @if (searchQuery() || selectedHackathon() || selectedTech() || selectedLocation()) {
+      <button
+        class="text-[#E8593C] text-xs bg-transparent border-none cursor-pointer hover:underline"
+        (click)="clearFilters()"
+      >
+        Clear filters
+      </button>
+    }
+  </div>
+
+  <!-- Team cards -->
+  @for (team of filteredTeams(); track team.id) {
+    <app-team-card
+      [team]="team"
+      (joinRequest)="onJoinRequest($event)"
+      (cancelRequest)="onCancelRequest($event)"
+    />
+  }
+
+  @if (filteredTeams().length === 0) {
+    <div class="flex flex-col items-center gap-3 py-16 text-center">
+      <span class="material-icons text-[#2a2a2a]" style="font-size: 48px;">group_off</span>
+      <p class="text-[#888888] text-sm m-0">No teams found</p>
+      <button
+        class="text-[#E8593C] text-xs hover:underline bg-transparent border-none cursor-pointer"
+        (click)="clearFilters()"
+      >Clear filters</button>
+    </div>
+  }
+
+</div>
+
+<!-- Create team modal -->
+@if (showCreateModal()) {
+  <app-create-team-modal (close)="showCreateModal.set(false)" />
+}
