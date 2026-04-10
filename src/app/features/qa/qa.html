@@ -1,0 +1,62 @@
+<div class="flex flex-col gap-5 p-4 max-w-2xl mx-auto w-full">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-[#f0f0f0] text-xl font-bold m-0">Ask Help</h1>
+      <p class="text-[#888888] text-sm m-0">Get answers from the MK dev community</p>
+    </div>
+    <button
+      class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white bg-[#E8593C] border-none cursor-pointer hover:bg-[#d04a2e] transition-all"
+      (click)="showAskModal.set(true)"
+    >
+      <span class="material-icons-outlined" style="font-size: 16px;">add</span>
+      Ask Question
+    </button>
+  </div>
+
+  <!-- Search + filters -->
+  <div class="flex flex-col gap-3">
+    <div class="flex items-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 h-9">
+      <span class="material-icons-outlined text-[#888888]" style="font-size: 18px;">search</span>
+      <input
+        class="flex-1 bg-transparent border-none outline-none text-sm text-[#f0f0f0] placeholder-[#888888]"
+        placeholder="Search questions or tags..."
+        (input)="onSearch($event)"
+      />
+    </div>
+
+    <div class="flex items-center gap-2">
+      @for (filter of filters; track filter.value) {
+        <button
+          class="rounded-full px-3 py-1 text-xs font-medium border transition-all cursor-pointer"
+          [style.background]="selectedFilter() === filter.value ? '#E8593C' : 'transparent'"
+          [style.color]="selectedFilter() === filter.value ? 'white' : '#888888'"
+          [style.border-color]="selectedFilter() === filter.value ? '#E8593C' : '#2a2a2a'"
+          (click)="selectedFilter.set(filter.value)"
+        >
+          {{ filter.label }}
+        </button>
+      }
+      <span class="ml-auto text-[#888888] text-xs">{{ filteredPosts().length }} questions</span>
+    </div>
+  </div>
+
+  <!-- Posts -->
+  @for (post of filteredPosts(); track post.id) {
+    <app-qa-post-card
+      [post]="post"
+      (votePost)="onVotePost($event)"
+      (voteComment)="onVoteComment($event)"
+      (addComment)="onAddComment($event)"
+    />
+  }
+
+  @if (filteredPosts().length === 0) {
+    <div class="flex flex-col items-center gap-3 py-16 text-center">
+      <span class="material-icons text-[#2a2a2a]" style="font-size: 48px;">help_outline</span>
+      <p class="text-[#888888] text-sm m-0">No questions found</p>
+    </div>
+  }
+
+</div>
