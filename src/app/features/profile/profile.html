@@ -1,1 +1,205 @@
-<p>profile works!</p>
+<div class="profile-page">
+
+  <!-- Cover photo -->
+  <div class="profile-cover" [style.background]="profile().coverColor">
+    <div class="profile-cover__overlay"></div>
+    <!-- Edit cover button -->
+    <button class="profile-cover__edit">
+      <span class="material-icons" style="font-size: 16px;">photo_camera</span>
+      Edit Cover
+    </button>
+  </div>
+
+  <!-- Profile info section -->
+  <div class="flex flex-col gap-4 px-6 pb-4 bg-[#111111] border-b border-[#2a2a2a]">
+
+    <!-- Avatar row -->
+    <div class="flex items-end justify-between -mt-10 relative z-10">
+
+      <!-- Avatar -->
+      <div class="relative">
+        <div class="w-20 h-20 rounded-full bg-[#2a2a2a] border-4 border-[#111111] flex items-center justify-center">
+          <span class="material-icons text-[#888888]" style="font-size: 48px;">account_circle</span>
+        </div>
+        <button class="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#E8593C] border-2 border-[#111111] flex items-center justify-center cursor-pointer">
+          <span class="material-icons text-white" style="font-size: 12px;">photo_camera</span>
+        </button>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex items-center gap-2 pb-1">
+        <button class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-[#888888] border border-[#2a2a2a] bg-transparent cursor-pointer hover:border-[#3a3a3a] hover:text-[#f0f0f0] transition-all">
+          <span class="material-icons-outlined" style="font-size: 14px;">share</span>
+          Share
+        </button>
+        <button class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-white bg-[#E8593C] border-none cursor-pointer hover:bg-[#d04a2e] transition-all">
+          <span class="material-icons-outlined" style="font-size: 14px;">edit</span>
+          Edit Profile
+        </button>
+      </div>
+    </div>
+
+    <!-- Name + badges -->
+    <div class="flex flex-col gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        <h1 class="text-[#f0f0f0] text-lg font-bold m-0">{{ profile().name }}</h1>
+        @for (badge of profile().badges; track badge.label) {
+          <span
+            class="rounded-full px-2 py-0.5 text-[10px] font-bold border"
+            [style.color]="badge.color"
+            [style.border-color]="badge.color"
+            [style.background]="badge.color + '15'"
+          >
+            {{ badge.label }}
+          </span>
+        }
+      </div>
+
+      <div class="flex items-center gap-1 text-[#888888] text-xs">
+        <span class="text-[#E8593C] font-medium">{{ profile().username }}</span>
+        <span>·</span>
+        <span>{{ profile().role }}</span>
+        <span>·</span>
+        <span>{{ profile().company }}</span>
+      </div>
+
+      <!-- Bio -->
+      <p class="text-[#d0d0d0] text-sm m-0">{{ profile().bio }}</p>
+
+      <!-- Meta info -->
+      <div class="flex items-center gap-4 flex-wrap text-[#888888] text-xs">
+        <div class="flex items-center gap-1">
+          <span class="material-icons-outlined" style="font-size: 14px;">location_on</span>
+          {{ profile().location }}
+        </div>
+        <div class="flex items-center gap-1">
+          <span class="material-icons-outlined" style="font-size: 14px;">code</span>
+          {{ profile().github }}
+        </div>
+        @if (profile().website) {
+          <div class="flex items-center gap-1">
+            <span class="material-icons-outlined" style="font-size: 14px;">link</span>
+            <a [href]="profile().website" class="text-[#E8593C] hover:underline">{{ profile().website }}</a>
+          </div>
+        }
+        <div class="flex items-center gap-1">
+          <span class="material-icons-outlined" style="font-size: 14px;">calendar_today</span>
+          Joined {{ profile().joinedAt }}
+        </div>
+      </div>
+
+      <!-- Tech stack -->
+      <div class="flex flex-wrap gap-1.5">
+        @for (tech of profile().techStack; track tech) {
+          <span class="rounded-md px-2 py-0.5 text-[11px] bg-[#2a2a2a] text-[#888888] border border-[#3a3a3a]">
+            {{ tech }}
+          </span>
+        }
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-3 sm:grid-cols-6 gap-3 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-3">
+      <div class="flex flex-col items-center gap-0.5">
+        <span class="text-[#f0f0f0] font-bold text-base">{{ profile().stats.posts }}</span>
+        <span class="text-[#888888] text-[11px]">Posts</span>
+      </div>
+      <div class="flex flex-col items-center gap-0.5 border-l border-[#2a2a2a]">
+        <span class="text-[#f0f0f0] font-bold text-base">{{ profile().stats.projects }}</span>
+        <span class="text-[#888888] text-[11px]">Projects</span>
+      </div>
+      <div class="flex flex-col items-center gap-0.5 border-l border-[#2a2a2a]">
+        <span class="text-[#f0f0f0] font-bold text-base">{{ profile().stats.hackathons }}</span>
+        <span class="text-[#888888] text-[11px]">Hackathons</span>
+      </div>
+      <div class="flex flex-col items-center gap-0.5 border-l border-[#2a2a2a]">
+        <span class="text-[#E8593C] font-bold text-base">{{ profile().stats.rep }}</span>
+        <span class="text-[#888888] text-[11px]">Rep</span>
+      </div>
+      <div class="flex flex-col items-center gap-0.5 border-l border-[#2a2a2a]">
+        <span class="text-[#f0f0f0] font-bold text-base">{{ profile().stats.followers }}</span>
+        <span class="text-[#888888] text-[11px]">Followers</span>
+      </div>
+      <div class="flex flex-col items-center gap-0.5 border-l border-[#2a2a2a]">
+        <span class="text-[#f0f0f0] font-bold text-base">{{ profile().stats.following }}</span>
+        <span class="text-[#888888] text-[11px]">Following</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex items-center gap-1 px-4 py-2 border-b border-[#2a2a2a] bg-[#111111] sticky top-[60px] z-10">
+    @for (tab of tabs; track tab.value) {
+      <button
+        class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border-none cursor-pointer transition-all duration-200 relative"
+        [style.color]="activeTab() === tab.value ? '#f0f0f0' : '#888888'"
+        [style.background]="activeTab() === tab.value ? '#1e1e1e' : 'transparent'"
+        (click)="activeTab.set(tab.value)"
+      >
+        <span class="material-icons-outlined" style="font-size: 16px;">{{ tab.icon }}</span>
+        {{ tab.label }}
+        @if (activeTab() === tab.value) {
+          <span class="absolute bottom-0 left-3 right-3 h-0.5 bg-[#E8593C] rounded-full"></span>
+        }
+      </button>
+    }
+  </div>
+
+  <!-- Tab content -->
+  <div class="flex flex-col gap-4 p-4 max-w-2xl mx-auto w-full">
+
+    @if (activeTab() === 'posts') {
+      @for (post of myPosts(); track post.id) {
+        <app-post-card [post]="post" />
+      }
+      @if (myPosts().length === 0) {
+        <!-- Избриши го ng-container и замени со ова: -->
+        <div class="empty-state">
+          <span class="material-icons text-[#2a2a2a]" style="font-size: 48px;">grid_view</span>
+          <p class="text-[#888888] text-sm m-0">No posts yet</p>
+        </div>
+      }
+    }
+
+    @if (activeTab() === 'liked') {
+      @for (post of likedPosts(); track post.id) {
+        <app-post-card [post]="post" />
+      }
+      @if (likedPosts().length === 0) {
+        <div class="empty-state">
+          <span class="material-icons text-[#2a2a2a]" style="font-size: 48px;">favorite_border</span>
+          <p class="text-[#888888] text-sm m-0">No liked posts yet</p>
+        </div>
+      }
+    }
+
+    @if (activeTab() === 'saved') {
+      @for (post of savedPosts(); track post.id) {
+        <app-post-card [post]="post" />
+      }
+      @if (savedPosts().length === 0) {
+        <div class="empty-state">
+          <span class="material-icons text-[#2a2a2a]" style="font-size: 48px;">bookmark_border</span>
+          <p class="text-[#888888] text-sm m-0">No saved posts yet</p>
+        </div>
+      }
+    }
+
+    @if (activeTab() === 'projects') {
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        @for (project of myProjects(); track project.id) {
+          <app-project-card [project]="project" />
+        }
+      </div>
+      @if (myProjects().length === 0) {
+        <div class="empty-state">
+          <span class="material-icons text-[#2a2a2a]" style="font-size: 48px;">folder_copy</span>
+          <p class="text-[#888888] text-sm m-0">No projects yet</p>
+        </div>
+      }
+    }
+
+  </div>
+
+</div>

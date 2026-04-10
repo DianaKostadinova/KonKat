@@ -5,6 +5,7 @@ import { Hackathons } from './features/hackathons/hackathons';
 import { Teammates } from './features/find-team/teammates';
 import { QA } from './features/qa/qa';
 import { Chat } from './features/messages/chat'
+import {Profile} from './features/profile/profile';
 export const routes: Routes = [
   { path: '', redirectTo: 'feed', pathMatch: 'full' },
   { path: 'feed', component: HomeFeed },
@@ -13,6 +14,8 @@ export const routes: Routes = [
   { path: 'find-team', component: Teammates },
   { path: 'chat', component: Chat },
   { path: 'qa', component: QA },
+  { path: 'profile', component: Profile },
+  { path: 'profile/:id', component: Profile },
 
 
 
