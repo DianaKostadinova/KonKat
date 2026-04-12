@@ -10,10 +10,10 @@ export class ProfileService {
     name: 'Diana Kostadinova',
     username: 'diana-dev',
     role: 'Software Engineer',
-    company: 'MevMK',
+    company: 'KonKat',
     location: 'Skopje, Macedonia',
     bio: 'Passionate frontend developer building cool stuff with Angular and React. Open source contributor. Coffee addict ☕',
-    github: 'marko-dev',
+    github: 'diana-dev',
     website: 'https://diana.dev.mk',
     coverColor: '#E8593C',
     stats: {

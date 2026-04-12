@@ -6,6 +6,9 @@ import { Teammates } from './features/find-team/teammates';
 import { QA } from './features/qa/qa';
 import { Chat } from './features/messages/chat'
 import {Profile} from './features/profile/profile';
+import {Workspace} from './features/workspace/workspace'
+import {MyWorkspaces} from './features/myworkspace/myworkspace'
+
 export const routes: Routes = [
   { path: '', redirectTo: 'feed', pathMatch: 'full' },
   { path: 'feed', component: HomeFeed },
@@ -16,7 +19,6 @@ export const routes: Routes = [
   { path: 'qa', component: QA },
   { path: 'profile', component: Profile },
   { path: 'profile/:id', component: Profile },
-
-
-
+  { path: 'workspace/:id', component: Workspace },
+  { path: 'workspaces',     component: MyWorkspaces },
 ];

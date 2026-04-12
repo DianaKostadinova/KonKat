@@ -1,10 +1,10 @@
 import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
 import { TeamPost } from './teammates.model';
-
+import {RouterLink, Route} from '@angular/router';
 @Component({
   selector: 'app-team-card',
   standalone: true,
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './team-card.html',
   styleUrl: './team-card.css',
 })

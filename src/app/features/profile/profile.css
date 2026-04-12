@@ -2,6 +2,7 @@
   display: block;
   height: calc(100vh - 60px);
   overflow-y: auto;
+  position: relative;
 }
 
 :host::-webkit-scrollbar { width: 4px; }

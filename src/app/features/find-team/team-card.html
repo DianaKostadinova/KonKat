@@ -156,12 +156,14 @@
     }
 
     @if (team.requestStatus === 'approved') {
-      <div class="flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-[#28c840] bg-[#28c840]/10 border border-[#28c840]/30">
-        <span class="material-icons-outlined" style="font-size: 16px;">check_circle</span>
-        You're In!
-      </div>
+      <button
+        class="flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-[#28c840] bg-[#28c840]/10 border border-[#28c840]/30 cursor-pointer hover:bg-[#28c840]/20 transition-all"
+        [routerLink]="['/workspace', team.id]"
+      >
+        <span class="material-icons-outlined" style="font-size: 16px;">rocket_launch</span>
+        Open Workspace
+      </button>
     }
-
     @if (team.requestStatus === 'rejected') {
       <div class="flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-[#888888] bg-transparent border border-[#2a2a2a]">
         <span class="material-icons-outlined" style="font-size: 16px;">cancel</span>

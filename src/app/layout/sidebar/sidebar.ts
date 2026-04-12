@@ -14,6 +14,6 @@ export class Sidebar {
     { type: 'divider' },
     { label: 'Chat',           icon: 'chat_bubble_outline', route: '/chat', badge: 3 },
     { type: 'divider' },
-    { label: 'Teammates',      icon: 'group',               route: '/teams' },
+    { label: 'Workspace',      icon: 'group',               route: '/workspace' },
   ];
 }

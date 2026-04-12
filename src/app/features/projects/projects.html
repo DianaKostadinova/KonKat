@@ -2,7 +2,7 @@
 
   <!-- Header -->
   <div class="flex flex-col gap-1">
-    <h1 class="text-[#f0f0f0] text-xl font-bold m-0">Teammates</h1>
+    <h1 class="text-[#f0f0f0] text-xl font-bold m-0">Workspace</h1>
     <p class="text-[#888888] text-sm m-0">Discover what developers in MK are building</p>
   </div>
 
@@ -117,7 +117,7 @@
   <!-- Featured -->
   @if (!selectedTech() && !searchQuery()) {
     <div class="flex flex-col gap-3">
-      <span class="text-[#f0f0f0] text-sm font-semibold">Featured Teammates</span>
+      <span class="text-[#f0f0f0] text-sm font-semibold">Featured Workspace</span>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         @for (project of featured(); track project.id) {
           <app-project-card [project]="project" [featured]="true" />
@@ -129,7 +129,7 @@
   <!-- All projects grid -->
   <div class="flex flex-col gap-3">
     <span class="text-[#f0f0f0] text-sm font-semibold">
-      All Teammates
+      All Workspace
       <span class="text-[#888888] font-normal ml-1">({{ filteredProjects().length }})</span>
     </span>
 
