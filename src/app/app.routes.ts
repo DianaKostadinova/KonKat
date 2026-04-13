@@ -7,7 +7,7 @@ import { QA } from './features/qa/qa';
 import { Chat } from './features/messages/chat'
 import {Profile} from './features/profile/profile';
 import {Workspace} from './features/workspace/workspace'
-import {MyWorkspaces} from './features/myworkspace/myworkspace'
+import {MyWorkspaces} from './features/workspace/myworkspace'
 
 export const routes: Routes = [
   { path: '', redirectTo: 'feed', pathMatch: 'full' },
@@ -20,5 +20,5 @@ export const routes: Routes = [
   { path: 'profile', component: Profile },
   { path: 'profile/:id', component: Profile },
   { path: 'workspace/:id', component: Workspace },
-  { path: 'workspaces',     component: MyWorkspaces },
+  { path: 'myworkspaces',     component: MyWorkspaces },
 ];
