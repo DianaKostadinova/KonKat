@@ -1,9 +1,10 @@
-import {Component,signal} from '@angular/core';
-import {RouterOutlet} from '@angular/router';
-import {Navbar} from './layout/navbar/navbar';
-import {Sidebar} from './layout/sidebar/sidebar';
-import {RightPanel} from './layout/right-panel/right-panel';
-
+import { Component, computed, inject } from '@angular/core';
+import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter, map, startWith } from 'rxjs';
+import { Navbar } from './layout/navbar/navbar';
+import { Sidebar } from './layout/sidebar/sidebar';
+import { RightPanel } from './layout/right-panel/right-panel';
 
 @Component({
   selector: 'app-root',
@@ -12,5 +13,18 @@ import {RightPanel} from './layout/right-panel/right-panel';
   styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = signal('KonKat');
+  private router = inject(Router);
+
+  private currentUrl = toSignal(
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd),
+      map(e => (e as NavigationEnd).urlAfterRedirects),
+      startWith(this.router.url)
+    )
+  );
+
+  showShell = computed(() => {
+    const url = this.currentUrl() ?? '';
+    return !url.startsWith('/login');
+  });
 }

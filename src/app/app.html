@@ -1,11 +1,15 @@
-<app-navbar />
+@if (showShell()) {
+  <app-navbar />
+}
 
-<div class="app-shell">
-  <app-sidebar />
-
-  <main class="main-content">
-    <router-outlet />
-  </main>
-
-  <app-right-panel />
-</div>
+@if (showShell()) {
+  <div class="app-shell">
+    <app-sidebar />
+    <main class="main-content">
+      <router-outlet />
+    </main>
+    <app-right-panel />
+  </div>
+} @else {
+  <router-outlet />
+}

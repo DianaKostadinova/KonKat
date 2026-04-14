@@ -4,6 +4,7 @@ import { PostService } from '../../shared/post-card/post.service';
 import { ProjectService } from '../projects/project.service';
 import { PostCard } from '../../shared/post-card/post-card';
 import { ProjectCard } from '../projects/project-card';
+import { AuthService } from '../../shared/auth/auth.service';
 
 type Tab = 'posts' | 'liked' | 'saved' | 'projects';
 
@@ -28,7 +29,12 @@ export class Profile {
     public profileService: ProfileService,
     private postService: PostService,
     private projectService: ProjectService,
+    private authService: AuthService,
   ) {}
+
+  logout() {
+    this.authService.logout();
+  }
 
   profile = computed(() => this.profileService.getProfile());
   myPosts = computed(() => this.postService.getPosts());
