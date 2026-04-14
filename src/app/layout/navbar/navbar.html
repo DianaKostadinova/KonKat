@@ -45,15 +45,36 @@
       }
     </div>
 
-    <button class="navbar__icon-btn" routerLink="/notifications">
-      <span class="material-icons-outlined">notifications</span>
+    <!-- Notifications -->
+    <div class="relative">
+      <button
+        class="navbar__icon-btn"
+        (click)="toggleNotif()"
+      >
+        <span class="material-icons-outlined">notifications</span>
+        @if (notificationService.unreadCount() > 0) {
+          <span class="navbar__badge">
+        {{ notificationService.unreadCount() > 9 ? '9+' : notificationService.unreadCount() }}
+      </span>
+        }
+      </button>
 
-      @if (notificationLabel()) {
-        <span class="navbar__badge" style="font-size: 1px">
-          {{ notificationLabel() }}
-        </span>
+      <!-- Dropdown -->
+      @if (isNotifOpen()) {
+        <!-- Backdrop -->
+        <div
+          class="fixed inset-0 z-40"
+          (click)="isNotifOpen.set(false)"
+        ></div>
+
+        <!-- Dropdown panel -->
+        <div class="absolute right-0 top-full mt-2 z-50">
+          <app-notification-dropdown
+            (close)="isNotifOpen.set(false)"
+          />
+        </div>
       }
-    </button>
+    </div>
 
     <button class="navbar__avatar" routerLink="/profile">
       <span class="material-icons">account_circle</span>

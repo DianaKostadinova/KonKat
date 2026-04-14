@@ -1,11 +1,13 @@
 import { Component, signal, computed, HostListener } from '@angular/core';
 import {CommonModule} from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterModule } from '@angular/router';
+import {NotificationDropdown} from '../../shared/notification-bell/notification-bell';
+import { NotificationService } from '../../shared/notification-bell/notification.service';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule,RouterModule, ],
+  imports: [CommonModule,RouterModule,NotificationDropdown ],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })
@@ -14,7 +16,7 @@ export class Navbar {
   searchQuery = signal('')
   notificationCount = signal(3)
   isMobileMenuOpen = signal(false);
-
+  isNotifOpen = signal(false)
   notificationLabel = computed(() =>{
     const count = this.notificationCount();
     if (count == 0) return null
@@ -42,6 +44,7 @@ export class Navbar {
   onEscape() {
     this.searchQuery.set('');
     this.isSearchFocused.set(false);
+    this.isNotifOpen.set(false);
   }
 
   navLinks = [
@@ -50,4 +53,8 @@ export class Navbar {
     { label: 'Hackathons', icon: 'calendar_month',   route: '/hackathons' },
     { label: 'Find Team',  icon: 'group',            route: '/find-team' },
   ]
+  constructor(public notificationService: NotificationService) {}
+  toggleNotif(){
+    this.isNotifOpen.update(v => !v);
+  }
 }

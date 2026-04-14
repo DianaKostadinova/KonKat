@@ -1,48 +1,113 @@
-<div class="notification-bell">
-  <button 
-    class="notification-bell__button"
-    (click)="toggleDropdown()"
-  >
-    <span class="material-icons-outlined">notifications</span>
-    @if (notifications().length > 0) {
-      <span class="notification-bell__count">{{ notifications().length }}</span>
-    }
-  </button>
+<div class="notification-dropdown">
 
-  @if (isDropdownOpen()) {
-    <div class="notification-bell__dropdown">
-      <div class="notification-bell__header">
-        <h3>Notifications</h3>
-      </div>
-
-      @if (notifications().length > 0) {
-        <ul class="notification-bell__list">
-          @for (notification of notifications(); track notification.id) {
-            <li 
-              class="notification-bell__item"
-              [class.notification-bell__item--unread]="!notification.read"
-              (click)="markAsRead(notification.id)"
-            >
-              <div class="notification-bell__content">
-                <p class="notification-bell__message">{{ notification.message }}</p>
-                <span class="notification-bell__time">
-                  {{ notification.timestamp | date:'short' }}
-                </span>
-              </div>
-            </li>
-          }
-        </ul>
-      } @else {
-        <div class="notification-bell__empty">
-          <p>No notifications</p>
-        </div>
+  <!-- Header -->
+  <div class="flex items-center justify-between px-4 py-3 border-b border-[#2a2a2a]">
+    <div class="flex items-center gap-2">
+      <span class="text-[#f0f0f0] text-sm font-semibold">Notifications</span>
+      @if (notificationService.unreadCount() > 0) {
+        <span class="flex items-center justify-center min-w-5 h-5 rounded-full bg-[#E8593C] text-white text-[10px] font-bold px-1">
+          {{ notificationService.unreadCount() }}
+        </span>
       }
-
-      <div class="notification-bell__footer">
-        <button class="notification-bell__view-all">
-          View all notifications
-        </button>
-      </div>
     </div>
-  }
+    <div class="flex items-center gap-2">
+      @if (notificationService.unreadCount() > 0) {
+        <button
+          class="text-[#E8593C] text-xs bg-transparent border-none cursor-pointer hover:underline"
+          (click)="markAllRead()"
+        >
+          Mark all read
+        </button>
+      }
+      <button
+        class="flex items-center justify-center w-7 h-7 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all"
+        (click)="close.emit()"
+      >
+        <span class="material-icons" style="font-size: 16px;">close</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="flex items-center gap-1 px-4 py-2 border-b border-[#2a2a2a]">
+    <button
+      class="rounded-full px-3 py-1 text-xs font-medium border transition-all cursor-pointer"
+      [style.background]="filter() === 'all' ? '#E8593C' : 'transparent'"
+      [style.color]="filter() === 'all' ? 'white' : '#888888'"
+      [style.border-color]="filter() === 'all' ? '#E8593C' : '#2a2a2a'"
+      (click)="filter.set('all')"
+    >
+      All
+    </button>
+    <button
+      class="rounded-full px-3 py-1 text-xs font-medium border transition-all cursor-pointer"
+      [style.background]="filter() === 'unread' ? '#E8593C' : 'transparent'"
+      [style.color]="filter() === 'unread' ? 'white' : '#888888'"
+      [style.border-color]="filter() === 'unread' ? '#E8593C' : '#2a2a2a'"
+      (click)="filter.set('unread')"
+    >
+      Unread
+      @if (notificationService.unreadCount() > 0) {
+        <span class="ml-1">({{ notificationService.unreadCount() }})</span>
+      }
+    </button>
+  </div>
+
+  <!-- Notification list -->
+  <div class="notification-list">
+
+    @if (filteredNotifications().length === 0) {
+      <div class="flex flex-col items-center gap-3 py-10">
+        <span class="material-icons text-[#2a2a2a]" style="font-size: 40px;">notifications_none</span>
+        <span class="text-[#888888] text-sm">
+          {{ filter() === 'unread' ? 'No unread notifications' : 'No notifications' }}
+        </span>
+      </div>
+    }
+
+    @for (notification of filteredNotifications(); track notification.id) {
+
+
+      <div
+        class="notification-icon flex-shrink-0"
+        [style.background]="notificationColor(notification.type) + '20'"
+        [style.border-color]="notificationColor(notification.type) + '40'"
+      >
+          <span class="material-icons-outlined"
+                style="font-size: 18px;"
+                [style.color]="notificationColor(notification.type)">
+            {{ notificationIcon(notification.type) }}
+          </span>
+      </div>
+
+      <!-- Content -->
+      <div class="flex flex-col gap-0.5 flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+            <span class="text-[#f0f0f0] text-xs font-semibold truncate">
+              {{ notification.title }}
+            </span>
+          @if (!notification.read) {
+            <span class="w-1.5 h-1.5 rounded-full bg-[#E8593C] flex-shrink-0"></span>
+          }
+        </div>
+        <span class="text-[#888888] text-xs leading-relaxed">
+            {{ notification.message }}
+          </span>
+        <span class="text-[#888888] text-[11px] mt-0.5">{{ notification.createdAt }}</span>
+      </div>
+
+      <!-- Delete -->
+      <button
+        class="notification-delete"
+        (click)="onDelete($event, notification.id)"
+        title="Dismiss"
+      >
+        <span class="material-icons" style="font-size: 14px;">close</span>
+      </button>
+
+
+    }
+
+  </div>
+
 </div>

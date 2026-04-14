@@ -1,53 +1,67 @@
-import { Component, signal, HostListener, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-
-interface Notification {
-  id: string;
-  message: string;
-  timestamp: Date;
-  read: boolean;
-}
+import { Component,Output,EventEmitter, signal } from '@angular/core';
+import {RouterLink } from '@angular/router';
+import { NotificationService } from './notification.service';
+import {Notification,NotificationType} from './notification-bell.model';
 
 @Component({
-  selector: 'app-notification-bell',
+  selector: 'app-notification-dropdown',
   standalone: true,
-  imports: [CommonModule],
+  imports: [RouterLink],
   templateUrl: './notification-bell.html',
   styleUrl: './notification-bell.css',
 })
-export class NotificationBell implements OnInit {
-  isDropdownOpen = signal(false);
-  notifications = signal<Notification[]>([]);
+export class NotificationDropdown {
+  @Output() close = new EventEmitter<void>();
 
-  ngOnInit() {
-    this.notifications.set([
-      { id: '1', message: 'New message from John', timestamp: new Date(), read: false },
-      { id: '2', message: 'Your post was liked', timestamp: new Date(), read: false },
-      { id: '3', message: 'Team invitation received', timestamp: new Date(), read: true },
-    ]);
+  filter = signal<'all' | 'unread'>('all');
+
+  constructor(public notificationService: NotificationService) {}
+
+  filteredNotifications() {
+    const all = this.notificationService.getAll();
+    return this.filter() === 'unread'
+      ? all.filter(n => !n.read)
+      : all;
   }
 
-  toggleDropdown() {
-    this.isDropdownOpen.update(v => !v);
+  onNotificationClick(notification: Notification) {
+    this.notificationService.markAsRead(notification.id);
+    this.close.emit();
   }
 
-  closeDropdown() {
-    this.isDropdownOpen.set(false);
+  onDelete(event: Event, id: number) {
+    event.stopPropagation();
+    event.preventDefault();
+    this.notificationService.delete(id);
   }
 
-  markAsRead(notificationId: string) {
-    this.notifications.update(notifications =>
-      notifications.map(n =>
-        n.id === notificationId ? { ...n, read: true } : n
-      )
-    );
+  markAllRead() {
+    this.notificationService.markAllAsRead();
   }
 
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent) {
-    const target = event.target as HTMLElement;
-    if (!target.closest('.notification-bell')) {
-      this.closeDropdown();
+  notificationIcon(type: NotificationType): string {
+    switch (type) {
+      case 'join_request':      return 'person_add';
+      case 'join_approved':     return 'check_circle';
+      case 'join_rejected':     return 'cancel';
+      case 'comment':           return 'chat_bubble_outline';
+      case 'like':              return 'favorite';
+      case 'hackathon_reminder':return 'emoji_events';
+      case 'team_message':      return 'groups';
+      case 'mention':           return 'alternate_email';
+      default:                  return 'notifications';
+    }
+  }
+
+  notificationColor(type: NotificationType): string {
+    switch (type) {
+      case 'join_approved':     return '#28c840';
+      case 'join_rejected':     return '#888888';
+      case 'like':              return '#E8593C';
+      case 'hackathon_reminder':return '#febc2e';
+      case 'join_request':      return '#3b82f6';
+      case 'mention':           return '#a855f7';
+      default:                  return '#888888';
     }
   }
 }
