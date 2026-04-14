@@ -1,1 +1,48 @@
-<p>notification-bell works!</p>
+<div class="notification-bell">
+  <button 
+    class="notification-bell__button"
+    (click)="toggleDropdown()"
+  >
+    <span class="material-icons-outlined">notifications</span>
+    @if (notifications().length > 0) {
+      <span class="notification-bell__count">{{ notifications().length }}</span>
+    }
+  </button>
+
+  @if (isDropdownOpen()) {
+    <div class="notification-bell__dropdown">
+      <div class="notification-bell__header">
+        <h3>Notifications</h3>
+      </div>
+
+      @if (notifications().length > 0) {
+        <ul class="notification-bell__list">
+          @for (notification of notifications(); track notification.id) {
+            <li 
+              class="notification-bell__item"
+              [class.notification-bell__item--unread]="!notification.read"
+              (click)="markAsRead(notification.id)"
+            >
+              <div class="notification-bell__content">
+                <p class="notification-bell__message">{{ notification.message }}</p>
+                <span class="notification-bell__time">
+                  {{ notification.timestamp | date:'short' }}
+                </span>
+              </div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <div class="notification-bell__empty">
+          <p>No notifications</p>
+        </div>
+      }
+
+      <div class="notification-bell__footer">
+        <button class="notification-bell__view-all">
+          View all notifications
+        </button>
+      </div>
+    </div>
+  }
+</div>

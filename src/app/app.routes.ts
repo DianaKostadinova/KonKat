@@ -8,7 +8,7 @@ import { Chat } from './features/messages/chat'
 import {Profile} from './features/profile/profile';
 import {Workspace} from './features/workspace/workspace'
 import {MyWorkspaces} from './features/workspace/myworkspace'
-
+import { NotificationBell } from './shared/notification-bell/notification-bell';
 export const routes: Routes = [
   { path: '', redirectTo: 'feed', pathMatch: 'full' },
   { path: 'feed', component: HomeFeed },
@@ -21,4 +21,5 @@ export const routes: Routes = [
   { path: 'profile/:id', component: Profile },
   { path: 'workspace/:id', component: Workspace },
   { path: 'myworkspaces',     component: MyWorkspaces },
+  {path: 'notifications', component: NotificationBell}
 ];

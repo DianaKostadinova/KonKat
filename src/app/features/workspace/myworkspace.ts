@@ -74,7 +74,6 @@ import { TeamService } from '../find-team/team.service';
 export class MyWorkspaces {
   constructor(private teamService: TeamService) {}
 
-  // Only show approved teams
   myTeams = computed(() =>
     this.teamService.getAll().filter(t => t.requestStatus === 'approved')
   );
