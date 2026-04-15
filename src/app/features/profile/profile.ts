@@ -19,7 +19,6 @@ type Tab = 'posts' | 'liked' | 'saved' | 'projects';
 })
 export class Profile {
   activeTab = signal<Tab>('posts');
-  showCoverPicker = signal(false);
   shareCopied = signal(false);
   showCreatePost = signal(false);
 
@@ -29,8 +28,6 @@ export class Profile {
     { value: 'saved',    label: 'Saved',    icon: 'bookmark_border' },
     { value: 'projects', label: 'Projects', icon: 'folder_copy' },
   ];
-
-  readonly coverOptions = ['#E8593C', '#6366f1', '#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#8b5cf6', '#14b8a6'];
 
   constructor(
     public profileService: ProfileService,
@@ -43,9 +40,14 @@ export class Profile {
     this.authService.logout();
   }
 
-  selectCoverColor(color: string) {
-    this.profileService.updateProfile({ coverColor: color });
-    this.showCoverPicker.set(false);
+  onCoverImageChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.profileService.updateProfile({ coverImage: reader.result as string });
+    };
+    reader.readAsDataURL(file);
   }
 
   shareProfile() {

@@ -1,31 +1,19 @@
 <div class="profile-page">
 
   <!-- Cover photo -->
-  <div class="profile-cover" [style.background]="profile().coverColor">
+  <div
+    class="profile-cover"
+    [style.background-color]="profile().coverColor"
+    [style.background-image]="profile().coverImage ? 'url(' + profile().coverImage + ')' : 'none'"
+    [style.background-size]="'cover'"
+    [style.background-position]="'center'"
+  >
     <div class="profile-cover__overlay"></div>
-    <!-- Edit cover button -->
-    <button class="profile-cover__edit" (click)="showCoverPicker.set(!showCoverPicker())">
+    <label class="profile-cover__edit">
       <span class="material-icons" style="font-size: 16px;">photo_camera</span>
       Edit Cover
-    </button>
-
-    <!-- Cover color picker -->
-    @if (showCoverPicker()) {
-      <div class="cover-picker-backdrop" (click)="showCoverPicker.set(false)"></div>
-      <div class="cover-picker">
-        <p class="cover-picker__label">Choose cover color</p>
-        <div class="cover-picker__swatches">
-          @for (color of coverOptions; track color) {
-            <button
-              class="cover-swatch"
-              [style.background]="color"
-              [class.selected]="profile().coverColor === color"
-              (click)="selectCoverColor(color)"
-            ></button>
-          }
-        </div>
-      </div>
-    }
+      <input type="file" accept="image/*" (change)="onCoverImageChange($event)" style="display:none" />
+    </label>
   </div>
 
   <!-- Profile info section -->

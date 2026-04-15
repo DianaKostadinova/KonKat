@@ -11,6 +11,7 @@ export interface UserProfile {
   avatar?: string;
   interests: string[];
   coverColor: string;
+  coverImage?: string;
   stats: {
     posts: number;
     projects: number;
