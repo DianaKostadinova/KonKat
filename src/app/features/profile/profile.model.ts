@@ -8,6 +8,8 @@ export interface UserProfile {
   bio: string;
   github: string;
   website?: string;
+  avatar?: string;
+  interests: string[];
   coverColor: string;
   stats: {
     posts: number;

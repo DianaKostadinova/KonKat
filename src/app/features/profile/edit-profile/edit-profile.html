@@ -1,0 +1,187 @@
+<div class="edit-page">
+
+  <!-- Header -->
+  <div class="edit-header">
+    @if (isSetup()) {
+      <div class="setup-banner">
+        <span class="material-icons" style="font-size: 20px; color: #E8593C;">waving_hand</span>
+        <div>
+          <p class="setup-title">Welcome to KonKat!</p>
+          <p class="setup-sub">Set up your profile so others can find and connect with you.</p>
+        </div>
+      </div>
+    } @else {
+      <button class="back-btn" (click)="cancel()">
+        <span class="material-icons-outlined" style="font-size: 18px;">arrow_back</span>
+        Back
+      </button>
+    }
+    <h1 class="page-title">{{ isSetup() ? 'Set Up Your Profile' : 'Edit Profile' }}</h1>
+  </div>
+
+  <div class="edit-body">
+
+    <!-- Avatar + Cover -->
+    <section class="card">
+      <h2 class="section-title">Photo &amp; Cover</h2>
+
+      <!-- Cover color -->
+      <div class="field-group">
+        <label class="field-label">Cover Color</label>
+        <div class="color-row">
+          @for (color of coverOptions; track color) {
+            <button
+              class="color-swatch"
+              [style.background]="color"
+              [class.selected]="coverColor === color"
+              (click)="coverColor = color"
+            ></button>
+          }
+        </div>
+      </div>
+
+      <!-- Avatar -->
+      <div class="field-group">
+        <label class="field-label">Profile Picture</label>
+        <div class="avatar-row">
+          <div class="avatar-preview">
+            @if (avatar) {
+              <img [src]="avatar" alt="avatar" class="avatar-img" />
+            } @else {
+              <span class="material-icons" style="font-size: 40px; color: #555;">account_circle</span>
+            }
+          </div>
+          <label class="upload-btn">
+            <span class="material-icons-outlined" style="font-size: 16px;">upload</span>
+            Upload photo
+            <input type="file" accept="image/*" (change)="onAvatarChange($event)" style="display:none" />
+          </label>
+          @if (avatar) {
+            <button class="remove-btn" (click)="avatar = ''">Remove</button>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Basic info -->
+    <section class="card">
+      <h2 class="section-title">Basic Info</h2>
+
+      <div class="two-col">
+        <div class="field-group">
+          <label class="field-label">Full Name</label>
+          <input class="field-input" type="text" [(ngModel)]="name" placeholder="Your name" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Username</label>
+          <div class="prefix-input">
+            <span class="prefix">&#64;</span>
+            <input class="field-input prefix-field" type="text" [(ngModel)]="username" placeholder="username" />
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="field-group">
+          <label class="field-label">Role / Title</label>
+          <input class="field-input" type="text" [(ngModel)]="role" placeholder="e.g. Frontend Engineer" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Company / School</label>
+          <input class="field-input" type="text" [(ngModel)]="company" placeholder="Where do you work or study?" />
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Location</label>
+        <input class="field-input" type="text" [(ngModel)]="location" placeholder="City, Country" />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Bio</label>
+        <textarea class="field-input field-textarea" [(ngModel)]="bio" placeholder="Tell the community a bit about yourself..." rows="3"></textarea>
+      </div>
+    </section>
+
+    <!-- Links -->
+    <section class="card">
+      <h2 class="section-title">Links</h2>
+
+      <div class="two-col">
+        <div class="field-group">
+          <label class="field-label">GitHub username</label>
+          <div class="prefix-input">
+            <span class="prefix">github.com/</span>
+            <input class="field-input prefix-field" type="text" [(ngModel)]="github" placeholder="your-handle" />
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Website</label>
+          <input class="field-input" type="url" [(ngModel)]="website" placeholder="https://yoursite.com" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Skills -->
+    <section class="card">
+      <h2 class="section-title">Skills &amp; Tech Stack</h2>
+      <p class="section-hint">Press Enter or comma to add a skill.</p>
+
+      <div class="tag-input-wrap">
+        @for (tech of techStack; track tech) {
+          <span class="tag tag--skill">
+            {{ tech }}
+            <button class="tag-remove" (click)="removeTech(tech)">
+              <span class="material-icons" style="font-size: 12px;">close</span>
+            </button>
+          </span>
+        }
+        <input
+          class="tag-input"
+          type="text"
+          [(ngModel)]="techInput"
+          (keydown)="onTechKeydown($event)"
+          (blur)="addTech()"
+          placeholder="Add a skill..."
+        />
+      </div>
+    </section>
+
+    <!-- Interests -->
+    <section class="card">
+      <h2 class="section-title">Interests</h2>
+      <p class="section-hint">What topics excite you? Press Enter or comma to add.</p>
+
+      <div class="tag-input-wrap">
+        @for (interest of interests; track interest) {
+          <span class="tag tag--interest">
+            {{ interest }}
+            <button class="tag-remove" (click)="removeInterest(interest)">
+              <span class="material-icons" style="font-size: 12px;">close</span>
+            </button>
+          </span>
+        }
+        <input
+          class="tag-input"
+          type="text"
+          [(ngModel)]="interestInput"
+          (keydown)="onInterestKeydown($event)"
+          (blur)="addInterest()"
+          placeholder="e.g. Open Source, AI, Game Dev..."
+        />
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <div class="actions">
+      @if (!isSetup()) {
+        <button class="btn-cancel" (click)="cancel()">Cancel</button>
+      }
+      <button class="btn-save" (click)="save()">
+        <span class="material-icons-outlined" style="font-size: 16px;">check</span>
+        {{ isSetup() ? 'Finish Setup' : 'Save Changes' }}
+      </button>
+    </div>
+
+  </div>
+</div>

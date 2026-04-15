@@ -1,0 +1,331 @@
+:host {
+  display: block;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+  background: #0f0f0f;
+}
+
+:host::-webkit-scrollbar { width: 4px; }
+:host::-webkit-scrollbar-track { background: transparent; }
+:host::-webkit-scrollbar-thumb { background-color: #2a2a2a; border-radius: 4px; }
+
+.edit-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+/* Header */
+.edit-header {
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f0f0f0;
+  margin: 12px 0 0;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #888;
+  font-size: 13px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+.back-btn:hover { color: #f0f0f0; }
+
+/* Setup banner */
+.setup-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.setup-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f0f0f0;
+  margin: 0 0 2px;
+}
+.setup-sub {
+  font-size: 12px;
+  color: #888;
+  margin: 0;
+}
+
+/* Cards */
+.card {
+  background: #111111;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f0f0f0;
+  margin: 0 0 16px;
+}
+
+.section-hint {
+  font-size: 11px;
+  color: #666;
+  margin: -10px 0 12px;
+}
+
+/* Fields */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.field-group:last-child { margin-bottom: 0; }
+
+.field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #888;
+}
+
+.field-input {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: #f0f0f0;
+  font-size: 13px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  outline: none;
+}
+.field-input:focus { border-color: #E8593C; }
+.field-input::placeholder { color: #555; }
+
+.field-textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 520px) {
+  .two-col { grid-template-columns: 1fr; }
+}
+
+/* Prefix input */
+.prefix-input {
+  display: flex;
+  align-items: center;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.prefix-input:focus-within { border-color: #E8593C; }
+
+.prefix {
+  font-size: 12px;
+  color: #555;
+  padding: 9px 8px 9px 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.prefix-field {
+  border: none !important;
+  border-radius: 0 !important;
+  padding-left: 0 !important;
+  background: transparent !important;
+}
+.prefix-field:focus { border-color: transparent !important; }
+
+/* Avatar */
+.avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.avatar-preview {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #2a2a2a;
+  border: 2px solid #3a3a3a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #f0f0f0;
+  background: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.upload-btn:hover { border-color: #E8593C; }
+
+.remove-btn {
+  font-size: 12px;
+  color: #888;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s;
+}
+.remove-btn:hover { color: #ef4444; }
+
+/* Color swatches */
+.color-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.color-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.color-swatch:hover { transform: scale(1.15); }
+.color-swatch.selected {
+  border-color: #f0f0f0;
+  transform: scale(1.15);
+}
+
+/* Tag inputs */
+.tag-input-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-height: 44px;
+  transition: border-color 0.2s;
+}
+.tag-input-wrap:focus-within { border-color: #E8593C; }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tag--skill {
+  background: #2a2a2a;
+  color: #c0c0c0;
+  border: 1px solid #3a3a3a;
+}
+
+.tag--interest {
+  background: rgba(232, 89, 60, 0.12);
+  color: #E8593C;
+  border: 1px solid rgba(232, 89, 60, 0.3);
+}
+
+.tag-remove {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+.tag-remove:hover { opacity: 1; }
+
+.tag-input {
+  flex: 1;
+  min-width: 120px;
+  background: none;
+  border: none;
+  outline: none;
+  color: #f0f0f0;
+  font-size: 13px;
+}
+.tag-input::placeholder { color: #555; }
+
+/* Actions */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn-cancel {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid #2a2a2a;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-cancel:hover { border-color: #3a3a3a; color: #f0f0f0; }
+
+.btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  background: #E8593C;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-save:hover { background: #d04a2e; }

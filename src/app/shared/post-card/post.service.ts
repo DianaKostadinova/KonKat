@@ -89,6 +89,11 @@ jobs:
     return this.posts();
   }
 
+  addPost(postData: Omit<Post, 'id'>) {
+    const id = Date.now();
+    this.posts.update(posts => [{ id, ...postData }, ...posts]);
+  }
+
   toggleLike(postId: number) {
     this.posts.update(posts =>
       posts.map(p => p.id === postId

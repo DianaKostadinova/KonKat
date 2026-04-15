@@ -6,6 +6,7 @@ import { Teammates } from './features/find-team/teammates';
 import { QA } from './features/qa/qa';
 import { Chat } from './features/messages/chat';
 import { Profile } from './features/profile/profile';
+import { EditProfile } from './features/profile/edit-profile/edit-profile';
 import { Workspace } from './features/workspace/workspace';
 import { MyWorkspaces } from './features/workspace/myworkspace';
 import { NotificationDropdown } from './shared/notification-bell/notification-bell';
@@ -22,6 +23,7 @@ export const routes: Routes = [
   { path: 'chat',          component: Chat,                 canActivate: [authGuard] },
   { path: 'qa',            component: QA,                   canActivate: [authGuard] },
   { path: 'profile',       component: Profile,              canActivate: [authGuard] },
+  { path: 'profile/edit',  component: EditProfile,          canActivate: [authGuard] },
   { path: 'profile/:id',   component: Profile,              canActivate: [authGuard] },
   { path: 'workspace/:id', component: Workspace,            canActivate: [authGuard] },
   { path: 'myworkspaces',  component: MyWorkspaces,         canActivate: [authGuard] },

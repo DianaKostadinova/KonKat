@@ -24,6 +24,7 @@ export class ProfileService {
       followers: 89,
       following: 42,
     },
+    interests: ['Open Source', 'UI/UX', 'Dev Tools', 'Hackathons'],
     techStack: ['Angular', 'React', 'TypeScript', 'Node.js', 'SCSS', 'Tailwind'],
     badges: [
       { label: 'PRO', color: '#E8593C' },
@@ -65,6 +66,9 @@ export class ProfileService {
   ]);
 
   getProfile() { return this.profile(); }
+  updateProfile(updates: Partial<UserProfile>) {
+    this.profile.update(p => ({ ...p, ...updates }));
+  }
   getSavedPosts() { return this.savedPosts(); }
   getLikedPosts() { return this.likedPosts(); }
 }

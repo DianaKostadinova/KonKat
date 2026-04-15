@@ -35,7 +35,7 @@ export class AuthService {
     // Replace with real API call
     this._user.set({ name, email });
     this._isLoggedIn.set(true);
-    this.router.navigate(['/feed']);
+    this.router.navigate(['/profile/edit'], { queryParams: { setup: 'true' } });
     return { success: true };
   }
 

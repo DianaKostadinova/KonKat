@@ -1,0 +1,94 @@
+<!-- Backdrop -->
+<div class="backdrop" (click)="close()"></div>
+
+<!-- Modal -->
+<div class="modal">
+
+  <!-- Header -->
+  <div class="modal-header">
+    <h2 class="modal-title">Create Post</h2>
+    <button class="close-btn" (click)="close()">
+      <span class="material-icons" style="font-size: 20px;">close</span>
+    </button>
+  </div>
+
+  <!-- Type selector -->
+  <div class="type-tabs">
+    @for (t of types; track t.value) {
+      <button
+        class="type-tab"
+        [class.active]="type() === t.value"
+        (click)="type.set(t.value)"
+      >
+        <span class="material-icons-outlined" style="font-size: 16px;">{{ t.icon }}</span>
+        {{ t.label }}
+      </button>
+    }
+  </div>
+
+  <!-- Body -->
+  <div class="modal-body">
+
+    <!-- Content textarea -->
+    <textarea
+      class="field-input field-textarea"
+      [(ngModel)]="content"
+      [placeholder]="type() === 'code'
+        ? 'Describe your code snippet...'
+        : type() === 'media'
+        ? 'Write a caption...'
+        : 'Share an idea, update, or question...'"
+      rows="4"
+    ></textarea>
+
+    <!-- Code fields -->
+    @if (type() === 'code') {
+      <div class="code-meta">
+        <label class="field-label">Language</label>
+        <select class="field-input field-select" [(ngModel)]="language">
+          @for (lang of languages; track lang) {
+            <option [value]="lang">{{ lang }}</option>
+          }
+        </select>
+      </div>
+      <textarea
+        class="field-input field-code"
+        [(ngModel)]="codeSnippet"
+        placeholder="Paste your code here..."
+        rows="7"
+        spellcheck="false"
+      ></textarea>
+    }
+
+    <!-- Media placeholder -->
+    @if (type() === 'media') {
+      <label class="media-upload">
+        <span class="material-icons-outlined" style="font-size: 28px; color: #555;">add_photo_alternate</span>
+        <span class="media-label">Click to attach an image</span>
+        <input type="file" accept="image/*" style="display:none" />
+      </label>
+    }
+
+    <!-- Tags -->
+    <div class="tags-row">
+      <label class="field-label">Tags <span class="hint">(comma-separated, e.g. angular, typescript)</span></label>
+      <input
+        class="field-input"
+        type="text"
+        [(ngModel)]="tagsInput"
+        placeholder="#angular, #typescript, #webdev"
+      />
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="modal-footer">
+    <button class="btn-cancel" (click)="close()">Cancel</button>
+    <button class="btn-post" [disabled]="!canPost" (click)="submit()">
+      <span class="material-icons-outlined" style="font-size: 16px;">send</span>
+      Post
+    </button>
+  </div>
+
+</div>
