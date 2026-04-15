@@ -36,8 +36,20 @@ export class Auth {
         this.error.set('Passwords do not match.');
         return;
       }
-      if (this.password.length < 6) {
-        this.error.set('Password must be at least 6 characters.');
+      if (this.password.length < 8) {
+        this.error.set('Password must be at least 8 characters.');
+        return;
+      }
+      if (!/[A-Z]/.test(this.password)) {
+        this.error.set('Password must contain at least one uppercase letter.');
+        return;
+      }
+      if (!/[0-9]/.test(this.password)) {
+        this.error.set('Password must contain at least one number.');
+        return;
+      }
+      if (!/[^A-Za-z0-9]/.test(this.password)) {
+        this.error.set('Password must contain at least one special character.');
         return;
       }
       const result = this.authService.register(this.name, this.email, this.password);
