@@ -16,7 +16,7 @@ interface AuthResponse {
   error?: string;
 }
 
-const API = 'http://localhost:8080/api';
+const API = 'http://localhost:8081/api';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
