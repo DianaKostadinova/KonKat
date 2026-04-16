@@ -109,4 +109,24 @@ jobs:
       )
     );
   }
+
+  toggleSave(postId: number) {
+    this.posts.update(posts =>
+      posts.map(p => p.id === postId ? { ...p, saved: !p.saved } : p)
+    );
+  }
+
+  addComment(postId: number, author: string, text: string) {
+    this.posts.update(posts =>
+      posts.map(p => {
+        if (p.id !== postId) return p;
+        const newComment = { id: Date.now(), author, text, time: 'just now' };
+        return {
+          ...p,
+          comments: [...(p.comments ?? []), newComment],
+          reactions: { ...p.reactions, comments: p.reactions.comments + 1 },
+        };
+      })
+    );
+  }
 }

@@ -60,3 +60,87 @@
   }
 
 </div>
+
+<!-- Ask Question Modal -->
+@if (showAskModal()) {
+  <div class="ask-backdrop" (click)="closeAskModal()"></div>
+  <div class="ask-modal">
+
+    <div class="ask-modal__header">
+      <h2 class="ask-modal__title">Ask a Question</h2>
+      <button class="ask-modal__close" (click)="closeAskModal()">
+        <span class="material-icons" style="font-size: 20px;">close</span>
+      </button>
+    </div>
+
+    <div class="ask-modal__body">
+
+      <div class="ask-field">
+        <label class="ask-label">Title <span class="ask-required">*</span></label>
+        <input
+          class="ask-input"
+          type="text"
+          [(ngModel)]="askTitle"
+          placeholder="e.g. How do I handle JWT refresh tokens in Angular?"
+        />
+      </div>
+
+      <div class="ask-field">
+        <label class="ask-label">Description <span class="ask-required">*</span></label>
+        <textarea
+          class="ask-input ask-textarea"
+          [(ngModel)]="askContent"
+          placeholder="Describe your problem in detail. What have you tried? What did you expect to happen?"
+          rows="5"
+        ></textarea>
+      </div>
+
+      <div class="ask-field">
+        <label class="ask-toggle">
+          <input type="checkbox" [(ngModel)]="askAddCode" style="accent-color: #E8593C;" />
+          <span class="ask-label" style="margin:0">Include a code snippet</span>
+        </label>
+      </div>
+
+      @if (askAddCode) {
+        <div class="ask-field">
+          <label class="ask-label">Language</label>
+          <select class="ask-input ask-select" [(ngModel)]="askLanguage">
+            @for (lang of languages; track lang) {
+              <option [value]="lang">{{ lang }}</option>
+            }
+          </select>
+        </div>
+        <div class="ask-field">
+          <textarea
+            class="ask-input ask-code"
+            [(ngModel)]="askCode"
+            placeholder="Paste your code here..."
+            rows="7"
+            spellcheck="false"
+          ></textarea>
+        </div>
+      }
+
+      <div class="ask-field">
+        <label class="ask-label">Tags <span class="ask-hint">(comma-separated)</span></label>
+        <input
+          class="ask-input"
+          type="text"
+          [(ngModel)]="askTagsInput"
+          placeholder="angular, typescript, rxjs"
+        />
+      </div>
+
+    </div>
+
+    <div class="ask-modal__footer">
+      <button class="ask-btn-cancel" (click)="closeAskModal()">Cancel</button>
+      <button class="ask-btn-submit" [disabled]="!canAsk" (click)="submitQuestion()">
+        <span class="material-icons-outlined" style="font-size: 16px;">send</span>
+        Post Question
+      </button>
+    </div>
+
+  </div>
+}

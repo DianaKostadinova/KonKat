@@ -32,8 +32,6 @@
 
   @if (post.type === 'code' && post.code) {
     <div class="rounded-lg border border-[#2a2a2a] overflow-hidden">
-
-
       <div class="flex items-center justify-between px-4 py-2 bg-[#111111] border-b border-[#2a2a2a]">
         <div class="flex items-center gap-2">
           <span class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"></span>
@@ -46,16 +44,13 @@
           [style.color]="copied() ? '#28c840' : '#888888'"
           (click)="copyCode()"
         >
-        <span class="material-icons" style="font-size: 14px;">
-          {{ copied() ? 'check' : 'content_copy' }}
-        </span>
+          <span class="material-icons" style="font-size: 14px;">
+            {{ copied() ? 'check' : 'content_copy' }}
+          </span>
           {{ copied() ? 'Copied!' : 'Copy' }}
         </button>
       </div>
-
-
       <pre class="m-0 p-0 bg-[#0d0d0d] overflow-x-auto"><code [highlight]="post.code.snippet" [language]="post.code.language"></code></pre>
-
     </div>
   }
 
@@ -82,7 +77,12 @@
       {{ likeCount() }}
     </button>
 
-    <button class="flex items-center gap-1.5 rounded-lg px-2 sm:px-3 py-1.5 text-xs font-medium text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all duration-200">
+    <button
+      class="flex items-center gap-1.5 rounded-lg px-2 sm:px-3 py-1.5 text-xs font-medium border-none cursor-pointer transition-all duration-200"
+      [style.color]="showComments() ? '#E8593C' : '#888888'"
+      [style.background]="showComments() ? '#2a1010' : 'transparent'"
+      (click)="toggleComments()"
+    >
       <span class="material-icons-outlined" style="font-size: 16px;">chat_bubble_outline</span>
       {{ post.reactions.comments }}
     </button>
@@ -92,9 +92,64 @@
       {{ post.reactions.shares }}
     </button>
 
-    <button class="flex items-center justify-center ml-auto w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all duration-200">
-      <span class="material-icons-outlined" style="font-size: 18px;">bookmark_border</span>
+    <button
+      class="flex items-center justify-center ml-auto w-8 h-8 rounded-lg border-none cursor-pointer transition-all duration-200"
+      [style.color]="saved() ? '#E8593C' : '#888888'"
+      [style.background]="saved() ? '#2a1010' : 'transparent'"
+      (click)="toggleSave()"
+    >
+      <span class="material-icons" style="font-size: 18px;">
+        {{ saved() ? 'bookmark' : 'bookmark_border' }}
+      </span>
     </button>
   </div>
+
+  <!-- Comment section -->
+  @if (showComments()) {
+    <div class="flex flex-col gap-3 border-t border-[#2a2a2a] pt-3">
+
+      @if (post.comments && post.comments.length > 0) {
+        <div class="flex flex-col gap-2">
+          @for (comment of post.comments; track comment.id) {
+            <div class="flex gap-2">
+              <div class="w-7 h-7 rounded-full bg-[#2a2a2a] border border-[#3a3a3a] flex items-center justify-center flex-shrink-0">
+                <span class="material-icons text-[#888888]" style="font-size: 16px;">account_circle</span>
+              </div>
+              <div class="flex flex-col min-w-0">
+                <div class="flex items-baseline gap-2">
+                  <span class="text-[#f0f0f0] text-xs font-semibold">{{ comment.author }}</span>
+                  <span class="text-[#555555] text-[11px]">{{ comment.time }}</span>
+                </div>
+                <p class="text-[#d0d0d0] text-xs m-0 mt-0.5">{{ comment.text }}</p>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- New comment input -->
+      <div class="flex gap-2 items-center">
+        <div class="w-7 h-7 rounded-full bg-[#2a2a2a] border border-[#3a3a3a] flex items-center justify-center flex-shrink-0">
+          <span class="material-icons text-[#888888]" style="font-size: 16px;">account_circle</span>
+        </div>
+        <input
+          class="flex-1 bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-xs text-[#f0f0f0] placeholder-[#555555] outline-none focus:border-[#E8593C] transition-colors"
+          placeholder="Write a comment…"
+          [ngModel]="commentText()"
+          (ngModelChange)="commentText.set($event)"
+          (keydown.enter)="submitComment()"
+        />
+        <button
+          class="flex items-center justify-center w-7 h-7 rounded-lg border-none cursor-pointer transition-all duration-200"
+          [style.color]="commentText().trim() ? '#E8593C' : '#555555'"
+          [style.background]="commentText().trim() ? '#2a1010' : 'transparent'"
+          (click)="submitComment()"
+        >
+          <span class="material-icons" style="font-size: 16px;">send</span>
+        </button>
+      </div>
+
+    </div>
+  }
 
 </div>

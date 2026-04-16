@@ -1,5 +1,12 @@
 export type PostType = 'text' | 'code' | 'media';
 
+export interface Comment {
+  id: number;
+  author: string;
+  text: string;
+  time: string;
+}
+
 export interface Post {
   id: number;
   author: {
@@ -22,4 +29,6 @@ export interface Post {
     shares: number;
   };
   liked?: boolean;
+  saved?: boolean;
+  comments?: Comment[];
 }

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PostService } from '../post-card/post.service';
 import { PostType } from '../post-card/post.model';
@@ -10,14 +10,19 @@ import { PostType } from '../post-card/post.model';
   templateUrl: './create-post-modal.html',
   styleUrl: './create-post-modal.css',
 })
-export class CreatePostModal {
+export class CreatePostModal implements OnInit {
   @Input() authorName = '';
   @Input() authorRole = '';
   @Input() authorLocation = '';
+  @Input() initialType: PostType = 'text';
   @Output() closed = new EventEmitter<void>();
   @Output() posted = new EventEmitter<void>();
 
   type = signal<PostType>('text');
+
+  ngOnInit() {
+    this.type.set(this.initialType);
+  }
   content = '';
   codeSnippet = '';
   language = 'typescript';

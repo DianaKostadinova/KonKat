@@ -139,7 +139,25 @@ intercept(req: HttpRequest<any>, next: HttpHandler) {
       ],
     },
   ])
-  getAll() {return this.posts();}
+  getAll() { return this.posts(); }
+
+  addPost(data: { title: string; content: string; tags: string[]; code?: { language: string; snippet: string } }) {
+    const newPost: QAPost = {
+      id: Date.now(),
+      author: { name: 'You', role: 'Developer' },
+      title: data.title,
+      content: data.content,
+      code: data.code,
+      tags: data.tags,
+      votes: 0,
+      voted: null,
+      views: 0,
+      comments: [],
+      solved: false,
+      createdAt: 'just now',
+    };
+    this.posts.update(posts => [newPost, ...posts]);
+  }
 
   votePost(postId: number, direction: 'up' | 'down') {
     this.posts.update(posts => posts.map(p => {

@@ -1,4 +1,5 @@
 import { Component, signal, effect } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-right-panel',
@@ -10,7 +11,7 @@ import { Component, signal, effect } from '@angular/core';
 export class RightPanel {
   isOpen = signal(false);
 
-  constructor (){
+  constructor(private router: Router){
     effect(()=>{
       if (this.isOpen()){
         document.body.style.overflow = 'hidden';
@@ -19,8 +20,14 @@ export class RightPanel {
       }
     })
   }
+
   toggle() {
     this.isOpen.update(v => !v);
+  }
+
+  goToFindTeam() {
+    this.router.navigate(['/find-team']);
+    this.isOpen.set(false);
   }
 
   currentUser = signal({

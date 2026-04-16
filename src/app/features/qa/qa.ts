@@ -1,4 +1,5 @@
 import { Component, signal, computed } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { QAPost } from './qa.model';
 import { QAService } from './qa.service';
 import { QAPostCard } from './qa-post-card';
@@ -6,7 +7,7 @@ import { QAPostCard } from './qa-post-card';
 @Component({
   selector: 'app-qa',
   standalone: true,
-  imports: [QAPostCard],
+  imports: [QAPostCard, FormsModule],
   templateUrl: './qa.html',
   styleUrl: './qa.css',
 })
@@ -14,6 +15,16 @@ export class QA {
   showAskModal = signal(false);
   searchQuery = signal('');
   selectedFilter = signal('all');
+
+  // Ask modal form state
+  askTitle = '';
+  askContent = '';
+  askTagsInput = '';
+  askAddCode = false;
+  askLanguage = 'typescript';
+  askCode = '';
+
+  readonly languages = ['typescript', 'javascript', 'python', 'java', 'go', 'rust', 'css', 'html', 'yaml', 'bash', 'sql'];
 
   filters = [
     { value: 'all', label: 'All Questions' },
@@ -52,5 +63,32 @@ export class QA {
 
   onAddComment(data: { postId: number; content: string }) {
     this.qaService.addComment(data.postId, data.content);
+  }
+
+  get canAsk(): boolean {
+    return this.askTitle.trim().length > 0 && this.askContent.trim().length > 0;
+  }
+
+  submitQuestion() {
+    if (!this.canAsk) return;
+    const tags = this.askTagsInput.split(',').map(t => t.trim()).filter(Boolean);
+    this.qaService.addPost({
+      title: this.askTitle.trim(),
+      content: this.askContent.trim(),
+      tags,
+      code: this.askAddCode && this.askCode.trim()
+        ? { language: this.askLanguage, snippet: this.askCode.trim() }
+        : undefined,
+    });
+    this.closeAskModal();
+  }
+
+  closeAskModal() {
+    this.showAskModal.set(false);
+    this.askTitle = '';
+    this.askContent = '';
+    this.askTagsInput = '';
+    this.askAddCode = false;
+    this.askCode = '';
   }
 }
