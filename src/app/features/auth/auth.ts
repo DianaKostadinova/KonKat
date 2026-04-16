@@ -25,35 +25,40 @@ export class Auth {
 
   constructor(private authService: AuthService) {}
 
-  onSubmit() {
+  async onSubmit() {
     this.error.set('');
+    this.loading.set(true);
 
-    if (this.mode() === 'login') {
-      const result = this.authService.login(this.email, this.password);
-      if (!result.success) this.error.set(result.error ?? 'Login failed.');
-    } else {
-      if (this.password !== this.confirmPassword) {
-        this.error.set('Passwords do not match.');
-        return;
+    try {
+      if (this.mode() === 'login') {
+        const result = await this.authService.login(this.email, this.password);
+        if (!result.success) this.error.set(result.error ?? 'Login failed.');
+      } else {
+        if (this.password !== this.confirmPassword) {
+          this.error.set('Passwords do not match.');
+          return;
+        }
+        if (this.password.length < 8) {
+          this.error.set('Password must be at least 8 characters.');
+          return;
+        }
+        if (!/[A-Z]/.test(this.password)) {
+          this.error.set('Password must contain at least one uppercase letter.');
+          return;
+        }
+        if (!/[0-9]/.test(this.password)) {
+          this.error.set('Password must contain at least one number.');
+          return;
+        }
+        if (!/[^A-Za-z0-9]/.test(this.password)) {
+          this.error.set('Password must contain at least one special character.');
+          return;
+        }
+        const result = await this.authService.register(this.name, this.email, this.password);
+        if (!result.success) this.error.set(result.error ?? 'Registration failed.');
       }
-      if (this.password.length < 8) {
-        this.error.set('Password must be at least 8 characters.');
-        return;
-      }
-      if (!/[A-Z]/.test(this.password)) {
-        this.error.set('Password must contain at least one uppercase letter.');
-        return;
-      }
-      if (!/[0-9]/.test(this.password)) {
-        this.error.set('Password must contain at least one number.');
-        return;
-      }
-      if (!/[^A-Za-z0-9]/.test(this.password)) {
-        this.error.set('Password must contain at least one special character.');
-        return;
-      }
-      const result = this.authService.register(this.name, this.email, this.password);
-      if (!result.success) this.error.set(result.error ?? 'Registration failed.');
+    } finally {
+      this.loading.set(false);
     }
   }
 

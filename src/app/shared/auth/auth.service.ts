@@ -1,11 +1,22 @@
 import { Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 export interface AuthUser {
+  id: number;
   name: string;
   email: string;
   avatar?: string;
 }
+
+interface AuthResponse {
+  token?: string;
+  user?: { id: number; email: string; displayName: string; avatarUrl?: string };
+  error?: string;
+}
+
+const API = 'http://localhost:8080/api';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -15,40 +26,73 @@ export class AuthService {
   isLoggedIn = this._isLoggedIn.asReadonly();
   user = this._user.asReadonly();
 
-  constructor(private router: Router) {}
-
-  login(email: string, password: string): { success: boolean; error?: string } {
-    if (!email || !password) {
-      return { success: false, error: 'Please fill in all fields.' };
-    }
-    // Replace with real API call
-    this._user.set({ name: 'Diana Kostadinova', email });
-    this._isLoggedIn.set(true);
-    this.router.navigate(['/feed']);
-    return { success: true };
+  constructor(private http: HttpClient, private router: Router) {
+    this.restoreSession();
   }
 
-  register(name: string, email: string, password: string): { success: boolean; error?: string } {
-    if (!name || !email || !password) {
-      return { success: false, error: 'Please fill in all fields.' };
+  async login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+    if (!email || !password) return { success: false, error: 'Please fill in all fields.' };
+
+    try {
+      const res = await firstValueFrom(
+        this.http.post<AuthResponse>(`${API}/auth/login`, { email, password })
+      );
+      if (res.error || !res.token || !res.user) return { success: false, error: res.error ?? 'Login failed' };
+      this.setSession(res.token, res.user);
+      this.router.navigate(['/feed']);
+      return { success: true };
+    } catch {
+      return { success: false, error: 'Invalid credentials' };
     }
-    // Replace with real API call
-    this._user.set({ name, email });
-    this._isLoggedIn.set(true);
-    this.router.navigate(['/profile/edit'], { queryParams: { setup: 'true' } });
-    return { success: true };
+  }
+
+  async register(name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> {
+    if (!name || !email || !password) return { success: false, error: 'Please fill in all fields.' };
+
+    try {
+      const res = await firstValueFrom(
+        this.http.post<AuthResponse>(`${API}/auth/register`, { email, password, displayName: name })
+      );
+      if (res.error || !res.token || !res.user) return { success: false, error: res.error ?? 'Registration failed' };
+      this.setSession(res.token, res.user);
+      this.router.navigate(['/profile/edit'], { queryParams: { setup: 'true' } });
+      return { success: true };
+    } catch {
+      return { success: false, error: 'Registration failed. Email may already be in use.' };
+    }
   }
 
   loginWithGoogle() {
-    // Replace with real OAuth flow
-    this._user.set({ name: 'Diana Kostadinova', email: 'diana@example.com' });
-    this._isLoggedIn.set(true);
-    this.router.navigate(['/feed']);
+    // TODO: implement OAuth flow
+    console.warn('Google login not yet implemented');
   }
 
   logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     this._user.set(null);
     this._isLoggedIn.set(false);
     this.router.navigate(['/login']);
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem('token');
+  }
+
+  private setSession(token: string, user: { id: number; email: string; displayName: string; avatarUrl?: string }) {
+    localStorage.setItem('token', token);
+    const authUser: AuthUser = { id: user.id, name: user.displayName, email: user.email, avatar: user.avatarUrl };
+    localStorage.setItem('user', JSON.stringify(authUser));
+    this._user.set(authUser);
+    this._isLoggedIn.set(true);
+  }
+
+  private restoreSession() {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    if (token && user) {
+      this._user.set(JSON.parse(user));
+      this._isLoggedIn.set(true);
+    }
   }
 }
