@@ -1,13 +1,11 @@
 package com.example.konkat.user
-
+import org.hibernate.annotations.CreationTimestamp
 import jakarta.persistence.*
 import java.time.LocalDateTime
-
 @Entity
 @Table(name = "users")
-class User(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+data class User(
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
     @Column(unique = true, nullable = false)
@@ -25,16 +23,27 @@ class User(
     var avatarUrl: String? = null,
     var bio: String? = null,
     var location: String? = null,
+    var company: String? = null,
+    var github: String? = null,
+    var website: String? = null,
+    var coverColor: String? = null,
+    var coverImageUrl: String? = null,
 
     @ElementCollection
     @CollectionTable(name = "user_tech_stack", joinColumns = [JoinColumn(name = "user_id")])
     @Column(name = "tech")
     var techStack: MutableList<String> = mutableListOf(),
 
-    @Enumerated(EnumType.STRING)
-    var role: Role = Role.USER,
+    @ElementCollection
+    @CollectionTable(name = "user_interests", joinColumns = [JoinColumn(name = "user_id")])
+    @Column(name = "interest")
+    var interests: MutableList<String> = mutableListOf(),
 
-    val createdAt: LocalDateTime = LocalDateTime.now(),
+    @Enumerated(EnumType.STRING)
+    val role: UserRole = UserRole.USER,
+
+    @CreationTimestamp
+    val joinedAt: LocalDateTime = LocalDateTime.now()
 )
 
-enum class Role { USER, ADMIN }
+enum class UserRole { USER, ADMIN }
