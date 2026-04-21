@@ -167,7 +167,7 @@
         class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border-none cursor-pointer transition-all duration-200 relative"
         [style.color]="activeTab() === tab.value ? '#f0f0f0' : '#888888'"
         [style.background]="activeTab() === tab.value ? '#1e1e1e' : 'transparent'"
-        (click)="activeTab.set(tab.value)"
+        (click)="setTab(tab.value)"
       >
         <span class="material-icons-outlined" style="font-size: 16px;">{{ tab.icon }}</span>
         {{ tab.label }}
@@ -251,11 +251,8 @@
   <!-- Create Post Modal -->
   @if (showCreatePost()) {
     <app-create-post-modal
-      [authorName]="profile().name"
-      [authorRole]="profile().role"
-      [authorLocation]="profile().location"
       (closed)="showCreatePost.set(false)"
-      (posted)="activeTab.set('posts')"
+      (posted)="setTab('posts')"
     />
   }
 

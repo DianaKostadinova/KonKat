@@ -83,11 +83,16 @@
   </div>
 
   <!-- Footer -->
+  @if (error()) {
+    <p style="color:#e05a3a; font-size:12px; padding: 0 16px 8px; margin:0;">{{ error() }}</p>
+  }
   <div class="modal-footer">
-    <button class="btn-cancel" (click)="close()">Cancel</button>
-    <button class="btn-post" [disabled]="!canPost" (click)="submit()">
-      <span class="material-icons-outlined" style="font-size: 16px;">send</span>
-      Post
+    <button class="btn-cancel" (click)="close()" [disabled]="submitting()">Cancel</button>
+    <button class="btn-post" [disabled]="!canPost || submitting()" (click)="submit()">
+      <span class="material-icons-outlined" style="font-size: 16px;">
+        {{ submitting() ? 'hourglass_empty' : 'send' }}
+      </span>
+      {{ submitting() ? 'Posting…' : 'Post' }}
     </button>
   </div>
 

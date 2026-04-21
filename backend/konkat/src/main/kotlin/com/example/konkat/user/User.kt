@@ -20,13 +20,21 @@ data class User(
     @Column(unique = true)
     var username: String? = null,
 
+    @Column(columnDefinition = "TEXT")           // base64 data-URLs can be 100s of KB
     var avatarUrl: String? = null,
+
+    var title: String? = null,                   // job title, e.g. "Software Engineer"
+
+    @Column(columnDefinition = "TEXT")
     var bio: String? = null,
+
     var location: String? = null,
     var company: String? = null,
     var github: String? = null,
     var website: String? = null,
     var coverColor: String? = null,
+
+    @Column(columnDefinition = "TEXT")           // cover images are also base64
     var coverImageUrl: String? = null,
 
     @ElementCollection
@@ -43,7 +51,7 @@ data class User(
     val role: UserRole = UserRole.USER,
 
     @CreationTimestamp
-    val joinedAt: LocalDateTime = LocalDateTime.now()
+    val joinedAt: LocalDateTime? = null   // nullable: existing rows may have NULL in DB
 )
 
 enum class UserRole { USER, ADMIN }

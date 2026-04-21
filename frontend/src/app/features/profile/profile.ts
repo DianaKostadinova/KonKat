@@ -1,7 +1,6 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ProfileService } from './profile.service';
-import { PostService } from '../../shared/post-card/post.service';
 import { ProjectService } from '../projects/project.service';
 import { PostCard } from '../../shared/post-card/post-card';
 import { ProjectCard } from '../projects/project-card';
@@ -17,8 +16,8 @@ type Tab = 'posts' | 'liked' | 'saved' | 'projects';
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
-export class Profile {
-  activeTab = signal<Tab>('posts');
+export class Profile implements OnInit {
+  activeTab  = signal<Tab>('posts');
   shareCopied = signal(false);
   showCreatePost = signal(false);
 
@@ -31,16 +30,39 @@ export class Profile {
 
   constructor(
     public profileService: ProfileService,
-    private postService: PostService,
     private projectService: ProjectService,
-    private authService: AuthService,
+    public authService: AuthService,
   ) {}
 
-  logout() {
+  ngOnInit(): void {
+    // Load real profile data from DB
+    this.profileService.loadProfile();
+
+    const userId = this.authService.user()?.id;
+    if (userId) {
+      this.profileService.loadMyPosts(userId);
+    }
+  }
+
+  setTab(tab: Tab): void {
+    this.activeTab.set(tab);
+    const userId = this.authService.user()?.id;
+    if (tab === 'saved') {
+      this.profileService.loadSavedPosts();
+    }
+    if (tab === 'liked' && userId) {
+      this.profileService.loadLikedPosts();
+    }
+    if (tab === 'posts' && userId) {
+      this.profileService.loadMyPosts(userId);
+    }
+  }
+
+  logout(): void {
     this.authService.logout();
   }
 
-  onCoverImageChange(event: Event) {
+  onCoverImageChange(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -50,7 +72,7 @@ export class Profile {
     reader.readAsDataURL(file);
   }
 
-  shareProfile() {
+  shareProfile(): void {
     const url = window.location.origin + '/profile';
     navigator.clipboard.writeText(url).then(() => {
       this.shareCopied.set(true);
@@ -58,12 +80,8 @@ export class Profile {
     });
   }
 
-  profile = computed(() => this.profileService.getProfile());
-
-  myPosts = computed(() =>
-    this.postService.getPosts().filter(p => p.author.name === this.profile().name)
-  );
-
+  profile    = computed(() => this.profileService.getProfile());
+  myPosts    = computed(() => this.profileService.getMyPosts());
   likedPosts = computed(() => this.profileService.getLikedPosts());
   savedPosts = computed(() => this.profileService.getSavedPosts());
   myProjects = computed(() => this.projectService.getProjects().slice(0, 3));

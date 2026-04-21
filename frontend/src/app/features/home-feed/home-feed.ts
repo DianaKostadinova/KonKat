@@ -1,6 +1,6 @@
 import { Component, computed, signal } from '@angular/core';
 import { PostService } from '../../shared/post-card/post.service';
-import { ProfileService } from '../profile/profile.service';
+import { AuthService } from '../../shared/auth/auth.service';
 import { PostCard } from '../../shared/post-card/post-card';
 import { CreatePostModal } from '../../shared/create-post-modal/create-post-modal';
 import { PostType } from '../../shared/post-card/post.model';
@@ -14,44 +14,48 @@ import { PostType } from '../../shared/post-card/post.model';
 })
 export class HomeFeed {
   posts = computed(() => this.postService.getPosts());
-  newPostText = signal('');
-  showModal = signal(false);
+
+  newPostText      = signal('');
+  showModal        = signal(false);
   modalInitialType = signal<PostType>('text');
 
   constructor(
     private postService: PostService,
-    private profileService: ProfileService,
+    public authService: AuthService,
   ) {}
 
-  get author() {
-    return this.profileService.getProfile();
+  get currentUser() {
+    return this.authService.user();
   }
 
-  onPostInput(event: Event) {
+  onPostInput(event: Event): void {
     const input = event.target as HTMLTextAreaElement;
     this.newPostText.set(input.value);
   }
 
-  submitPost() {
+  // Quick single-line post from the feed input bar
+  submitQuickPost(): void {
     const text = this.newPostText().trim();
     if (!text) return;
+
     this.postService.addPost({
       author: {
-        name: this.author.name,
-        role: this.author.role,
-        location: this.author.location,
-        time: 'just now',
-        badge: this.author.badges[0]?.label,
+        id:       this.currentUser?.id,
+        name:     this.currentUser?.name ?? 'You',
+        role:     '',
+        location: '',
+        time:     'just now',
       },
-      type: 'text',
-      content: text,
+      type:      'text',
+      content:   text,
+      tags:      [],
       reactions: { likes: 0, comments: 0, shares: 0 },
-      liked: false,
-    });
-    this.newPostText.set('');
+      liked:     false,
+      saved:     false,
+    }).subscribe(() => this.newPostText.set(''));
   }
 
-  openModal(type: PostType) {
+  openModal(type: PostType): void {
     this.modalInitialType.set(type);
     this.showModal.set(true);
   }

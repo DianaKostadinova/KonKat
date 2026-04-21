@@ -10,6 +10,7 @@ export interface Comment {
 export interface Post {
   id: number;
   author: {
+    id?: number;       // real DB user id — used for profile filtering
     name: string;
     role: string;
     location: string;

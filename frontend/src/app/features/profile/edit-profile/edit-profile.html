@@ -173,13 +173,18 @@
     </section>
 
     <!-- Actions -->
+    @if (error()) {
+      <p style="color:#e05a3a; font-size:13px; margin: 0 0 8px 0;">{{ error() }}</p>
+    }
     <div class="actions">
       @if (!isSetup()) {
-        <button class="btn-cancel" (click)="cancel()">Cancel</button>
+        <button class="btn-cancel" (click)="cancel()" [disabled]="saving()">Cancel</button>
       }
-      <button class="btn-save" (click)="save()">
-        <span class="material-icons-outlined" style="font-size: 16px;">check</span>
-        {{ isSetup() ? 'Finish Setup' : 'Save Changes' }}
+      <button class="btn-save" (click)="save()" [disabled]="saving()">
+        <span class="material-icons-outlined" style="font-size: 16px;">
+          {{ saving() ? 'hourglass_empty' : 'check' }}
+        </span>
+        {{ saving() ? 'Saving…' : (isSetup() ? 'Finish Setup' : 'Save Changes') }}
       </button>
     </div>
 

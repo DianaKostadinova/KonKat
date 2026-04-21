@@ -28,7 +28,11 @@ class JwtService(
 
     fun extractEmail(token: String): String = parseClaims(token).subject
 
-    fun extractUserId(token: String): Long = parseClaims(token)["userId", Long::class.java]
+    fun extractUserId(token: String): Long {
+        val raw = parseClaims(token)["userId"]
+        return (raw as? Number)?.toLong()
+            ?: throw IllegalStateException("userId claim is missing or not a number (got ${raw?.javaClass})")
+    }
 
     fun isValid(token: String): Boolean = runCatching {
         parseClaims(token).expiration.after(Date())

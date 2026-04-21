@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PostService } from '../post-card/post.service';
+import { AuthService } from '../auth/auth.service';
 import { PostType } from '../post-card/post.model';
 
 @Component({
@@ -11,22 +12,18 @@ import { PostType } from '../post-card/post.model';
   styleUrl: './create-post-modal.css',
 })
 export class CreatePostModal implements OnInit {
-  @Input() authorName = '';
-  @Input() authorRole = '';
-  @Input() authorLocation = '';
   @Input() initialType: PostType = 'text';
   @Output() closed = new EventEmitter<void>();
   @Output() posted = new EventEmitter<void>();
 
-  type = signal<PostType>('text');
+  type       = signal<PostType>('text');
+  submitting = signal(false);
+  error      = signal('');
 
-  ngOnInit() {
-    this.type.set(this.initialType);
-  }
-  content = '';
+  content     = '';
   codeSnippet = '';
-  language = 'typescript';
-  tagsInput = '';
+  language    = 'typescript';
+  tagsInput   = '';
 
   readonly types: { value: PostType; label: string; icon: string }[] = [
     { value: 'text',  label: 'Text',  icon: 'notes' },
@@ -34,9 +31,19 @@ export class CreatePostModal implements OnInit {
     { value: 'media', label: 'Media', icon: 'image' },
   ];
 
-  readonly languages = ['typescript', 'javascript', 'python', 'java', 'go', 'rust', 'css', 'html', 'yaml', 'bash', 'sql'];
+  readonly languages = [
+    'typescript', 'javascript', 'python', 'java', 'kotlin',
+    'go', 'rust', 'css', 'html', 'yaml', 'bash', 'sql',
+  ];
 
-  constructor(private postService: PostService) {}
+  constructor(
+    private postService: PostService,
+    private authService: AuthService,
+  ) {}
+
+  ngOnInit(): void {
+    this.type.set(this.initialType);
+  }
 
   get canPost(): boolean {
     if (!this.content.trim()) return false;
@@ -44,34 +51,48 @@ export class CreatePostModal implements OnInit {
     return true;
   }
 
-  submit() {
-    if (!this.canPost) return;
+  submit(): void {
+    if (!this.canPost || this.submitting()) return;
+    this.submitting.set(true);
+    this.error.set('');
 
     const rawTags = this.tagsInput.split(',').map(t => t.trim()).filter(Boolean);
-    const tags = rawTags.map(t => t.startsWith('#') ? t : `#${t}`);
+    const tags    = rawTags.map(t => t.startsWith('#') ? t : `#${t}`);
+    const user    = this.authService.user();
 
     this.postService.addPost({
       author: {
-        name: this.authorName || 'You',
-        role: this.authorRole || 'Developer',
-        location: this.authorLocation || '',
-        time: 'just now',
+        id:       user?.id,
+        name:     user?.name ?? 'You',
+        role:     '',
+        location: '',
+        time:     'just now',
       },
-      type: this.type(),
+      type:    this.type(),
       content: this.content.trim(),
       code: this.type() === 'code'
         ? { language: this.language, snippet: this.codeSnippet }
         : undefined,
-      tags: tags.length ? tags : undefined,
+      tags:      tags.length ? tags : [],
       reactions: { likes: 0, comments: 0, shares: 0 },
-      liked: false,
+      liked:     false,
+      saved:     false,
+    }).subscribe({
+      next: () => {
+        this.submitting.set(false);
+        this.posted.emit();
+        this.closed.emit();
+      },
+      error: (err) => {
+        this.submitting.set(false);
+        const msg = err?.error?.message ?? err?.message ?? 'Something went wrong. Try again.';
+        this.error.set(msg);
+        console.error('createPost failed', err);
+      },
     });
-
-    this.posted.emit();
-    this.closed.emit();
   }
 
-  close() {
+  close(): void {
     this.closed.emit();
   }
 }
