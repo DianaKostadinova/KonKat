@@ -22,56 +22,143 @@
 
   <div class="navbar__actions">
 
-    <div
-      class="navbar__search"
-      [class.navbar__search--focused]="isSearchFocused()"
-    >
-      <span class="material-icons-outlined navbar__search-icon">search</span>
+    <!-- ── Search ──────────────────────────────────────────────────────────── -->
+    <div class="navbar__search-wrap">
 
-      <input
-        class="navbar__search-input"
-        type="text"
-        placeholder="Search..."
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        (focus)="onSearchFocus()"
-        (blur)="onSearchBlur()"
-      />
+      <div
+        class="navbar__search"
+        [class.navbar__search--focused]="isSearchFocused()"
+      >
+        <span class="material-icons-outlined navbar__search-icon">
+          {{ searching() ? 'hourglass_empty' : 'search' }}
+        </span>
 
-      @if (hasSearchQuery()) {
-        <button class="navbar__search-clear" (click)="clearSearch()">
-          <span class="material-icons">close</span>
-        </button>
+        <input
+          class="navbar__search-input"
+          type="text"
+          placeholder="Search users, projects…"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          (focus)="onSearchFocus()"
+          (blur)="onSearchBlur()"
+        />
+
+        @if (hasSearchQuery()) {
+          <button class="navbar__search-clear" (click)="clearSearch()">
+            <span class="material-icons" style="font-size:16px;">close</span>
+          </button>
+        }
+      </div>
+
+      <!-- ── Results dropdown ──────────────────────────────────────────────── -->
+      @if (showDropdown() && hasSearchQuery()) {
+        <div class="search-dropdown">
+
+          <!-- Loading state -->
+          @if (searching()) {
+            <div class="search-dropdown__empty">
+              <span class="material-icons-outlined" style="font-size:20px;color:#555">hourglass_empty</span>
+              Searching…
+            </div>
+          }
+
+          <!-- No results -->
+          @else if (!hasResults()) {
+            <div class="search-dropdown__empty">
+              <span class="material-icons-outlined" style="font-size:20px;color:#555">search_off</span>
+              No results for "{{ searchQuery() }}"
+            </div>
+          }
+
+          @else {
+
+            <!-- ── People ─────────────────────────────────────────────────── -->
+            @if (searchResults()!.users.length > 0) {
+              <div class="search-dropdown__section">People</div>
+              @for (user of searchResults()!.users; track user.id) {
+                <button class="search-dropdown__item" (click)="goToUser(user.id)">
+                  <div class="search-item__avatar">
+                    @if (user.avatarUrl) {
+                      <img [src]="user.avatarUrl" alt="avatar" />
+                    } @else {
+                      <span class="material-icons" style="font-size:20px;color:#555">account_circle</span>
+                    }
+                  </div>
+                  <div class="search-item__info">
+                    <span class="search-item__name">{{ user.name }}</span>
+                    <span class="search-item__sub">
+                      @if (user.username) { @{{ user.username }} · }
+                      {{ user.role ?? '' }}
+                      @if (user.location) { · {{ user.location }} }
+                    </span>
+                  </div>
+                  <span class="material-icons-outlined search-item__arrow">arrow_forward</span>
+                </button>
+              }
+            }
+
+            <!-- ── Projects ───────────────────────────────────────────────── -->
+            @if (searchResults()!.projects.length > 0) {
+              <div class="search-dropdown__section">Projects</div>
+              @for (project of searchResults()!.projects; track project.id) {
+                <button class="search-dropdown__item" (click)="goToProject(project.id)">
+                  <div class="search-item__icon">
+                    <span class="material-icons-outlined" style="font-size:18px;color:#6366f1">folder_copy</span>
+                  </div>
+                  <div class="search-item__info">
+                    <span class="search-item__name">{{ project.title }}</span>
+                    <span class="search-item__sub">
+                      by {{ project.ownerName }}
+                      @if (project.techStack.length > 0) {
+                        · {{ project.techStack.slice(0, 3).join(', ') }}
+                      }
+                    </span>
+                  </div>
+                  <span class="material-icons-outlined search-item__arrow">arrow_forward</span>
+                </button>
+              }
+            }
+
+            <!-- ── Hackathons ──────────────────────────────────────────────── -->
+            @if (searchResults()!.hackathons.length > 0) {
+              <div class="search-dropdown__section">Hackathons</div>
+              @for (h of searchResults()!.hackathons; track h.id) {
+                <button class="search-dropdown__item" (click)="goToHackathon(h.id)">
+                  <div class="search-item__icon">
+                    <span class="material-icons-outlined" style="font-size:18px;color:#f59e0b">calendar_month</span>
+                  </div>
+                  <div class="search-item__info">
+                    <span class="search-item__name">{{ h.title }}</span>
+                    <span class="search-item__sub">
+                      {{ h.status }}
+                      @if (h.location) { · {{ h.location }} }
+                    </span>
+                  </div>
+                  <span class="material-icons-outlined search-item__arrow">arrow_forward</span>
+                </button>
+              }
+            }
+
+          }
+        </div>
       }
     </div>
 
-    <!-- Notifications -->
+    <!-- ── Notifications ────────────────────────────────────────────────────── -->
     <div class="relative">
-      <button
-        class="navbar__icon-btn"
-        (click)="toggleNotif()"
-      >
+      <button class="navbar__icon-btn" (click)="toggleNotif()">
         <span class="material-icons-outlined">notifications</span>
         @if (notificationService.unreadCount() > 0) {
           <span class="navbar__badge">
-        {{ notificationService.unreadCount() > 9 ? '9+' : notificationService.unreadCount() }}
-      </span>
+            {{ notificationService.unreadCount() > 9 ? '9+' : notificationService.unreadCount() }}
+          </span>
         }
       </button>
 
-      <!-- Dropdown -->
       @if (isNotifOpen()) {
-        <!-- Backdrop -->
-        <div
-          class="fixed inset-0 z-40"
-          (click)="isNotifOpen.set(false)"
-        ></div>
-
-        <!-- Dropdown panel -->
+        <div class="fixed inset-0 z-40" (click)="isNotifOpen.set(false)"></div>
         <div class="absolute right-0 top-full mt-2 z-50">
-          <app-notification-dropdown
-            (close)="isNotifOpen.set(false)"
-          />
+          <app-notification-dropdown (close)="isNotifOpen.set(false)" />
         </div>
       }
     </div>
@@ -80,10 +167,7 @@
       <span class="material-icons">account_circle</span>
     </button>
 
-    <button
-      class="navbar__mobile-toggle"
-      (click)="toggleMobileMenu()"
-    >
+    <button class="navbar__mobile-toggle" (click)="toggleMobileMenu()">
       @if (isMobileMenuOpen()) {
         <span class="material-icons">close</span>
       } @else {
@@ -97,10 +181,7 @@
 @if (isMobileMenuOpen()) {
   <div class="navbar__mobile-menu">
     @for (link of navLinks; track link.route) {
-      <a
-        [routerLink]="link.route"
-        (click)="toggleMobileMenu()"
-      >
+      <a [routerLink]="link.route" (click)="toggleMobileMenu()">
         <span class="material-icons-outlined">{{ link.icon }}</span>
         {{ link.label }}
       </a>
