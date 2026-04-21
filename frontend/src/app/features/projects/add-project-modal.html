@@ -1,0 +1,162 @@
+<!-- Backdrop -->
+<div class="backdrop" (click)="close()"></div>
+
+<!-- Modal -->
+<div class="modal">
+
+  <!-- Header -->
+  <div class="modal-header">
+    <div class="modal-header__left">
+      <span class="modal-icon material-icons-outlined">folder_copy</span>
+      <h2 class="modal-title">New Project</h2>
+    </div>
+    <button class="close-btn" (click)="close()">
+      <span class="material-icons" style="font-size:20px;">close</span>
+    </button>
+  </div>
+
+  <!-- Scrollable body -->
+  <div class="modal-body">
+
+    <!-- ── Thumbnail upload ─────────────────────────────────────────────── -->
+    <div class="field">
+      <label class="field-label">Thumbnail <span class="hint">optional</span></label>
+
+      @if (imagePreview) {
+        <div class="thumbnail-preview">
+          <img [src]="imagePreview" alt="preview" />
+          <button class="thumbnail-remove" (click)="removeImage()">
+            <span class="material-icons" style="font-size:16px;">close</span>
+          </button>
+        </div>
+      } @else {
+        <label class="thumbnail-upload">
+          <span class="material-icons-outlined" style="font-size:28px;color:#444;">add_photo_alternate</span>
+          <span class="thumbnail-upload__text">Click to upload a screenshot or cover image</span>
+          <input type="file" accept="image/*" (change)="onImageChange($event)" style="display:none" />
+        </label>
+      }
+    </div>
+
+    <!-- ── Title ────────────────────────────────────────────────────────── -->
+    <div class="field">
+      <label class="field-label">
+        Project Name <span class="required">*</span>
+      </label>
+      <input
+        class="field-input"
+        type="text"
+        [(ngModel)]="title"
+        placeholder="e.g. DevTask — Dark Themed Task Manager"
+        maxlength="100"
+      />
+    </div>
+
+    <!-- ── Description ──────────────────────────────────────────────────── -->
+    <div class="field">
+      <label class="field-label">Description <span class="hint">optional</span></label>
+      <textarea
+        class="field-input field-textarea"
+        [(ngModel)]="description"
+        placeholder="What does this project do? What problem does it solve?"
+        rows="3"
+        maxlength="500"
+      ></textarea>
+      <span class="char-count">{{ description.length }} / 500</span>
+    </div>
+
+    <!-- ── Status ────────────────────────────────────────────────────────── -->
+    <div class="field">
+      <label class="field-label">Status</label>
+      <div class="status-grid">
+        @for (opt of statusOptions; track opt.value) {
+          <button
+            type="button"
+            class="status-option"
+            [class.status-option--active]="status === opt.value"
+            (click)="status = opt.value"
+          >
+            <span class="status-option__label">{{ opt.label }}</span>
+            <span class="status-option__hint">{{ opt.hint }}</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ── Tech Stack ────────────────────────────────────────────────────── -->
+    <div class="field">
+      <label class="field-label">Tech Stack <span class="hint">press Enter or comma to add</span></label>
+
+      <!-- Tag chips -->
+      @if (techStack.length > 0) {
+        <div class="tags-wrap">
+          @for (tech of techStack; track tech) {
+            <span class="tag">
+              {{ tech }}
+              <button class="tag-remove" (click)="removeTech(tech)">
+                <span class="material-icons" style="font-size:12px;">close</span>
+              </button>
+            </span>
+          }
+        </div>
+      }
+
+      <input
+        class="field-input"
+        type="text"
+        [(ngModel)]="techInput"
+        (keydown)="onTechKeydown($event)"
+        placeholder="Angular, Spring Boot, PostgreSQL…"
+      />
+    </div>
+
+    <!-- ── Links ─────────────────────────────────────────────────────────── -->
+    <div class="field-row">
+
+      <div class="field">
+        <label class="field-label">
+          <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle;">code</span>
+          GitHub URL <span class="hint">optional</span>
+        </label>
+        <input
+          class="field-input"
+          type="url"
+          [(ngModel)]="githubUrl"
+          placeholder="https://github.com/you/project"
+        />
+      </div>
+
+      <div class="field">
+        <label class="field-label">
+          <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle;">open_in_new</span>
+          Live / Demo URL <span class="hint">optional</span>
+        </label>
+        <input
+          class="field-input"
+          type="url"
+          [(ngModel)]="liveUrl"
+          placeholder="https://myproject.dev"
+        />
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Error -->
+  @if (error()) {
+    <p class="modal-error">{{ error() }}</p>
+  }
+
+  <!-- Footer -->
+  <div class="modal-footer">
+    <button class="btn-cancel" (click)="close()" [disabled]="saving()">Cancel</button>
+    <button class="btn-create" [disabled]="!canSubmit" (click)="submit()">
+      <span class="material-icons-outlined" style="font-size:16px;">
+        {{ saving() ? 'hourglass_empty' : 'add_circle_outline' }}
+      </span>
+      {{ saving() ? 'Creating…' : 'Create Project' }}
+    </button>
+  </div>
+
+</div>

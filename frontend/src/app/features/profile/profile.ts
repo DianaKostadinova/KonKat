@@ -8,13 +8,14 @@ import { AuthService } from '../../shared/auth/auth.service';
 import { FollowService } from '../../shared/follow/follow.service';
 import { FollowListModal } from '../../shared/follow/follow-list-modal';
 import { CreatePostModal } from '../../shared/create-post-modal/create-post-modal';
+import { AddProjectModal } from '../projects/add-project-modal';
 
 type Tab = 'posts' | 'liked' | 'saved' | 'projects';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [PostCard, ProjectCard, RouterLink, CreatePostModal, FollowListModal],
+  imports: [PostCard, ProjectCard, RouterLink, CreatePostModal, FollowListModal, AddProjectModal],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -31,6 +32,9 @@ export class Profile implements OnInit {
   // Follow list modal
   followListOpen = signal(false);
   followListType = signal<'followers' | 'following'>('followers');
+
+  // Add project modal
+  showAddProject = signal(false);
 
   // True when the profile shown belongs to the logged-in user
   isOwnProfile = true;
@@ -64,13 +68,13 @@ export class Profile implements OnInit {
 
       this.profileService.loadPublicProfile(this.viewedUserId).subscribe({
         next: (p) => {
-          // Seed the follow state from the profile response
           this.isFollowing.set(p.isFollowing ?? false);
           this.followerCount.set(p.stats.followers);
         },
       });
 
       this.profileService.loadMyPosts(this.viewedUserId);
+      this.projectService.loadUserProjects(this.viewedUserId);
 
     } else {
       // ── Viewing own profile ───────────────────────────────────────────────
@@ -83,6 +87,7 @@ export class Profile implements OnInit {
 
       if (currentUserId) {
         this.profileService.loadMyPosts(currentUserId);
+        this.projectService.loadMyProjects();
       }
     }
   }
@@ -115,9 +120,19 @@ export class Profile implements OnInit {
   setTab(tab: Tab): void {
     this.activeTab.set(tab);
     const userId = this.viewedUserId ?? this.authService.user()?.id;
-    if (tab === 'saved'    && this.isOwnProfile) this.profileService.loadSavedPosts();
-    if (tab === 'liked'    && this.isOwnProfile) this.profileService.loadLikedPosts();
-    if (tab === 'posts'    && userId)            this.profileService.loadMyPosts(userId);
+    if (tab === 'saved'    && this.isOwnProfile)  this.profileService.loadSavedPosts();
+    if (tab === 'liked'    && this.isOwnProfile)  this.profileService.loadLikedPosts();
+    if (tab === 'posts'    && userId)             this.profileService.loadMyPosts(userId);
+    if (tab === 'projects' && userId) {
+      this.isOwnProfile
+        ? this.projectService.loadMyProjects()
+        : this.projectService.loadUserProjects(userId);
+    }
+  }
+
+  onProjectCreated(): void {
+    // Reload after creation so the list is fresh
+    this.projectService.loadMyProjects();
   }
 
   // ── Other actions ─────────────────────────────────────────────────────────
@@ -148,5 +163,5 @@ export class Profile implements OnInit {
   myPosts    = computed(() => this.profileService.getMyPosts());
   likedPosts = computed(() => this.profileService.getLikedPosts());
   savedPosts = computed(() => this.profileService.getSavedPosts());
-  myProjects = computed(() => this.projectService.getProjects().slice(0, 3));
+  myProjects = computed(() => this.projectService.getProjects());
 }

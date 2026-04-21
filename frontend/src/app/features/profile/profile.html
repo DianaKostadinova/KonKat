@@ -262,15 +262,31 @@
     }
 
     @if (activeTab() === 'projects') {
+
+      <!-- Add project button — only on own profile -->
+      @if (isOwnProfile) {
+        <button
+          (click)="showAddProject.set(true)"
+          class="flex items-center gap-2 w-full rounded-xl border border-dashed border-[#2a2a2a] bg-transparent p-4 text-[#555] cursor-pointer hover:border-[#E8593C] hover:text-[#E8593C] transition-all group"
+        >
+          <span class="material-icons-outlined text-2xl group-hover:text-[#E8593C]">add_circle_outline</span>
+          <span class="text-sm font-medium">Add New Project</span>
+        </button>
+      }
+
+      <!-- Project cards grid -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         @for (project of myProjects(); track project.id) {
           <app-project-card [project]="project" />
         }
       </div>
+
       @if (myProjects().length === 0) {
         <div class="empty-state">
           <span class="material-icons text-[#2a2a2a]" style="font-size: 48px;">folder_copy</span>
-          <p class="text-[#888888] text-sm m-0">No projects yet</p>
+          <p class="text-[#888888] text-sm m-0">
+            {{ isOwnProfile ? 'No projects yet — add your first one above' : 'No projects yet' }}
+          </p>
         </div>
       }
     }
@@ -291,6 +307,14 @@
       [userId]="viewedUserId"
       [type]="followListType()"
       (close)="followListOpen.set(false)"
+    />
+  }
+
+  <!-- Add Project Modal -->
+  @if (showAddProject()) {
+    <app-add-project-modal
+      (closed)="showAddProject.set(false)"
+      (created)="onProjectCreated()"
     />
   }
 
