@@ -23,4 +23,5 @@ export interface UserProfile {
   techStack: string[];
   badges: { label: string; color: string; }[];
   joinedAt: string;
+  isFollowing?: boolean;
 }

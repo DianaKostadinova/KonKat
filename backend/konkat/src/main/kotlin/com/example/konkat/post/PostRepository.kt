@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository
 interface PostRepository : JpaRepository<Post, Long> {
     fun findAllByOrderByCreatedAtDesc(): List<Post>
     fun findByAuthorIdOrderByCreatedAtDesc(authorId: Long): List<Post>
+    fun countByAuthorId(authorId: Long): Long
 }

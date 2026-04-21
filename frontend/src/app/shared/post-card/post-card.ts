@@ -1,5 +1,6 @@
 import { Component, Input, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { Post } from './post.model';
 import { PostService } from './post.service';
 import { HighlightModule } from 'ngx-highlightjs';
@@ -7,7 +8,7 @@ import { HighlightModule } from 'ngx-highlightjs';
 @Component({
   selector: 'app-post-card',
   standalone: true,
-  imports: [HighlightModule, FormsModule],
+  imports: [HighlightModule, FormsModule, RouterLink],
   templateUrl: './post-card.html',
   styleUrl: './post-card.css',
 })

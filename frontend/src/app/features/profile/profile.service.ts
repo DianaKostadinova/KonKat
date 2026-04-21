@@ -37,9 +37,8 @@ export class ProfileService {
   }
 
   /**
-   * Loads the real profile from the DB.
+   * Loads the authenticated user's own profile from the DB.
    * Returns an Observable so callers can react once data arrives.
-   * Also updates the internal signal automatically.
    */
   loadProfile(): Observable<UserProfile> {
     const req$ = this.http.get<any>(`${API}/users/me`, { headers: this.authHeaders() }).pipe(
@@ -48,6 +47,21 @@ export class ProfileService {
       share(),
     );
     req$.subscribe({ error: err => console.error('loadProfile failed', err) });
+    return req$;
+  }
+
+  /**
+   * Loads any user's public profile by ID.
+   * Used when navigating to /profile/:id.
+   * Updates the same internal signal so the template reacts automatically.
+   */
+  loadPublicProfile(userId: number): Observable<UserProfile> {
+    const req$ = this.http.get<any>(`${API}/users/${userId}`, { headers: this.authHeaders() }).pipe(
+      tap(data => this.setFromDto(data)),
+      map(() => this.profile()),
+      share(),
+    );
+    req$.subscribe({ error: err => console.error('loadPublicProfile failed', err) });
     return req$;
   }
 

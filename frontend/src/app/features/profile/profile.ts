@@ -1,10 +1,11 @@
 import { Component, signal, computed, OnInit } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { ProfileService } from './profile.service';
 import { ProjectService } from '../projects/project.service';
 import { PostCard } from '../../shared/post-card/post-card';
 import { ProjectCard } from '../projects/project-card';
 import { AuthService } from '../../shared/auth/auth.service';
+import { FollowService } from '../../shared/follow/follow.service';
 import { CreatePostModal } from '../../shared/create-post-modal/create-post-modal';
 
 type Tab = 'posts' | 'liked' | 'saved' | 'projects';
@@ -17,9 +18,19 @@ type Tab = 'posts' | 'liked' | 'saved' | 'projects';
   styleUrl: './profile.css',
 })
 export class Profile implements OnInit {
-  activeTab  = signal<Tab>('posts');
-  shareCopied = signal(false);
+  activeTab      = signal<Tab>('posts');
+  shareCopied    = signal(false);
   showCreatePost = signal(false);
+
+  // Follow state — only relevant when viewing someone else's profile
+  isFollowing   = signal(false);
+  followLoading = signal(false);
+  followerCount = signal(0);
+
+  // True when the profile shown belongs to the logged-in user
+  isOwnProfile = true;
+  // The user ID being viewed (may differ from the logged-in user)
+  viewedUserId: number | null = null;
 
   tabs: { value: Tab; label: string; icon: string }[] = [
     { value: 'posts',    label: 'Posts',    icon: 'grid_view' },
@@ -29,38 +40,77 @@ export class Profile implements OnInit {
   ];
 
   constructor(
-    public profileService: ProfileService,
+    public  profileService: ProfileService,
     private projectService: ProjectService,
-    public authService: AuthService,
+    public  authService: AuthService,
+    private followService: FollowService,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
-    // Load real profile data from DB
-    this.profileService.loadProfile();
+    // Read optional :id param from the route
+    const paramId = this.route.snapshot.paramMap.get('id');
+    const currentUserId = this.authService.user()?.id;
 
-    const userId = this.authService.user()?.id;
-    if (userId) {
-      this.profileService.loadMyPosts(userId);
+    if (paramId && Number(paramId) !== currentUserId) {
+      // ── Viewing someone else's profile ────────────────────────────────────
+      this.isOwnProfile = false;
+      this.viewedUserId = Number(paramId);
+
+      this.profileService.loadPublicProfile(this.viewedUserId).subscribe({
+        next: (p) => {
+          // Seed the follow state from the profile response
+          this.isFollowing.set(p.isFollowing ?? false);
+          this.followerCount.set(p.stats.followers);
+        },
+      });
+
+      this.profileService.loadMyPosts(this.viewedUserId);
+
+    } else {
+      // ── Viewing own profile ───────────────────────────────────────────────
+      this.isOwnProfile = true;
+      this.viewedUserId = currentUserId ?? null;
+
+      this.profileService.loadProfile().subscribe({
+        next: (p) => this.followerCount.set(p.stats.followers),
+      });
+
+      if (currentUserId) {
+        this.profileService.loadMyPosts(currentUserId);
+      }
     }
   }
+
+  // ── Follow toggle ─────────────────────────────────────────────────────────
+
+  toggleFollow(): void {
+    if (!this.viewedUserId || this.followLoading()) return;
+    this.followLoading.set(true);
+
+    this.followService.toggle(this.viewedUserId).subscribe({
+      next: (result) => {
+        this.isFollowing.set(result.following);
+        this.followerCount.set(result.followerCount);
+        this.followLoading.set(false);
+      },
+      error: () => this.followLoading.set(false),
+    });
+  }
+
+  // ── Tab switching ─────────────────────────────────────────────────────────
 
   setTab(tab: Tab): void {
     this.activeTab.set(tab);
-    const userId = this.authService.user()?.id;
-    if (tab === 'saved') {
-      this.profileService.loadSavedPosts();
-    }
-    if (tab === 'liked' && userId) {
-      this.profileService.loadLikedPosts();
-    }
-    if (tab === 'posts' && userId) {
-      this.profileService.loadMyPosts(userId);
-    }
+    const userId = this.viewedUserId ?? this.authService.user()?.id;
+    if (tab === 'saved'    && this.isOwnProfile) this.profileService.loadSavedPosts();
+    if (tab === 'liked'    && this.isOwnProfile) this.profileService.loadLikedPosts();
+    if (tab === 'posts'    && userId)            this.profileService.loadMyPosts(userId);
   }
 
-  logout(): void {
-    this.authService.logout();
-  }
+  // ── Other actions ─────────────────────────────────────────────────────────
+
+  logout(): void { this.authService.logout(); }
 
   onCoverImageChange(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
@@ -73,12 +123,14 @@ export class Profile implements OnInit {
   }
 
   shareProfile(): void {
-    const url = window.location.origin + '/profile';
+    const url = window.location.href;
     navigator.clipboard.writeText(url).then(() => {
       this.shareCopied.set(true);
       setTimeout(() => this.shareCopied.set(false), 2000);
     });
   }
+
+  // ── Template helpers ──────────────────────────────────────────────────────
 
   profile    = computed(() => this.profileService.getProfile());
   myPosts    = computed(() => this.profileService.getMyPosts());
