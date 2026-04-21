@@ -21,6 +21,16 @@ data class FollowStatusDto(
     val followingCount: Long,
 )
 
+/** A single user card shown inside the followers / following list modal */
+data class FollowUserDto(
+    val id: Long,
+    val name: String,
+    val username: String?,
+    val role: String?,         // job title
+    val avatarUrl: String?,
+    val location: String?,
+)
+
 // ── Service ───────────────────────────────────────────────────────────────────
 
 @Service
@@ -76,4 +86,25 @@ class FollowService(
 
     fun getFollowerCount(userId: Long)  = followRepository.countByFollowingId(userId)
     fun getFollowingCount(userId: Long) = followRepository.countByFollowerId(userId)
+
+    /** Returns the list of users who follow userId */
+    fun getFollowers(userId: Long): List<FollowUserDto> =
+        followRepository.findByFollowingId(userId)
+            .map { it.follower.toFollowUserDto() }
+
+    /** Returns the list of users that userId follows */
+    fun getFollowing(userId: Long): List<FollowUserDto> =
+        followRepository.findByFollowerId(userId)
+            .map { it.following.toFollowUserDto() }
 }
+
+// ── Mapping helper ────────────────────────────────────────────────────────────
+
+private fun com.example.konkat.user.User.toFollowUserDto() = FollowUserDto(
+    id        = id,
+    name      = displayName,
+    username  = username,
+    role      = title,
+    avatarUrl = avatarUrl,
+    location  = location,
+)

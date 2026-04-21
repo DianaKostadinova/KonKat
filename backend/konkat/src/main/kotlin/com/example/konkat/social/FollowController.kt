@@ -43,4 +43,20 @@ class FollowController(private val followService: FollowService) {
         val currentUserId = request.getAttribute("userId") as Long
         return ResponseEntity.ok(followService.getStatus(currentUserId, id))
     }
+
+    /**
+     * GET /api/users/:id/followers
+     * Returns the list of users who follow this user.
+     */
+    @GetMapping("/{id}/followers")
+    fun getFollowers(@PathVariable id: Long): ResponseEntity<List<FollowUserDto>> =
+        ResponseEntity.ok(followService.getFollowers(id))
+
+    /**
+     * GET /api/users/:id/following
+     * Returns the list of users this user follows.
+     */
+    @GetMapping("/{id}/following")
+    fun getFollowing(@PathVariable id: Long): ResponseEntity<List<FollowUserDto>> =
+        ResponseEntity.ok(followService.getFollowing(id))
 }

@@ -17,4 +17,10 @@ interface FollowRepository : JpaRepository<UserFollow, Long> {
 
     /** How many people this user follows (their following count) */
     fun countByFollowerId(followerId: Long): Long
+
+    /** All rows where this user is the follower → who they follow */
+    fun findByFollowerId(followerId: Long): List<UserFollow>
+
+    /** All rows where this user is the target → who follows them */
+    fun findByFollowingId(followingId: Long): List<UserFollow>
 }

@@ -6,6 +6,7 @@ import { PostCard } from '../../shared/post-card/post-card';
 import { ProjectCard } from '../projects/project-card';
 import { AuthService } from '../../shared/auth/auth.service';
 import { FollowService } from '../../shared/follow/follow.service';
+import { FollowListModal } from '../../shared/follow/follow-list-modal';
 import { CreatePostModal } from '../../shared/create-post-modal/create-post-modal';
 
 type Tab = 'posts' | 'liked' | 'saved' | 'projects';
@@ -13,7 +14,7 @@ type Tab = 'posts' | 'liked' | 'saved' | 'projects';
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [PostCard, ProjectCard, RouterLink, CreatePostModal],
+  imports: [PostCard, ProjectCard, RouterLink, CreatePostModal, FollowListModal],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -26,6 +27,10 @@ export class Profile implements OnInit {
   isFollowing   = signal(false);
   followLoading = signal(false);
   followerCount = signal(0);
+
+  // Follow list modal
+  followListOpen = signal(false);
+  followListType = signal<'followers' | 'following'>('followers');
 
   // True when the profile shown belongs to the logged-in user
   isOwnProfile = true;
@@ -96,6 +101,13 @@ export class Profile implements OnInit {
       },
       error: () => this.followLoading.set(false),
     });
+  }
+
+  // ── Follow list modal ─────────────────────────────────────────────────────
+
+  openFollowList(type: 'followers' | 'following'): void {
+    this.followListType.set(type);
+    this.followListOpen.set(true);
   }
 
   // ── Tab switching ─────────────────────────────────────────────────────────
