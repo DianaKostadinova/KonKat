@@ -5,9 +5,7 @@
     <div class="flex items-center gap-2">
       <span class="text-[#f0f0f0] text-sm font-semibold">Notifications</span>
       @if (notificationService.unreadCount() > 0) {
-        <span class="flex items-center justify-center min-w-5 h-5 rounded-full bg-[#E8593C] text-white text-[10px] font-bold px-1">
-          {{ notificationService.unreadCount() }}
-        </span>
+        <span class="w-2 h-2 rounded-full bg-[#E8593C]"></span>
       }
     </div>
     <div class="flex items-center gap-2">
@@ -47,9 +45,6 @@
       (click)="filter.set('unread')"
     >
       Unread
-      @if (notificationService.unreadCount() > 0) {
-        <span class="ml-1">({{ notificationService.unreadCount() }})</span>
-      }
     </button>
   </div>
 
@@ -66,46 +61,36 @@
     }
 
     @for (notification of filteredNotifications(); track notification.id) {
-
-
       <div
-        class="notification-icon flex-shrink-0"
-        [style.background]="notificationColor(notification.type) + '20'"
-        [style.border-color]="notificationColor(notification.type) + '40'"
+        class="notification-item"
+        [class.notification-item--unread]="!notification.read"
+        (click)="onNotificationClick(notification)"
       >
-          <span class="material-icons-outlined"
-                style="font-size: 18px;"
-                [style.color]="notificationColor(notification.type)">
+        <div
+          class="notification-icon"
+          [style.background]="notificationColor(notification.type) + '20'"
+          [style.border-color]="notificationColor(notification.type) + '40'"
+        >
+          <span class="material-icons-outlined" style="font-size: 18px;" [style.color]="notificationColor(notification.type)">
             {{ notificationIcon(notification.type) }}
           </span>
-      </div>
-
-      <!-- Content -->
-      <div class="flex flex-col gap-0.5 flex-1 min-w-0">
-        <div class="flex items-center gap-2">
-            <span class="text-[#f0f0f0] text-xs font-semibold truncate">
-              {{ notification.title }}
-            </span>
-          @if (!notification.read) {
-            <span class="w-1.5 h-1.5 rounded-full bg-[#E8593C] flex-shrink-0"></span>
-          }
         </div>
-        <span class="text-[#888888] text-xs leading-relaxed">
-            {{ notification.message }}
-          </span>
-        <span class="text-[#888888] text-[11px] mt-0.5">{{ notification.createdAt }}</span>
+
+        <div class="flex flex-col gap-1 flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="text-[#f0f0f0] text-xs font-semibold truncate">{{ notification.title }}</span>
+            @if (!notification.read) {
+              <span class="w-1.5 h-1.5 rounded-full bg-[#E8593C] flex-shrink-0"></span>
+            }
+          </div>
+          <span class="text-[#888888] text-xs leading-relaxed">{{ notification.message }}</span>
+          <span class="text-[#555555] text-[11px]">{{ notification.createdAt }}</span>
+        </div>
+
+        <button class="notification-delete" (click)="onDelete($event, notification.id)" title="Dismiss">
+          <span class="material-icons" style="font-size: 14px;">close</span>
+        </button>
       </div>
-
-      <!-- Delete -->
-      <button
-        class="notification-delete"
-        (click)="onDelete($event, notification.id)"
-        title="Dismiss"
-      >
-        <span class="material-icons" style="font-size: 14px;">close</span>
-      </button>
-
-
     }
 
   </div>
