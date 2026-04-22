@@ -1,0 +1,219 @@
+<!-- Backdrop -->
+<div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" (click)="close.emit()">
+
+  <!-- Modal panel — stop click propagation so clicking inside doesn't close -->
+  <div
+    class="modal-panel w-full max-w-lg flex flex-col gap-0 rounded-2xl border border-[#2a2a2a] bg-[#111111] overflow-hidden shadow-2xl"
+    (click)="$event.stopPropagation()"
+  >
+
+    <!-- ── Header ─────────────────────────────────────────────────────── -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-[#2a2a2a]">
+      <div class="flex flex-col gap-0.5">
+        <h2 class="text-[#f0f0f0] font-bold text-base m-0">Post an Event</h2>
+        <p class="text-[#888888] text-xs m-0">Share a hackathon or webinar with the community</p>
+      </div>
+      <button
+        class="w-8 h-8 rounded-lg border border-[#2a2a2a] bg-transparent text-[#888888] cursor-pointer flex items-center justify-center hover:text-[#f0f0f0] hover:border-[#3a3a3a] transition-all"
+        (click)="close.emit()"
+      >
+        <span class="material-icons" style="font-size: 18px;">close</span>
+      </button>
+    </div>
+
+    <!-- ── Scrollable body ────────────────────────────────────────────── -->
+    <div class="overflow-y-auto max-h-[70vh] flex flex-col gap-5 px-6 py-5">
+
+      <!-- Type toggle -->
+      <div class="flex rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-1 gap-1">
+        <button
+          class="type-btn flex-1 flex items-center justify-center gap-2"
+          [class.type-btn--active-orange]="eventType() === 'hackathon'"
+          [class.type-btn--inactive]="eventType() !== 'hackathon'"
+          (click)="setType('hackathon')"
+        >
+          <span class="material-icons-outlined" style="font-size: 16px;">emoji_events</span>
+          Hackathon
+        </button>
+        <button
+          class="type-btn flex-1 flex items-center justify-center gap-2"
+          [class.type-btn--active-purple]="eventType() === 'webinar'"
+          [class.type-btn--inactive]="eventType() !== 'webinar'"
+          (click)="setType('webinar')"
+        >
+          <span class="material-icons-outlined" style="font-size: 16px;">videocam</span>
+          Webinar
+        </button>
+      </div>
+
+      <!-- Title -->
+      <div class="field-group">
+        <label class="field-label">Title <span class="text-[#E8593C]">*</span></label>
+        <input
+          [(ngModel)]="title"
+          name="title"
+          type="text"
+          class="field-input"
+          placeholder="e.g. CodeFest AI 2025"
+        />
+      </div>
+
+      <!-- Description -->
+      <div class="field-group">
+        <label class="field-label">Description</label>
+        <textarea
+          [(ngModel)]="description"
+          name="description"
+          rows="3"
+          class="field-input resize-none"
+          placeholder="What's this event about? Who should attend?"
+        ></textarea>
+      </div>
+
+      <!-- Dates -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="field-group">
+          <label class="field-label">Start Date & Time</label>
+          <input [(ngModel)]="startDate" name="startDate" type="datetime-local" class="field-input" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">End Date & Time</label>
+          <input [(ngModel)]="endDate" name="endDate" type="datetime-local" class="field-input" />
+        </div>
+      </div>
+
+      <!-- Location -->
+      <div class="field-group">
+        <label class="field-label">Location</label>
+        <input
+          [(ngModel)]="location"
+          name="location"
+          type="text"
+          class="field-input"
+          [placeholder]="eventType() === 'webinar' ? 'Online' : 'e.g. Ohrid, Macedonia'"
+        />
+      </div>
+
+      <!-- Tags -->
+      <div class="field-group">
+        <label class="field-label">Tags <span class="text-[#555] font-normal">(comma separated)</span></label>
+        <input
+          [(ngModel)]="tagsRaw"
+          name="tags"
+          type="text"
+          class="field-input"
+          placeholder="e.g. AI, Web3, Open Source"
+        />
+      </div>
+
+      <!-- ── Hackathon-only fields ──────────────────────────────────── -->
+      @if (eventType() === 'hackathon') {
+        <div class="flex flex-col gap-4 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4">
+          <span class="text-[#E8593C] text-xs font-semibold tracking-wide">HACKATHON DETAILS</span>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="field-group">
+              <label class="field-label">Prize Pool</label>
+              <input
+                [(ngModel)]="prize"
+                name="prize"
+                type="text"
+                class="field-input"
+                placeholder="e.g. €5,000"
+              />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Max Team Size</label>
+              <input
+                [(ngModel)]="maxTeamSize"
+                name="maxTeamSize"
+                type="number"
+                min="1"
+                class="field-input"
+                placeholder="e.g. 5"
+              />
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── Webinar-only fields ────────────────────────────────────── -->
+      @if (eventType() === 'webinar') {
+        <div class="flex flex-col gap-4 rounded-xl border border-purple-900 bg-[#1a1a1a] p-4">
+          <span class="text-purple-400 text-xs font-semibold tracking-wide">WEBINAR DETAILS</span>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="field-group">
+              <label class="field-label">Speaker Name</label>
+              <input
+                [(ngModel)]="speakerName"
+                name="speakerName"
+                type="text"
+                class="field-input"
+                placeholder="e.g. Jane Doe"
+              />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Speaker Title</label>
+              <input
+                [(ngModel)]="speakerTitle"
+                name="speakerTitle"
+                type="text"
+                class="field-input"
+                placeholder="e.g. Senior ML Engineer"
+              />
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Join URL</label>
+            <input
+              [(ngModel)]="joinUrl"
+              name="joinUrl"
+              type="url"
+              class="field-input"
+              placeholder="https://zoom.us/j/..."
+            />
+          </div>
+        </div>
+      }
+
+      <!-- Error -->
+      @if (error()) {
+        <div class="flex items-center gap-2 rounded-lg bg-red-900/30 border border-red-800 px-3 py-2">
+          <span class="material-icons text-red-400" style="font-size: 16px;">error_outline</span>
+          <span class="text-red-400 text-xs">{{ error() }}</span>
+        </div>
+      }
+
+    </div>
+
+    <!-- ── Footer ─────────────────────────────────────────────────────── -->
+    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#2a2a2a]">
+      <button
+        class="rounded-lg border border-[#2a2a2a] bg-transparent px-4 py-2 text-sm text-[#888888] cursor-pointer hover:text-[#f0f0f0] hover:border-[#3a3a3a] transition-all"
+        (click)="close.emit()"
+        [disabled]="submitting()"
+      >Cancel</button>
+
+      <button
+        class="flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        [class.bg-[#E8593C]]="eventType() === 'hackathon'"
+        [class.hover:bg-[#d14e33]]="eventType() === 'hackathon'"
+        [class.bg-purple-600]="eventType() === 'webinar'"
+        [class.hover:bg-purple-700]="eventType() === 'webinar'"
+        (click)="submit()"
+        [disabled]="submitting()"
+      >
+        @if (submitting()) {
+          <span class="material-icons animate-spin" style="font-size: 16px;">refresh</span>
+          Publishing…
+        } @else {
+          <span class="material-icons" style="font-size: 16px;">publish</span>
+          Publish Event
+        }
+      </button>
+    </div>
+
+  </div>
+</div>

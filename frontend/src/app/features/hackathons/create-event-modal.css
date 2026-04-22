@@ -1,0 +1,79 @@
+.modal-panel {
+  animation: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
+/* Field helpers */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #888888;
+}
+
+.field-input {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #f0f0f0;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.field-input::placeholder { color: #555; }
+
+.field-input:focus { border-color: #E8593C; }
+
+/* Override for webinar active type */
+.field-input:focus.webinar-focus { border-color: #7c3aed; }
+
+/* datetime-local colour fix */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5);
+  cursor: pointer;
+}
+
+/* Type toggle buttons */
+.type-btn {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.type-btn--inactive {
+  background: transparent;
+  color: #555;
+}
+
+.type-btn--inactive:hover { color: #888; }
+
+.type-btn--active-orange {
+  background: #E8593C;
+  color: white;
+}
+
+.type-btn--active-purple {
+  background: #7c3aed;
+  color: white;
+}
+
+/* Spinner animation */
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-spin { animation: spin 0.8s linear infinite; }

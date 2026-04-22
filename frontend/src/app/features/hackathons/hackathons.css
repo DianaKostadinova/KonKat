@@ -7,3 +7,52 @@
 :host::-webkit-scrollbar { width: 4px; }
 :host::-webkit-scrollbar-track { background: transparent; }
 :host::-webkit-scrollbar-thumb { background-color: #2a2a2a; border-radius: 4px; }
+
+/* Tab buttons */
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+  color: #555;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: #888; }
+.tab-btn--active { background: #E8593C; color: white; }
+
+.tab-count {
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.15);
+  padding: 1px 5px;
+  border-radius: 20px;
+}
+.tab-btn:not(.tab-btn--active) .tab-count {
+  background: #2a2a2a;
+  color: #555;
+}
+
+/* Loading skeleton pulse */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+.animate-pulse { animation: pulse 1.5s ease-in-out infinite; }
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  text-align: center;
+}

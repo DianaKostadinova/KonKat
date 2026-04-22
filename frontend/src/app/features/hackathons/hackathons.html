@@ -1,28 +1,161 @@
 <div class="flex flex-col gap-6 p-4 max-w-4xl mx-auto w-full">
 
-  <div class="flex items-center justify-between">
+  <!-- ── Page header ─────────────────────────────────────────────────────── -->
+  <div class="flex items-start justify-between gap-4 flex-wrap">
     <div class="flex flex-col gap-1">
-      <h1 class="text-[#f0f0f0] text-xl font-bold m-0">Hackathons</h1>
-      <p class="text-[#888888] text-sm m-0">Compete, build, and win with developers across Macedonia</p>
+      <h1 class="text-[#f0f0f0] text-xl font-bold m-0">Events</h1>
+      <p class="text-[#888888] text-sm m-0">Hackathons & webinars happening in the community</p>
     </div>
-    <span class="text-[#888888] text-xs rounded-full px-3 py-1 border border-[#2a2a2a]">
-      {{ hackathons().length }} upcoming
-    </span>
+    <button
+      class="flex items-center gap-2 rounded-xl bg-[#E8593C] px-4 py-2.5 text-sm font-semibold text-white cursor-pointer hover:bg-[#d14e33] transition-colors duration-200"
+      (click)="showModal.set(true)"
+    >
+      <span class="material-icons" style="font-size: 18px;">add</span>
+      Post Event
+    </button>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    @for (hackathon of hackathons(); track hackathon.id) {
-      <app-hackathon-card
-        [hackathon]="hackathon"
-        (register)="onRegister($event)"
+  <!-- ── Tabs + search row ────────────────────────────────────────────────── -->
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+
+    <!-- Tabs -->
+    <div class="flex rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-1 gap-1">
+      <button class="tab-btn" [class.tab-btn--active]="activeTab() === 'all'"        (click)="setTab('all')">
+        All
+        <span class="tab-count">{{ filteredHackathons().length + filteredWebinars().length }}</span>
+      </button>
+      <button class="tab-btn" [class.tab-btn--active]="activeTab() === 'hackathons'" (click)="setTab('hackathons')">
+        <span class="material-icons-outlined" style="font-size: 14px;">emoji_events</span>
+        Hackathons
+        <span class="tab-count">{{ filteredHackathons().length }}</span>
+      </button>
+      <button class="tab-btn" [class.tab-btn--active]="activeTab() === 'webinars'"   (click)="setTab('webinars')">
+        <span class="material-icons-outlined" style="font-size: 14px;">videocam</span>
+        Webinars
+        <span class="tab-count">{{ filteredWebinars().length }}</span>
+      </button>
+    </div>
+
+    <!-- Search -->
+    <div class="flex items-center gap-2 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 flex-1 max-w-xs">
+      <span class="material-icons-outlined text-[#555]" style="font-size: 18px;">search</span>
+      <input
+        type="text"
+        class="bg-transparent border-none outline-none text-[#f0f0f0] text-sm placeholder-[#555] flex-1 min-w-0"
+        placeholder="Search events, tags…"
+        [value]="search()"
+        (input)="setSearch($any($event.target).value)"
       />
-    }
+      @if (search()) {
+        <button class="text-[#555] hover:text-[#888] cursor-pointer" (click)="setSearch('')">
+          <span class="material-icons" style="font-size: 16px;">close</span>
+        </button>
+      }
+    </div>
   </div>
 
-  <!-- Calendar -->
-  <div class="flex flex-col gap-3">
-    <h2 class="text-[#f0f0f0] text-sm font-semibold m-0">Event Calendar</h2>
-    <app-hackathon-calendar [hackathons]="hackathons()" />
-  </div>
+  <!-- ── Loading skeleton ─────────────────────────────────────────────────── -->
+  @if (isLoading()) {
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      @for (i of [1,2,3,4]; track i) {
+        <div class="h-64 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] animate-pulse"></div>
+      }
+    </div>
+  }
+
+  <!-- ── Cards grid ───────────────────────────────────────────────────────── -->
+  @if (!isLoading()) {
+
+    <!-- Hackathons section -->
+    @if (activeTab() === 'all' || activeTab() === 'hackathons') {
+      @if (activeTab() === 'all' && filteredHackathons().length > 0) {
+        <div class="flex items-center gap-2">
+          <span class="material-icons-outlined text-[#E8593C]" style="font-size: 16px;">emoji_events</span>
+          <span class="text-[#f0f0f0] text-sm font-semibold">Hackathons</span>
+          <span class="text-[#555] text-xs">({{ filteredHackathons().length }})</span>
+        </div>
+      }
+
+      @if (filteredHackathons().length > 0) {
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          @for (hackathon of filteredHackathons(); track hackathon.id) {
+            <app-hackathon-card
+              [hackathon]="hackathon"
+              (save)="onSaveHackathon($event)"
+            />
+          }
+        </div>
+      } @else if (activeTab() === 'hackathons') {
+        <div class="empty-state">
+          <span class="material-icons text-[#333]" style="font-size: 48px;">emoji_events</span>
+          <p class="text-[#555] text-sm m-0">No hackathons found{{ search() ? ' for "' + search() + '"' : '' }}</p>
+          <button class="text-[#E8593C] text-xs hover:underline cursor-pointer" (click)="showModal.set(true)">
+            + Post the first one
+          </button>
+        </div>
+      }
+    }
+
+    <!-- Webinars section -->
+    @if (activeTab() === 'all' || activeTab() === 'webinars') {
+      @if (activeTab() === 'all' && filteredWebinars().length > 0) {
+        <div class="flex items-center gap-2 mt-2">
+          <span class="material-icons-outlined text-purple-400" style="font-size: 16px;">videocam</span>
+          <span class="text-[#f0f0f0] text-sm font-semibold">Webinars</span>
+          <span class="text-[#555] text-xs">({{ filteredWebinars().length }})</span>
+        </div>
+      }
+
+      @if (filteredWebinars().length > 0) {
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          @for (webinar of filteredWebinars(); track webinar.id) {
+            <app-webinar-card
+              [webinar]="webinar"
+              (save)="onSaveWebinar($event)"
+            />
+          }
+        </div>
+      } @else if (activeTab() === 'webinars') {
+        <div class="empty-state">
+          <span class="material-icons text-[#333]" style="font-size: 48px;">videocam</span>
+          <p class="text-[#555] text-sm m-0">No webinars found{{ search() ? ' for "' + search() + '"' : '' }}</p>
+          <button class="text-purple-500 text-xs hover:underline cursor-pointer" (click)="showModal.set(true)">
+            + Post the first one
+          </button>
+        </div>
+      }
+    }
+
+    <!-- Empty all-tab state -->
+    @if (activeTab() === 'all' && filteredHackathons().length === 0 && filteredWebinars().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons text-[#333]" style="font-size: 48px;">event_note</span>
+        <p class="text-[#555] text-sm m-0">
+          {{ search() ? 'No events match "' + search() + '"' : 'No upcoming events yet' }}
+        </p>
+        @if (!search()) {
+          <button class="text-[#E8593C] text-xs hover:underline cursor-pointer" (click)="showModal.set(true)">
+            + Be the first to post one
+          </button>
+        }
+      </div>
+    }
+  }
+
+  <!-- ── Calendar (hackathons only for now) ──────────────────────────────── -->
+  @if (!isLoading() && filteredHackathons().length > 0) {
+    <div class="flex flex-col gap-3">
+      <h2 class="text-[#f0f0f0] text-sm font-semibold m-0">Event Calendar</h2>
+      <app-hackathon-calendar [hackathons]="filteredHackathons()" />
+    </div>
+  }
 
 </div>
+
+<!-- ── Create Event Modal ──────────────────────────────────────────────────── -->
+@if (showModal()) {
+  <app-create-event-modal
+    (close)="showModal.set(false)"
+    (created)="showModal.set(false)"
+  />
+}

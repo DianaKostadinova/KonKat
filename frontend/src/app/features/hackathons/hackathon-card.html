@@ -1,80 +1,81 @@
 <div class="flex flex-col rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] overflow-hidden transition-all duration-200 hover:border-[#3a3a3a]">
 
-  <!-- Top color bar -->
-  <div class="h-1 w-full"
-       [style.background]="hackathon.registered ? '#28c840' : '#E8593C'">
-  </div>
+  <!-- Top accent bar -->
+  <div class="h-1 w-full" [style.background]="hackathon.registered ? '#28c840' : '#E8593C'"></div>
 
   <div class="flex flex-col gap-4 p-5">
 
-    <!-- Header -->
+    <!-- Header row -->
     <div class="flex items-start justify-between gap-3">
-      <div class="flex flex-col gap-1">
+      <div class="flex flex-col gap-1 flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
           <span class="text-[#f0f0f0] font-semibold text-sm">{{ hackathon.title }}</span>
           @if (hackathon.registered) {
-            <span class="rounded-full px-2 py-0.5 text-[10px] font-bold bg-[#0d2a0d] text-[#28c840] border border-[#28c840]">
-              REGISTERED
-            </span>
+            <span class="rounded-full px-2 py-0.5 text-[10px] font-bold bg-[#0d2a0d] text-[#28c840] border border-[#28c840]">REGISTERED</span>
           }
         </div>
         <div class="flex items-center gap-1.5 text-[#888888] text-xs">
           <span class="material-icons-outlined" style="font-size: 14px;">location_on</span>
-          {{ hackathon.location }}, {{ hackathon.city }}
+          {{ hackathon.location }}
         </div>
       </div>
-      <span class="text-[#E8593C] font-bold text-sm flex-shrink-0">{{ hackathon.prizePool }}</span>
+
+      <div class="flex items-center gap-2 flex-shrink-0">
+        @if (hackathon.prizePool) {
+          <span class="text-[#E8593C] font-bold text-sm">{{ hackathon.prizePool }}</span>
+        }
+        <!-- Save / Bookmark -->
+        <button
+          class="flex items-center justify-center w-8 h-8 rounded-lg border border-[#2a2a2a] bg-transparent cursor-pointer transition-all duration-200 hover:border-[#E8593C]"
+          [class.text-[#E8593C]]="hackathon.saved"
+          [class.text-[#555]]="!hackathon.saved"
+          (click)="onSave()"
+          title="{{ hackathon.saved ? 'Remove from saved' : 'Save event' }}"
+        >
+          <span class="material-icons" style="font-size: 18px;">
+            {{ hackathon.saved ? 'bookmark' : 'bookmark_border' }}
+          </span>
+        </button>
+      </div>
     </div>
 
     <!-- Description -->
-    <p class="text-[#888888] text-xs leading-relaxed m-0 line-clamp-2">
-      {{ hackathon.description }}
-    </p>
+    <p class="text-[#888888] text-xs leading-relaxed m-0 line-clamp-2">{{ hackathon.description }}</p>
 
-    <!-- Countdown timer -->
+    <!-- Countdown -->
     <div class="flex items-center gap-2">
       <span class="text-[#888888] text-xs">Starts in:</span>
       <div class="flex items-center gap-1">
-
-        <div class="flex flex-col items-center rounded-lg bg-[#111111] border border-[#2a2a2a] px-2 py-1 min-w-[36px]">
+        <div class="countdown-box">
           <span class="text-[#f0f0f0] font-bold text-sm font-mono">{{ pad(countdown().days) }}</span>
           <span class="text-[#888888] text-[9px]">days</span>
         </div>
-
         <span class="text-[#888888] font-bold">:</span>
-
-        <div class="flex flex-col items-center rounded-lg bg-[#111111] border border-[#2a2a2a] px-2 py-1 min-w-[36px]">
+        <div class="countdown-box">
           <span class="text-[#f0f0f0] font-bold text-sm font-mono">{{ pad(countdown().hours) }}</span>
           <span class="text-[#888888] text-[9px]">hrs</span>
         </div>
-
         <span class="text-[#888888] font-bold">:</span>
-
-        <div class="flex flex-col items-center rounded-lg bg-[#111111] border border-[#2a2a2a] px-2 py-1 min-w-[36px]">
+        <div class="countdown-box">
           <span class="text-[#f0f0f0] font-bold text-sm font-mono">{{ pad(countdown().minutes) }}</span>
           <span class="text-[#888888] text-[9px]">min</span>
         </div>
-
         <span class="text-[#888888] font-bold">:</span>
-
-        <div class="flex flex-col items-center rounded-lg bg-[#E8593C] border border-[#E8593C] px-2 py-1 min-w-[36px]">
+        <div class="countdown-box countdown-box--accent">
           <span class="text-white font-bold text-sm font-mono">{{ pad(countdown().seconds) }}</span>
           <span class="text-white text-[9px] opacity-80">sec</span>
         </div>
-
       </div>
     </div>
 
     <!-- Tags -->
     <div class="flex flex-wrap gap-1.5">
       @for (tag of hackathon.tags; track tag) {
-        <span class="rounded-md px-2 py-0.5 text-[11px] bg-[#2a2a2a] text-[#888888] border border-[#3a3a3a]">
-          {{ tag }}
-        </span>
+        <span class="rounded-md px-2 py-0.5 text-[11px] bg-[#2a2a2a] text-[#888888] border border-[#3a3a3a]">{{ tag }}</span>
       }
     </div>
 
-    <!-- Date + Deadline -->
+    <!-- Dates -->
     <div class="grid grid-cols-2 gap-3 rounded-lg bg-[#111111] border border-[#2a2a2a] p-3">
       <div class="flex flex-col gap-0.5">
         <span class="text-[#888888] text-[10px]">EVENT DATE</span>
@@ -83,34 +84,36 @@
         </span>
       </div>
       <div class="flex flex-col gap-0.5">
-        <span class="text-[#888888] text-[10px]">REGISTRATION CLOSES</span>
-        <span class="text-[#E8593C] text-xs font-medium">{{ formatDate(hackathon.registrationDeadline) }}</span>
+        <span class="text-[#888888] text-[10px]">ORGANIZER</span>
+        <span class="text-[#f0f0f0] text-xs font-medium truncate">{{ hackathon.organizer || '—' }}</span>
       </div>
     </div>
 
-    <!-- Teams progress bar -->
-    <div class="flex flex-col gap-2">
-      <div class="flex items-center justify-between">
-        <span class="text-[#888888] text-xs">Teams registered</span>
-        <span class="text-[#f0f0f0] text-xs font-medium">
-          {{ hackathon.currentTeams }} / {{ hackathon.maxTeams }}
-          <span class="text-[#888888] font-normal ml-1">({{ spotsLeft }} spots left)</span>
-        </span>
+    <!-- Team progress (only if backend provides data) -->
+    @if (hasTeamData) {
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[#888888] text-xs">Teams registered</span>
+          <span class="text-[#f0f0f0] text-xs font-medium">
+            {{ hackathon.currentTeams }} / {{ hackathon.maxTeams }}
+            <span class="text-[#888888] font-normal ml-1">({{ spotsLeft }} spots left)</span>
+          </span>
+        </div>
+        <div class="w-full h-1.5 rounded-full bg-[#2a2a2a] overflow-hidden">
+          <div
+            class="h-full rounded-full transition-all duration-500"
+            [style.width.%]="spotsPercent"
+            [style.background]="spotsPercent > 80 ? '#E8593C' : spotsPercent > 50 ? '#febc2e' : '#28c840'"
+          ></div>
+        </div>
       </div>
-      <div class="w-full h-1.5 rounded-full bg-[#2a2a2a] overflow-hidden">
-        <div
-          class="h-full rounded-full transition-all duration-500"
-          [style.width.%]="spotsPercent"
-          [style.background]="spotsPercent > 80 ? '#E8593C' : spotsPercent > 50 ? '#febc2e' : '#28c840'"
-        ></div>
-      </div>
-    </div>
+    }
 
-    <!-- Footer: organizer + buttons -->
+    <!-- Footer -->
     <div class="flex items-center justify-between gap-3 pt-1 border-t border-[#2a2a2a]">
       <div class="flex items-center gap-1.5">
-        <span class="material-icons-outlined text-[#888888]" style="font-size: 14px;">business</span>
-        <span class="text-[#888888] text-xs">{{ hackathon.organizer }}</span>
+        <span class="material-icons-outlined text-[#888888]" style="font-size: 14px;">emoji_events</span>
+        <span class="text-[#888888] text-xs">{{ hackathon.organizer || 'Unknown organizer' }}</span>
       </div>
       <div class="flex items-center gap-2">
         <button class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-[#888888] border border-[#2a2a2a] bg-transparent cursor-pointer hover:border-[#3a3a3a] hover:text-[#f0f0f0] transition-all duration-200">
