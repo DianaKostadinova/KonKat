@@ -116,7 +116,10 @@
         <span class="text-[#888888] text-xs">{{ hackathon.organizer || 'Unknown organizer' }}</span>
       </div>
       <div class="flex items-center gap-2">
-        <button class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-[#888888] border border-[#2a2a2a] bg-transparent cursor-pointer hover:border-[#3a3a3a] hover:text-[#f0f0f0] transition-all duration-200">
+        <button
+          class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-[#888888] border border-[#2a2a2a] bg-transparent cursor-pointer hover:border-[#3a3a3a] hover:text-[#f0f0f0] transition-all duration-200"
+          (click)="goToFindTeam()"
+        >
           <span class="material-icons-outlined" style="font-size: 14px;">group_add</span>
           Find Team
         </button>
@@ -125,7 +128,7 @@
           [style.background]="hackathon.registered ? 'transparent' : '#E8593C'"
           [style.color]="hackathon.registered ? '#888888' : 'white'"
           [style.border-color]="hackathon.registered ? '#2a2a2a' : '#E8593C'"
-          (click)="onRegister()"
+          (click)="openRegister()"
         >
           <span class="material-icons-outlined" style="font-size: 14px;">
             {{ hackathon.registered ? 'check_circle' : 'how_to_reg' }}
@@ -137,3 +140,12 @@
 
   </div>
 </div>
+
+<!-- Register modal -->
+@if (showRegModal()) {
+  <app-register-event-modal
+    [hackathon]="hackathon"
+    (close)="showRegModal.set(false)"
+    (registered)="showRegModal.set(false)"
+  />
+}

@@ -28,11 +28,14 @@
   <!-- Filters -->
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
     <select
-      class="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 h-9 text-sm text-[#888888] outline-none cursor-pointer hover:border-[#3a3a3a] transition-colors"
+      class="bg-[#1a1a1a] border rounded-lg px-3 h-9 text-sm text-[#888888] outline-none cursor-pointer transition-colors"
+      [class.border-[#E8593C]]="selectedHackathon() && selectedHackathon() !== 'All'"
+      [class.border-[#2a2a2a]]="!selectedHackathon() || selectedHackathon() === 'All'"
+      [value]="selectedHackathon()"
       (change)="setHackathon($event)"
     >
       @for (opt of hackathonOptions(); track opt) {
-        <option [value]="opt" class="bg-[#1a1a1a]">{{ opt }}</option>
+        <option [value]="opt" class="bg-[#1a1a1a]" [selected]="opt === selectedHackathon()">{{ opt }}</option>
       }
     </select>
 

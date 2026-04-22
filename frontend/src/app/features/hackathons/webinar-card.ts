@@ -1,10 +1,11 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, signal } from '@angular/core';
 import { Webinar } from './hackathons.model';
+import { RegisterEventModal } from './register-event-modal';
 
 @Component({
   selector: 'app-webinar-card',
   standalone: true,
-  imports: [],
+  imports: [RegisterEventModal],
   templateUrl: './webinar-card.html',
   styleUrl: './webinar-card.css',
 })
@@ -12,7 +13,9 @@ export class WebinarCard implements OnInit, OnDestroy {
   @Input() webinar!: Webinar;
   @Output() save = new EventEmitter<number>();
 
-  countdown = signal<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
+  countdown    = signal<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
+  showRegModal = signal(false);
+
   private timer: any;
 
   ngOnInit() {
@@ -44,7 +47,8 @@ export class WebinarCard implements OnInit, OnDestroy {
     return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   }
 
-  onSave() { this.save.emit(this.webinar.id); }
+  onSave()       { this.save.emit(this.webinar.id); }
+  openRegister() { this.showRegModal.set(true); }
 
   pad(n: number): string { return String(n).padStart(2, '0'); }
 }

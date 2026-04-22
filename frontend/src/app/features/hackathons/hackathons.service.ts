@@ -2,8 +2,12 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { forkJoin, Observable, tap } from 'rxjs';
 import { Hackathon, Webinar, CreateHackathonPayload, CreateWebinarPayload } from './hackathons.model';
+import { EventService } from '../../shared/event/event.service';
 
 const API = 'http://localhost:8081/api';
+
+export interface RegisterPayload { teamName?: string; role?: string; }
+export interface RegisterResult  { registered: boolean; teamName: string | null; role: string | null; participantCount: number; }
 
 @Injectable({ providedIn: 'root' })
 export class HackathonService {
@@ -12,7 +16,10 @@ export class HackathonService {
   private _webinars   = signal<Webinar[]>([]);
   private _loading    = signal(false);
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private eventService: EventService,
+  ) {}
 
   // ── Reads ─────────────────────────────────────────────────────────────────
 
@@ -20,7 +27,6 @@ export class HackathonService {
   getWebinars()   { return this._webinars();   }
   isLoading()     { return this._loading();    }
 
-  /** Fetch both hackathons and webinars from the API in one shot. */
   loadAll(): void {
     this._loading.set(true);
     forkJoin({
@@ -50,20 +56,34 @@ export class HackathonService {
       .pipe(tap(w => this._webinars.update(list => [this.mapWebinar(w), ...list])));
   }
 
+  /** Toggle save — also triggers right-panel refresh via EventService. */
   toggleSaveHackathon(id: number): void {
     this.http
       .post<{ saved: boolean }>(`${API}/hackathons/${id}/save`, {}, { headers: this.authHeaders() })
-      .subscribe({ next: ({ saved }) =>
-        this._hackathons.update(list => list.map(h => h.id === id ? { ...h, saved } : h))
-      });
+      .subscribe({ next: ({ saved }) => {
+        this._hackathons.update(list => list.map(h => h.id === id ? { ...h, saved } : h));
+        this.eventService.triggerRefresh();   // ← right panel reloads
+      }});
   }
 
   toggleSaveWebinar(id: number): void {
     this.http
       .post<{ saved: boolean }>(`${API}/webinars/${id}/save`, {}, { headers: this.authHeaders() })
-      .subscribe({ next: ({ saved }) =>
-        this._webinars.update(list => list.map(w => w.id === id ? { ...w, saved } : w))
-      });
+      .subscribe({ next: ({ saved }) => {
+        this._webinars.update(list => list.map(w => w.id === id ? { ...w, saved } : w));
+        this.eventService.triggerRefresh();   // ← right panel reloads
+      }});
+  }
+
+  /** Register (or unregister) for a hackathon. */
+  registerForHackathon(id: number, payload: RegisterPayload): Observable<RegisterResult> {
+    return this.http
+      .post<RegisterResult>(`${API}/hackathons/${id}/register`, payload, { headers: this.authHeaders() })
+      .pipe(tap(res => {
+        this._hackathons.update(list =>
+          list.map(h => h.id === id ? { ...h, registered: res.registered } : h)
+        );
+      }));
   }
 
   // ── Mappers ───────────────────────────────────────────────────────────────
@@ -81,13 +101,13 @@ export class HackathonService {
       endDate:              end,
       registrationDeadline: start,
       maxTeams:             h.maxTeamSize     ?? 0,
-      currentTeams:         0,
+      currentTeams:         h.participantCount ?? 0,
       prizePool:            h.prize          ?? '',
       tags:                 h.tags           ?? [],
       organizer:            h.organizerName  ?? '',
       organizerAvatar:      h.organizerAvatar ?? null,
       status:               this.mapStatus(h.status),
-      registered:           false,
+      registered:           h.registered     ?? false,
       saved:                h.saved          ?? false,
     };
   }

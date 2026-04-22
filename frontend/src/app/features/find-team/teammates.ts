@@ -1,4 +1,5 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { TeamPost } from './teammates.model';
 import { TeamService } from './team.service';
 import { TeamCard } from './team-card';
@@ -11,14 +12,23 @@ import { CreateTeamModal } from './createteam';
   templateUrl: './teammates.html',
   styleUrl: './teammates.css',
 })
-export class Teammates {
+export class Teammates implements OnInit {
   showCreateModal = signal(false);
   searchQuery = signal('');
   selectedHackathon = signal('');
   selectedTech = signal('');
   selectedLocation = signal('');
 
-  constructor(private teamService: TeamService) {}
+  constructor(
+    private teamService: TeamService,
+    private route: ActivatedRoute,
+  ) {}
+
+  ngOnInit() {
+    // Pre-select hackathon from query param (comes from hackathon card "Find Team" button)
+    const hackathon = this.route.snapshot.queryParamMap.get('hackathon');
+    if (hackathon) this.selectedHackathon.set(hackathon);
+  }
 
   allTeams = computed(() => this.teamService.getAll());
 

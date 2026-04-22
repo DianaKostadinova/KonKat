@@ -112,18 +112,36 @@
         <span class="material-icons-outlined text-[#888888]" style="font-size: 14px;">business</span>
         <span class="text-[#888888] text-xs">{{ webinar.organizerName }}</span>
       </div>
-      @if (webinar.joinUrl) {
-        <a
-          [href]="webinar.joinUrl"
-          target="_blank"
-          rel="noopener"
-          class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold bg-purple-600 text-white border border-purple-600 cursor-pointer hover:bg-purple-700 transition-all duration-200 no-underline"
+      <div class="flex items-center gap-2">
+        <button
+          class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-[#888888] border border-[#2a2a2a] bg-transparent cursor-pointer hover:border-purple-600 hover:text-purple-400 transition-all duration-200"
+          (click)="openRegister()"
         >
-          <span class="material-icons-outlined" style="font-size: 14px;">open_in_new</span>
-          Join Webinar
-        </a>
-      }
+          <span class="material-icons-outlined" style="font-size: 14px;">how_to_reg</span>
+          I'll Attend
+        </button>
+        @if (webinar.joinUrl) {
+          <a
+            [href]="webinar.joinUrl"
+            target="_blank"
+            rel="noopener"
+            class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold bg-purple-600 text-white border border-purple-600 cursor-pointer hover:bg-purple-700 transition-all duration-200 no-underline"
+          >
+            <span class="material-icons-outlined" style="font-size: 14px;">open_in_new</span>
+            Join
+          </a>
+        }
+      </div>
     </div>
 
   </div>
 </div>
+
+<!-- Attend modal -->
+@if (showRegModal()) {
+  <app-register-event-modal
+    [webinar]="webinar"
+    (close)="showRegModal.set(false)"
+    (registered)="showRegModal.set(false)"
+  />
+}

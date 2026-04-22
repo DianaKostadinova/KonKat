@@ -1,20 +1,25 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { Hackathon } from './hackathons.model';
+import { RegisterEventModal } from './register-event-modal';
 
 @Component({
   selector: 'app-hackathon-card',
   standalone: true,
-  imports: [],
+  imports: [RegisterEventModal],
   templateUrl: './hackathon-card.html',
   styleUrl: './hackathon-card.css',
 })
 export class HackathonCard implements OnInit, OnDestroy {
   @Input() hackathon!: Hackathon;
-  @Output() register  = new EventEmitter<number>();
-  @Output() save      = new EventEmitter<number>();
+  @Output() save = new EventEmitter<number>();
 
-  countdown = signal({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  countdown   = signal({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  showRegModal = signal(false);
+
   private timer: any;
+
+  constructor(private router: Router) {}
 
   ngOnInit() {
     this.updateCountdown();
@@ -42,8 +47,13 @@ export class HackathonCard implements OnInit, OnDestroy {
     return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
-  onRegister() { this.register.emit(this.hackathon.id); }
-  onSave()     { this.save.emit(this.hackathon.id); }
+  onSave()      { this.save.emit(this.hackathon.id); }
+  openRegister(){ this.showRegModal.set(true); }
+
+  /** Navigate to find-team pre-filtered by this hackathon's title */
+  goToFindTeam() {
+    this.router.navigate(['/find-team'], { queryParams: { hackathon: this.hackathon.title } });
+  }
 
   pad(n: number): string { return String(n).padStart(2, '0'); }
 }

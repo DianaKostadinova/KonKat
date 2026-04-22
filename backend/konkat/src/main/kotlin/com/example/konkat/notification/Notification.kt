@@ -26,8 +26,10 @@ enum class NotificationType {
     PROJECT_LIKE,
     PROJECT_INTEREST,   // someone clicked "I want to join"
     PROJECT_MEMBER,     // owner added you to a project
-    HACKATHON_INVITE,   // someone invited you to their team
-    HACKATHON_STARTED,  // a hackathon you registered for has begun
+    HACKATHON_INVITE,    // someone invited you to their team
+    HACKATHON_STARTED,   // a hackathon you registered for has begun
+    HACKATHON_REGISTER,  // someone registered for your hackathon
+    HACKATHON_SAVED,     // someone saved your hackathon
     BADGE_AWARDED,
 }
 

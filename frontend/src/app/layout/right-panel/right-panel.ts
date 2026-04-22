@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import { AuthService } from '../../shared/auth/auth.service';
 import { ProfileService } from '../../features/profile/profile.service';
@@ -22,7 +23,8 @@ export class RightPanel implements OnInit, OnDestroy {
   events   = signal<EventWithCountdown[]>([]);
   loading  = signal(true);
 
-  private timer: ReturnType<typeof setInterval> | null = null;
+  private timer:       ReturnType<typeof setInterval> | null = null;
+  private refreshSub: Subscription | null = null;
 
   trending = signal([
     { tag: '#nextjs',     posts: '142 posts' },
@@ -50,10 +52,10 @@ export class RightPanel implements OnInit, OnDestroy {
         error: () => this.loading.set(false),
       });
 
-      this.eventService.getSavedUpcoming().subscribe({
-        next: list => this.events.set(list.map(e => ({ ...e, countdown: this.calcCountdown(e.startDate) }))),
-        error: ()  => {},
-      });
+      this.loadSavedEvents();
+
+      // Reload whenever a save/unsave happens anywhere in the app
+      this.refreshSub = this.eventService.refresh$.subscribe(() => this.loadSavedEvents());
     } else {
       this.loading.set(false);
     }
@@ -63,7 +65,15 @@ export class RightPanel implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.timer) clearInterval(this.timer);
+    if (this.timer)      clearInterval(this.timer);
+    if (this.refreshSub) this.refreshSub.unsubscribe();
+  }
+
+  private loadSavedEvents(): void {
+    this.eventService.getSavedUpcoming().subscribe({
+      next: list => this.events.set(list.map(e => ({ ...e, countdown: this.calcCountdown(e.startDate) }))),
+      error: ()  => {},
+    });
   }
 
   // ── Countdown ─────────────────────────────────────────────────────────────

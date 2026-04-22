@@ -1,0 +1,97 @@
+.reg-panel {
+  animation: slide-up 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* Mode cards (solo / team) */
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 12px;
+  border-radius: 12px;
+  border: 1px solid #2a2a2a;
+  background: #1a1a1a;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 13px;
+}
+.mode-card:hover { border-color: #3a3a3a; color: #f0f0f0; }
+.mode-card--active {
+  border-color: #E8593C;
+  background: rgba(232,89,60,0.08);
+  color: #f0f0f0;
+}
+
+/* Field helpers */
+.field-group  { display: flex; flex-direction: column; gap: 6px; }
+.field-label  { font-size: 12px; font-weight: 500; color: #888; }
+.field-input  {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #f0f0f0;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.field-input::placeholder { color: #555; }
+.field-input:focus { border-color: #E8593C; }
+
+/* Buttons */
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1px solid #2a2a2a;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.icon-btn:hover { color: #f0f0f0; border-color: #3a3a3a; }
+
+.btn-ghost {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #2a2a2a;
+  background: transparent;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-ghost:hover { color: #f0f0f0; border-color: #3a3a3a; }
+.btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-primary {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #E8593C;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: #d14e33; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary.btn-purple { background: #7c3aed; }
+.btn-primary.btn-purple:hover { background: #6d28d9; }
+
+/* Spinner */
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-spin { animation: spin 0.7s linear infinite; }
