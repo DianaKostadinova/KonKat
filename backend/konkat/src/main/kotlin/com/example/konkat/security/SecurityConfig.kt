@@ -31,6 +31,11 @@ class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
                     .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
                     // Posts: read-only endpoints are public; writes require auth
                     .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/**").permitAll()
+                    // Hackathons & webinars: public listing; saves require auth
+                    .requestMatchers(HttpMethod.GET, "/api/hackathons", "/api/hackathons/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/webinars", "/api/webinars/**").permitAll()
+                    // Users: public profile lookup
+                    .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
                     .anyRequest().authenticated()
             }
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)

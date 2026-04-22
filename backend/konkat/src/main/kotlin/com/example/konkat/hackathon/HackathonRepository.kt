@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository
 interface HackathonRepository : JpaRepository<Hackathon, Long> {
     fun findByTitleContainingIgnoreCase(title: String): List<Hackathon>
     fun findByOrganizerId(organizerId: Long): List<Hackathon>
+    fun findByStatusIn(statuses: List<HackathonStatus>): List<Hackathon>
 }

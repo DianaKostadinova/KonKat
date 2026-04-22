@@ -1,62 +1,151 @@
-<!-- Desktop: само на >1024px -->
+<!-- ═══════════════════════  DESKTOP PANEL  ═══════════════════════ -->
 <aside class="desktop-panel">
 
-  <!-- Qa Card -->
-  <div class="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4 flex flex-col items-center gap-3">
-    <div class="w-16 h-16 rounded-full border-2 border-[#E8593C] bg-[#2a2a2a] flex items-center justify-center">
-      <span class="material-icons text-[#888888]" style="font-size: 40px;">account_circle</span>
-    </div>
-    <div class="text-center">
-      <p class="text-[#f0f0f0] font-semibold text-sm m-0">{{ currentUser().name }}</p>
-      <p class="text-[#888888] text-xs mt-1 m-0">{{ currentUser().role }} • {{ currentUser().location }}</p>
-    </div>
-    <div class="w-full grid grid-cols-3 gap-2 border-t border-[#2a2a2a] pt-3">
-      <div class="flex flex-col items-center gap-0.5">
-        <span class="text-[#f0f0f0] font-bold text-sm">{{ currentUser().projects }}</span>
-        <span class="text-[#888888] text-[11px]">Workspace</span>
-      </div>
-      <div class="flex flex-col items-center gap-0.5 border-x border-[#2a2a2a]">
-        <span class="text-[#f0f0f0] font-bold text-sm">{{ currentUser().hackathons }}</span>
-        <span class="text-[#888888] text-[11px]">Hackathons</span>
-      </div>
-      <div class="flex flex-col items-center gap-0.5">
-        <span class="text-[#f0f0f0] font-bold text-sm">{{ currentUser().rep }}</span>
-        <span class="text-[#888888] text-[11px]">Rep</span>
-      </div>
-    </div>
-    <div class="w-full flex items-center justify-between rounded-lg border border-[#2a2a2a] px-3 py-2">
-      <div class="flex items-center gap-2">
-        <span class="material-icons-outlined text-[#888888]" style="font-size: 16px;">code</span>
-        <span class="text-[#888888] text-xs">{{ currentUser().github }}</span>
-      </div>
-      <span class="text-[#E8593C] text-xs font-medium cursor-pointer hover:underline">Connected</span>
-    </div>
-  </div>
+  <!-- ── Profile card ──────────────────────────────────────────────── -->
+  @if (auth.isLoggedIn() && profile()) {
+    <div class="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4 flex flex-col items-center gap-3">
 
-  <!-- Upcoming Hackathons -->
+      <!-- avatar -->
+      <div
+        class="w-16 h-16 rounded-full border-2 border-[#E8593C] bg-[#2a2a2a] flex items-center justify-center overflow-hidden cursor-pointer"
+        (click)="goToProfile()"
+      >
+        @if (profile()?.avatar) {
+          <img [src]="profile()!.avatar" alt="avatar" class="w-full h-full object-cover" />
+        } @else {
+          <span class="material-icons text-[#888888]" style="font-size: 40px;">account_circle</span>
+        }
+      </div>
+
+      <!-- name / role -->
+      <div class="text-center">
+        <p class="text-[#f0f0f0] font-semibold text-sm m-0 cursor-pointer hover:text-[#E8593C] transition-colors" (click)="goToProfile()">
+          {{ profile()!.name }}
+        </p>
+        <p class="text-[#888888] text-xs mt-1 m-0">
+          {{ profile()!.role || 'No role set' }}
+          @if (profile()!.location) { <span> • {{ profile()!.location }}</span> }
+        </p>
+      </div>
+
+      <!-- stats -->
+      <div class="w-full grid grid-cols-3 gap-2 border-t border-[#2a2a2a] pt-3">
+        <div class="flex flex-col items-center gap-0.5">
+          <span class="text-[#f0f0f0] font-bold text-sm">{{ profile()!.stats.projects }}</span>
+          <span class="text-[#888888] text-[11px]">Projects</span>
+        </div>
+        <div class="flex flex-col items-center gap-0.5 border-x border-[#2a2a2a]">
+          <span class="text-[#f0f0f0] font-bold text-sm">{{ profile()!.stats.hackathons }}</span>
+          <span class="text-[#888888] text-[11px]">Hackathons</span>
+        </div>
+        <div class="flex flex-col items-center gap-0.5">
+          <span class="text-[#f0f0f0] font-bold text-sm">{{ repLabel }}</span>
+          <span class="text-[#888888] text-[11px]">Rep</span>
+        </div>
+      </div>
+
+      <!-- github link -->
+      @if (profile()!.github) {
+        <div class="w-full flex items-center justify-between rounded-lg border border-[#2a2a2a] px-3 py-2">
+          <div class="flex items-center gap-2">
+            <span class="material-icons-outlined text-[#888888]" style="font-size: 16px;">code</span>
+            <span class="text-[#888888] text-xs">{{ profile()!.github }}</span>
+          </div>
+          <span class="text-[#E8593C] text-xs font-medium">Connected</span>
+        </div>
+      }
+    </div>
+
+  } @else if (!auth.isLoggedIn()) {
+    <!-- not logged in -->
+    <div class="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4 flex flex-col items-center gap-3 text-center">
+      <span class="material-icons text-[#888888]" style="font-size: 40px;">account_circle</span>
+      <p class="text-[#888888] text-xs m-0">Sign in to see your profile & saved events</p>
+      <button
+        class="w-full rounded-lg bg-[#E8593C] py-1.5 text-xs text-white font-medium cursor-pointer hover:bg-[#d14e33] transition-colors"
+        (click)="goToLogin()"
+      >Sign In</button>
+    </div>
+  }
+
+  <!-- ── Upcoming saved events ─────────────────────────────────────── -->
   <div class="flex flex-col gap-3">
     <div class="flex items-center justify-between">
-      <span class="text-[#f0f0f0] text-sm font-semibold">Upcoming Hackathons</span>
-      <span class="text-[#E8593C] text-xs cursor-pointer hover:underline">View All</span>
+      <span class="text-[#f0f0f0] text-sm font-semibold">Upcoming</span>
+      <span class="text-[#E8593C] text-xs cursor-pointer hover:underline" (click)="goToHackathons()">Browse all</span>
     </div>
-    @for (hackathon of hackathons(); track hackathon.title) {
-      <div class="flex flex-col gap-1.5 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-3">
-        <span class="text-[#E8593C] text-[11px] font-semibold tracking-wide">
-          {{ hackathon.dateRange }} • {{ hackathon.location }}
-        </span>
-        <span class="text-[#f0f0f0] text-sm font-medium">{{ hackathon.title }}</span>
-        <div class="flex items-center gap-1.5">
-          <span class="material-icons-outlined text-[#888888]" style="font-size: 14px;">group</span>
-          <span class="text-[#888888] text-xs">{{ hackathon.teams }} teams looking for members</span>
+
+    @if (auth.isLoggedIn()) {
+      @if (events().length === 0) {
+        <p class="text-[#555] text-xs text-center py-2">
+          No saved events yet.<br>Browse hackathons & webinars and save the ones you're interested in.
+        </p>
+      }
+
+      @for (ev of events(); track ev.id) {
+        <div class="flex flex-col gap-2 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-3">
+
+          <!-- type badge + location -->
+          <div class="flex items-center justify-between">
+            <span
+              class="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full"
+              [class.bg-orange-500]="ev.type === 'HACKATHON'"
+              [class.text-white]="ev.type === 'HACKATHON'"
+              [class.bg-purple-600]="ev.type === 'WEBINAR'"
+              [class.text-white]="ev.type === 'WEBINAR'"
+            >{{ ev.type }}</span>
+            @if (ev.location) {
+              <span class="text-[#555] text-[10px] flex items-center gap-1">
+                <span class="material-icons-outlined" style="font-size: 12px;">place</span>
+                {{ ev.location }}
+              </span>
+            }
+          </div>
+
+          <!-- title -->
+          <span class="text-[#f0f0f0] text-sm font-medium leading-snug">{{ ev.title }}</span>
+
+          <!-- tags -->
+          @if (ev.tags.length > 0) {
+            <div class="flex flex-wrap gap-1">
+              @for (tag of ev.tags.slice(0, 3); track tag) {
+                <span class="text-[#888] text-[10px] bg-[#2a2a2a] px-1.5 py-0.5 rounded">{{ tag }}</span>
+              }
+            </div>
+          }
+
+          <!-- countdown -->
+          <div class="flex items-center gap-1.5 mt-1">
+            <span class="material-icons-outlined text-[#E8593C]" style="font-size: 14px;">timer</span>
+            @if (ev.countdown) {
+              <div class="flex items-center gap-1">
+                @if (ev.countdown.days > 0) {
+                  <span class="countdown-chip">{{ ev.countdown.days }}<span class="text-[#555]">d</span></span>
+                }
+                <span class="countdown-chip">{{ pad(ev.countdown.hours) }}<span class="text-[#555]">h</span></span>
+                <span class="countdown-chip">{{ pad(ev.countdown.minutes) }}<span class="text-[#555]">m</span></span>
+                @if (ev.countdown.days === 0) {
+                  <span class="countdown-chip">{{ pad(ev.countdown.seconds) }}<span class="text-[#555]">s</span></span>
+                }
+              </div>
+            } @else {
+              <span class="text-[#E8593C] text-xs font-semibold">Starting now!</span>
+            }
+          </div>
+
+          <button
+            class="mt-0.5 w-full rounded-lg border border-[#2a2a2a] bg-transparent py-1.5 text-xs text-[#f0f0f0] transition-all duration-200 hover:border-[#E8593C] hover:text-[#E8593C] cursor-pointer"
+            (click)="goToFindTeam()"
+          >Find a team</button>
         </div>
-        <button class="mt-1 w-full rounded-lg border border-[#2a2a2a] bg-transparent py-1.5 text-xs text-[#f0f0f0] transition-all duration-200 hover:border-[#E8593C] hover:text-[#E8593C] cursor-pointer" (click)="goToFindTeam()">
-          Find a team
-        </button>
-      </div>
+      }
+
+    } @else {
+      <p class="text-[#555] text-xs text-center py-2">Sign in to save events</p>
     }
   </div>
 
-  <!-- Trending -->
+  <!-- ── Trending ───────────────────────────────────────────────────── -->
   <div class="flex flex-col gap-3">
     <span class="text-[#f0f0f0] text-sm font-semibold">Trending in MK</span>
     @for (item of trending(); track item.tag) {
@@ -69,13 +158,12 @@
 
 </aside>
 
-<!-- Mobile: floating button + slideup -->
+
+<!-- ═══════════════════════  MOBILE PANEL  ════════════════════════ -->
 <div class="mobile-panel">
 
   <button class="mobile-panel__btn" (click)="toggle()">
-    <span class="material-icons" style="font-size: 20px;">
-      {{ isOpen() ? 'close' : 'info' }}
-    </span>
+    <span class="material-icons" style="font-size: 20px;">{{ isOpen() ? 'close' : 'info' }}</span>
   </button>
 
   @if (isOpen()) {
@@ -86,47 +174,87 @@
     <div class="mobile-panel__handle"></div>
     <div class="overflow-y-auto flex flex-col gap-4 pb-8 px-2">
 
-      <!-- Qa Card -->
-      <div class="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4 flex flex-col items-center gap-3">
-        <div class="w-16 h-16 rounded-full border-2 border-[#E8593C] bg-[#2a2a2a] flex items-center justify-center">
+      <!-- profile card -->
+      @if (auth.isLoggedIn() && profile()) {
+        <div class="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4 flex flex-col items-center gap-3">
+          <div class="w-16 h-16 rounded-full border-2 border-[#E8593C] bg-[#2a2a2a] flex items-center justify-center overflow-hidden" (click)="goToProfile()">
+            @if (profile()?.avatar) {
+              <img [src]="profile()!.avatar" alt="avatar" class="w-full h-full object-cover" />
+            } @else {
+              <span class="material-icons text-[#888888]" style="font-size: 40px;">account_circle</span>
+            }
+          </div>
+          <div class="text-center">
+            <p class="text-[#f0f0f0] font-semibold text-sm m-0">{{ profile()!.name }}</p>
+            <p class="text-[#888888] text-xs mt-1 m-0">
+              {{ profile()!.role || 'No role set' }}
+              @if (profile()!.location) { <span> • {{ profile()!.location }}</span> }
+            </p>
+          </div>
+          <div class="w-full grid grid-cols-3 gap-2 border-t border-[#2a2a2a] pt-3">
+            <div class="flex flex-col items-center gap-0.5">
+              <span class="text-[#f0f0f0] font-bold text-sm">{{ profile()!.stats.projects }}</span>
+              <span class="text-[#888888] text-[11px]">Projects</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5 border-x border-[#2a2a2a]">
+              <span class="text-[#f0f0f0] font-bold text-sm">{{ profile()!.stats.hackathons }}</span>
+              <span class="text-[#888888] text-[11px]">Hackathons</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5">
+              <span class="text-[#f0f0f0] font-bold text-sm">{{ repLabel }}</span>
+              <span class="text-[#888888] text-[11px]">Rep</span>
+            </div>
+          </div>
+        </div>
+      } @else if (!auth.isLoggedIn()) {
+        <div class="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4 flex flex-col items-center gap-3 text-center">
           <span class="material-icons text-[#888888]" style="font-size: 40px;">account_circle</span>
+          <p class="text-[#888888] text-xs m-0">Sign in to see your profile & saved events</p>
+          <button class="w-full rounded-lg bg-[#E8593C] py-1.5 text-xs text-white font-medium cursor-pointer" (click)="goToLogin()">Sign In</button>
         </div>
-        <div class="text-center">
-          <p class="text-[#f0f0f0] font-semibold text-sm m-0">{{ currentUser().name }}</p>
-          <p class="text-[#888888] text-xs mt-1 m-0">{{ currentUser().role }} • {{ currentUser().location }}</p>
-        </div>
-        <div class="w-full grid grid-cols-3 gap-2 border-t border-[#2a2a2a] pt-3">
-          <div class="flex flex-col items-center gap-0.5">
-            <span class="text-[#f0f0f0] font-bold text-sm">{{ currentUser().projects }}</span>
-            <span class="text-[#888888] text-[11px]">Workspace</span>
-          </div>
-          <div class="flex flex-col items-center gap-0.5 border-x border-[#2a2a2a]">
-            <span class="text-[#f0f0f0] font-bold text-sm">{{ currentUser().hackathons }}</span>
-            <span class="text-[#888888] text-[11px]">Hackathons</span>
-          </div>
-          <div class="flex flex-col items-center gap-0.5">
-            <span class="text-[#f0f0f0] font-bold text-sm">{{ currentUser().rep }}</span>
-            <span class="text-[#888888] text-[11px]">Rep</span>
-          </div>
-        </div>
-      </div>
+      }
 
-      <!-- Hackathons -->
+      <!-- upcoming saved events -->
       <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between">
-          <span class="text-[#f0f0f0] text-sm font-semibold">Upcoming Hackathons</span>
-          <span class="text-[#E8593C] text-xs cursor-pointer hover:underline">View All</span>
+          <span class="text-[#f0f0f0] text-sm font-semibold">Upcoming</span>
+          <span class="text-[#E8593C] text-xs cursor-pointer hover:underline" (click)="goToHackathons()">Browse all</span>
         </div>
-        @for (hackathon of hackathons(); track hackathon.title) {
-          <div class="flex flex-col gap-1.5 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-3">
-            <span class="text-[#E8593C] text-[11px] font-semibold">{{ hackathon.dateRange }} • {{ hackathon.location }}</span>
-            <span class="text-[#f0f0f0] text-sm font-medium">{{ hackathon.title }}</span>
-            <span class="text-[#888888] text-xs">{{ hackathon.teams }} teams looking for members</span>
-          </div>
+
+        @if (auth.isLoggedIn()) {
+          @if (events().length === 0) {
+            <p class="text-[#555] text-xs text-center py-2">No saved events yet.</p>
+          }
+          @for (ev of events(); track ev.id) {
+            <div class="flex flex-col gap-2 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-3">
+              <div class="flex items-center justify-between">
+                <span
+                  class="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full"
+                  [class.bg-orange-500]="ev.type === 'HACKATHON'"
+                  [class.text-white]="ev.type === 'HACKATHON'"
+                  [class.bg-purple-600]="ev.type === 'WEBINAR'"
+                >{{ ev.type }}</span>
+                @if (ev.location) {
+                  <span class="text-[#555] text-[10px]">{{ ev.location }}</span>
+                }
+              </div>
+              <span class="text-[#f0f0f0] text-sm font-medium">{{ ev.title }}</span>
+              <div class="flex items-center gap-1.5">
+                <span class="material-icons-outlined text-[#E8593C]" style="font-size: 14px;">timer</span>
+                @if (ev.countdown) {
+                  <span class="text-[#f0f0f0] text-xs font-mono">{{ formatCountdown(ev.countdown) }}</span>
+                } @else {
+                  <span class="text-[#E8593C] text-xs font-semibold">Starting now!</span>
+                }
+              </div>
+            </div>
+          }
+        } @else {
+          <p class="text-[#555] text-xs text-center py-2">Sign in to save events</p>
         }
       </div>
 
-      <!-- Trending -->
+      <!-- trending -->
       <div class="flex flex-col gap-3">
         <span class="text-[#f0f0f0] text-sm font-semibold">Trending in MK</span>
         @for (item of trending(); track item.tag) {
@@ -139,5 +267,4 @@
 
     </div>
   </div>
-
 </div>
