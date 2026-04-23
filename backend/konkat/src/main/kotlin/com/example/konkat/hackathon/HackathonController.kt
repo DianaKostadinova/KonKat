@@ -102,6 +102,23 @@ class HackathonController(
         })
     }
 
+    /** GET /api/hackathons/registered — upcoming hackathons the current user is registered for */
+    @GetMapping("/registered")
+    fun getRegistered(request: HttpServletRequest): ResponseEntity<List<HackathonDto>> {
+        val userId = (request.getAttribute("userId") as? Long)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required")
+
+        val hackathons = participantRepository.findByUserId(userId)
+            .map { it.hackathon }
+            .filter { it.status == HackathonStatus.UPCOMING || it.status == HackathonStatus.OPEN }
+
+        return ResponseEntity.ok(hackathons.map { h ->
+            val saved = savedEventRepository.existsByUserIdAndEventTypeAndEventId(userId, EventType.HACKATHON, h.id)
+            val count = participantRepository.countByHackathonId(h.id)
+            h.toDto(saved, registered = true, count)
+        })
+    }
+
     /** POST /api/hackathons — create a hackathon (auth required) */
     @PostMapping
     fun createHackathon(
