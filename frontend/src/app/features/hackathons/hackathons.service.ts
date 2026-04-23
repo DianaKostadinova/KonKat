@@ -83,7 +83,13 @@ export class HackathonService {
         this._hackathons.update(list =>
           list.map(h => h.id === id ? { ...h, registered: res.registered } : h)
         );
+        this.eventService.triggerRefresh();
       }));
+  }
+
+  /** GET /api/hackathons/registered — upcoming hackathons the user is registered for. */
+  getRegisteredUpcoming(): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/hackathons/registered`, { headers: this.authHeaders() });
   }
 
   // ── Mappers ───────────────────────────────────────────────────────────────

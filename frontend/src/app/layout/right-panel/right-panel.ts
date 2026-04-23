@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, signal, effect } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { AuthService } from '../../shared/auth/auth.service';
 import { ProfileService } from '../../features/profile/profile.service';
 import { EventService } from '../../shared/event/event.service';
+import { HackathonService } from '../../features/hackathons/hackathons.service';
 import { UserProfile } from '../../features/profile/profile.model';
 import { EventWithCountdown, CountdownTime } from '../../shared/event/saved-event.model';
 
@@ -18,10 +19,31 @@ import { EventWithCountdown, CountdownTime } from '../../shared/event/saved-even
 })
 export class RightPanel implements OnInit, OnDestroy {
 
-  isOpen   = signal(false);
-  profile  = signal<UserProfile | null>(null);
-  events   = signal<EventWithCountdown[]>([]);
-  loading  = signal(true);
+  isOpen           = signal(false);
+  profile          = signal<UserProfile | null>(null);
+  events           = signal<EventWithCountdown[]>([]);
+  registeredEvents = signal<EventWithCountdown[]>([]);
+  loading          = signal(true);
+
+  /** Saved events + registered hackathons merged and deduped, registered ones flagged. */
+  upcomingEvents = computed<EventWithCountdown[]>(() => {
+    const saved      = this.events();
+    const registered = this.registeredEvents().map(e => ({ ...e, registered: true }));
+    const savedIds   = new Set(saved.map(e => e.id + '|' + e.type));
+    const extra      = registered.filter(e => !savedIds.has(e.id + '|' + e.type));
+    const merged     = [
+      ...saved.map(e => ({
+        ...e,
+        registered: registered.some(r => r.id === e.id && r.type === e.type),
+      })),
+      ...extra,
+    ];
+    return merged.sort((a, b) => {
+      if (!a.startDate) return 1;
+      if (!b.startDate) return -1;
+      return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+    });
+  });
 
   private timer:       ReturnType<typeof setInterval> | null = null;
   private refreshSub: Subscription | null = null;
@@ -39,6 +61,7 @@ export class RightPanel implements OnInit, OnDestroy {
     public  auth: AuthService,
     private profileService: ProfileService,
     private eventService: EventService,
+    private hackathonService: HackathonService,
   ) {
     effect(() => {
       document.body.style.overflow = this.isOpen() ? 'hidden' : '';
@@ -53,9 +76,13 @@ export class RightPanel implements OnInit, OnDestroy {
       });
 
       this.loadSavedEvents();
+      this.loadRegisteredEvents();
 
-      // Reload whenever a save/unsave happens anywhere in the app
-      this.refreshSub = this.eventService.refresh$.subscribe(() => this.loadSavedEvents());
+      // Reload whenever a save/unsave/register happens anywhere in the app
+      this.refreshSub = this.eventService.refresh$.subscribe(() => {
+        this.loadSavedEvents();
+        this.loadRegisteredEvents();
+      });
     } else {
       this.loading.set(false);
     }
@@ -76,10 +103,32 @@ export class RightPanel implements OnInit, OnDestroy {
     });
   }
 
+  private loadRegisteredEvents(): void {
+    this.hackathonService.getRegisteredUpcoming().subscribe({
+      next: list => {
+        console.log('[RightPanel] registered hackathons:', list);
+        this.registeredEvents.set(list.map(h => ({
+          id:        h.id,
+          type:      'HACKATHON' as const,
+          title:     h.title,
+          startDate: h.startDate ?? null,
+          endDate:   h.endDate   ?? null,
+          location:  h.location  ?? null,
+          tags:      h.tags      ?? [],
+          countdown: this.calcCountdown(h.startDate ?? null),
+        })));
+      },
+      error: err => console.error('[RightPanel] getRegisteredUpcoming failed:', err),
+    });
+  }
+
   // ── Countdown ─────────────────────────────────────────────────────────────
 
   private tickCountdowns(): void {
     this.events.update(list =>
+      list.map(e => ({ ...e, countdown: this.calcCountdown(e.startDate) }))
+    );
+    this.registeredEvents.update(list =>
       list.map(e => ({ ...e, countdown: this.calcCountdown(e.startDate) }))
     );
   }

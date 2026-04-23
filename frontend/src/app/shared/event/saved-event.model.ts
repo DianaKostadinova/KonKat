@@ -17,4 +17,5 @@ export interface CountdownTime {
 
 export interface EventWithCountdown extends SavedEvent {
   countdown: CountdownTime | null;
+  registered?: boolean;
 }
