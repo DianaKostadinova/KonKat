@@ -165,15 +165,15 @@ class HackathonController(
         participantRepository.save(participant)
         val count = participantRepository.countByHackathonId(id)
 
-        // Notify the organizer — runs in its own REQUIRES_NEW transaction so a
-        // failure here can never roll back the registration above.
         if (hackathon.organizer.id != userId) {
-            notificationSender.send(
-                recipient   = hackathon.organizer,
-                actor       = user,
-                type        = NotificationType.HACKATHON_REGISTER,
-                hackathonId = hackathon.id,
-            )
+            runCatching {
+                notificationSender.send(
+                    recipient   = hackathon.organizer,
+                    actor       = user,
+                    type        = NotificationType.HACKATHON_REGISTER,
+                    hackathonId = hackathon.id,
+                )
+            }
         }
 
         return ResponseEntity.ok(RegisterResponse(true, participant.teamName, participant.role, count))
@@ -218,14 +218,15 @@ class HackathonController(
         }
         savedEventRepository.save(SavedEvent(user = user, eventType = EventType.HACKATHON, eventId = id))
 
-        // Notify organizer — isolated transaction, failure is safe to ignore
         if (hackathon.organizer.id != userId) {
-            notificationSender.send(
-                recipient   = hackathon.organizer,
-                actor       = user,
-                type        = NotificationType.HACKATHON_SAVED,
-                hackathonId = hackathon.id,
-            )
+            runCatching {
+                notificationSender.send(
+                    recipient   = hackathon.organizer,
+                    actor       = user,
+                    type        = NotificationType.HACKATHON_SAVED,
+                    hackathonId = hackathon.id,
+                )
+            }
         }
 
         return ResponseEntity.ok(mapOf("saved" to true))
