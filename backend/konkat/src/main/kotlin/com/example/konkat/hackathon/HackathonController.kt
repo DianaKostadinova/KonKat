@@ -3,14 +3,13 @@ package com.example.konkat.hackathon
 import com.example.konkat.event.EventType
 import com.example.konkat.event.SavedEvent
 import com.example.konkat.event.SavedEventRepository
-import com.example.konkat.notification.Notification
-import com.example.konkat.notification.NotificationRepository
+import com.example.konkat.notification.NotificationSender
 import com.example.konkat.notification.NotificationType
 import com.example.konkat.user.UserRepository
 import jakarta.servlet.http.HttpServletRequest
-import jakarta.transaction.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDateTime
@@ -75,13 +74,13 @@ data class ParticipantDto(
 
 @RestController
 @RequestMapping("/api/hackathons")
-@Transactional
+@Transactional                          // Spring @Transactional (not jakarta)
 class HackathonController(
-    private val hackathonRepository: HackathonRepository,
-    private val participantRepository: HackathonParticipantRepository,
-    private val savedEventRepository: SavedEventRepository,
-    private val notificationRepository: NotificationRepository,
-    private val userRepository: UserRepository,
+    private val hackathonRepository:    HackathonRepository,
+    private val participantRepository:  HackathonParticipantRepository,
+    private val savedEventRepository:   SavedEventRepository,
+    private val notificationSender:     NotificationSender,  // isolated REQUIRES_NEW transactions
+    private val userRepository:         UserRepository,
 ) {
 
     /** GET /api/hackathons — list upcoming + open hackathons (public) */
@@ -109,7 +108,8 @@ class HackathonController(
         @RequestBody body: CreateHackathonRequest,
         request: HttpServletRequest,
     ): ResponseEntity<HackathonDto> {
-        val userId    = request.getAttribute("userId") as Long
+        val userId    = (request.getAttribute("userId") as? Long)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required")
         val organizer = userRepository.findById(userId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
         }
@@ -137,17 +137,18 @@ class HackathonController(
         @RequestBody(required = false) body: RegisterRequest?,
         request: HttpServletRequest,
     ): ResponseEntity<RegisterResponse> {
-        val userId   = request.getAttribute("userId") as Long
-        val existing = participantRepository.findByUserIdAndHackathonId(userId, id)
+        val userId = (request.getAttribute("userId") as? Long)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required")
 
+        val existing = participantRepository.findByUserIdAndHackathonId(userId, id)
         if (existing != null) {
-            // Unregister
+            // Already registered → unregister (toggle)
             participantRepository.delete(existing)
             val count = participantRepository.countByHackathonId(id)
             return ResponseEntity.ok(RegisterResponse(false, null, null, count))
         }
 
-        // Register
+        // Not registered yet → register
         val hackathon = hackathonRepository.findById(id).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "Hackathon not found")
         }
@@ -162,20 +163,19 @@ class HackathonController(
             role      = body?.role?.trim()?.ifBlank { null },
         )
         participantRepository.save(participant)
+        val count = participantRepository.countByHackathonId(id)
 
-        // Notify the organizer (don't notify yourself)
+        // Notify the organizer — runs in its own REQUIRES_NEW transaction so a
+        // failure here can never roll back the registration above.
         if (hackathon.organizer.id != userId) {
-            notificationRepository.save(
-                Notification(
-                    recipient   = hackathon.organizer,
-                    actor       = user,
-                    type        = NotificationType.HACKATHON_REGISTER,
-                    hackathonId = hackathon.id,
-                )
+            notificationSender.send(
+                recipient   = hackathon.organizer,
+                actor       = user,
+                type        = NotificationType.HACKATHON_REGISTER,
+                hackathonId = hackathon.id,
             )
         }
 
-        val count = participantRepository.countByHackathonId(id)
         return ResponseEntity.ok(RegisterResponse(true, participant.teamName, participant.role, count))
     }
 
@@ -185,12 +185,12 @@ class HackathonController(
         val participants = participantRepository.findByHackathonId(id)
         return ResponseEntity.ok(participants.map { p ->
             ParticipantDto(
-                userId   = p.user.id,
-                name     = p.user.displayName,
+                userId    = p.user.id,
+                name      = p.user.displayName,
                 avatarUrl = p.user.avatarUrl,
-                role     = p.role,
-                teamName = p.teamName,
-                joinedAt = p.joinedAt?.format(ISO) ?: "",
+                role      = p.role,
+                teamName  = p.teamName,
+                joinedAt  = p.joinedAt?.format(ISO) ?: "",
             )
         })
     }
@@ -201,34 +201,34 @@ class HackathonController(
         @PathVariable id: Long,
         request: HttpServletRequest,
     ): ResponseEntity<Map<String, Boolean>> {
-        val userId   = request.getAttribute("userId") as Long
+        val userId = (request.getAttribute("userId") as? Long)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required")
+
         val existing = savedEventRepository.findByUserIdAndEventTypeAndEventId(userId, EventType.HACKATHON, id)
-
-        return if (existing != null) {
+        if (existing != null) {
             savedEventRepository.delete(existing)
-            ResponseEntity.ok(mapOf("saved" to false))
-        } else {
-            val hackathon = hackathonRepository.findById(id).orElseThrow {
-                ResponseStatusException(HttpStatus.NOT_FOUND, "Hackathon not found")
-            }
-            val user = userRepository.findById(userId).orElseThrow {
-                ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
-            }
-            savedEventRepository.save(SavedEvent(user = user, eventType = EventType.HACKATHON, eventId = id))
-
-            // Notify organizer (don't notify yourself)
-            if (hackathon.organizer.id != userId) {
-                notificationRepository.save(
-                    Notification(
-                        recipient   = hackathon.organizer,
-                        actor       = user,
-                        type        = NotificationType.HACKATHON_SAVED,
-                        hackathonId = hackathon.id,
-                    )
-                )
-            }
-            ResponseEntity.ok(mapOf("saved" to true))
+            return ResponseEntity.ok(mapOf("saved" to false))
         }
+
+        val hackathon = hackathonRepository.findById(id).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Hackathon not found")
+        }
+        val user = userRepository.findById(userId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+        }
+        savedEventRepository.save(SavedEvent(user = user, eventType = EventType.HACKATHON, eventId = id))
+
+        // Notify organizer — isolated transaction, failure is safe to ignore
+        if (hackathon.organizer.id != userId) {
+            notificationSender.send(
+                recipient   = hackathon.organizer,
+                actor       = user,
+                type        = NotificationType.HACKATHON_SAVED,
+                hackathonId = hackathon.id,
+            )
+        }
+
+        return ResponseEntity.ok(mapOf("saved" to true))
     }
 
     // ── Mapping ───────────────────────────────────────────────────────────────

@@ -5,7 +5,7 @@ import com.example.konkat.project.ProjectRepository
 import com.example.konkat.user.User
 import com.example.konkat.user.UserRepository
 import com.example.konkat.project.Project
-import jakarta.transaction.Transactional
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam

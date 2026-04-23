@@ -3,7 +3,7 @@ package com.example.konkat.user
 import com.example.konkat.post.PostRepository
 import com.example.konkat.social.FollowRepository
 import jakarta.servlet.http.HttpServletRequest
-import jakarta.transaction.Transactional
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*

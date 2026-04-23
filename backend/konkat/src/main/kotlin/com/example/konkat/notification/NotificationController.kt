@@ -2,8 +2,8 @@ package com.example.konkat.notification
 
 import com.example.konkat.user.UserRepository
 import jakarta.servlet.http.HttpServletRequest
-import jakarta.transaction.Transactional
 import org.springframework.http.HttpStatus
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException

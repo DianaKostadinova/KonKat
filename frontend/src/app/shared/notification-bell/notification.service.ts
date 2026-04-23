@@ -1,6 +1,7 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Notification, NotificationType } from './notification-bell.model';
+import { AuthService } from '../auth/auth.service';
 
 const API = 'http://localhost:8081/api';
 
@@ -59,8 +60,18 @@ export class NotificationService {
 
   unreadCount = computed(() => this._notifications().filter(n => !n.read).length);
 
+  private auth = inject(AuthService);
+
   constructor(private http: HttpClient) {
-    this.load();
+    // Reload notifications whenever the user logs in (or on page refresh if already logged in)
+    effect(() => {
+      if (this.auth.isLoggedIn()) {
+        this.load();
+      } else {
+        // Clear stale notifications on logout
+        this._notifications.set([]);
+      }
+    });
   }
 
   load(): void {

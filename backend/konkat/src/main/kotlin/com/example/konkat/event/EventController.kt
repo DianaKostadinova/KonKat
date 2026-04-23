@@ -3,7 +3,7 @@ package com.example.konkat.event
 import com.example.konkat.hackathon.HackathonRepository
 import com.example.konkat.webinar.WebinarRepository
 import jakarta.servlet.http.HttpServletRequest
-import jakarta.transaction.Transactional
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime

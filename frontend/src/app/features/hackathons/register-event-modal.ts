@@ -55,13 +55,20 @@ export class RegisterEventModal {
         : {};
 
       this.hackathonService.registerForHackathon(this.hackathon.id, payload).subscribe({
-        next: () => {
-          this.buildPostContent();
-          this.step.set('share');
-          this.registered.emit();
+        next: (res) => {
+          if (res.registered) {
+            this.buildPostContent();
+            this.step.set('share');
+            this.registered.emit();
+          } else {
+            // Was already registered — toggled off
+            this.registered.emit();
+            this.close.emit();
+          }
         },
-        error: () => {
-          this.error.set('Registration failed. You may already be registered.');
+        error: (err) => {
+          const msg = err?.error?.message ?? err?.message ?? '';
+          this.error.set(msg || 'Registration failed. Please try again.');
           this.step.set('choose');
         },
       });

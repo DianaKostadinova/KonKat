@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -41,8 +41,8 @@ export class AuthService {
       this.setSession(res.token, res.user);
       this.router.navigate(['/feed']);
       return { success: true };
-    } catch {
-      return { success: false, error: 'Invalid credentials' };
+    } catch (err) {
+      return { success: false, error: this.extractError(err, 'Wrong email or password.') };
     }
   }
 
@@ -57,8 +57,8 @@ export class AuthService {
       this.setSession(res.token, res.user);
       this.router.navigate(['/profile/edit'], { queryParams: { setup: 'true' } });
       return { success: true };
-    } catch {
-      return { success: false, error: 'Registration failed. Email may already be in use.' };
+    } catch (err) {
+      return { success: false, error: this.extractError(err, 'Registration failed. Try a different email.') };
     }
   }
 
@@ -94,5 +94,15 @@ export class AuthService {
       this._user.set(JSON.parse(user));
       this._isLoggedIn.set(true);
     }
+  }
+
+  /** Pull the backend's error message out of an HttpErrorResponse, or fall back to a default. */
+  private extractError(err: unknown, fallback: string): string {
+    if (err instanceof HttpErrorResponse) {
+      // Backend sends { error: "..." } in the response body
+      const msg = err.error?.error ?? err.error?.message ?? err.message;
+      if (msg && typeof msg === 'string' && !msg.startsWith('Http failure')) return msg;
+    }
+    return fallback;
   }
 }

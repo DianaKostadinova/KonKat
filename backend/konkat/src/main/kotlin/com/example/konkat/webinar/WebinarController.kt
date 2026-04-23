@@ -5,8 +5,8 @@ import com.example.konkat.event.SavedEvent
 import com.example.konkat.event.SavedEventRepository
 import com.example.konkat.user.UserRepository
 import jakarta.servlet.http.HttpServletRequest
-import jakarta.transaction.Transactional
 import org.springframework.http.HttpStatus
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
@@ -80,7 +80,8 @@ class WebinarController(
         @RequestBody body: CreateWebinarRequest,
         request: HttpServletRequest,
     ): ResponseEntity<WebinarDto> {
-        val userId    = request.getAttribute("userId") as Long
+        val userId = (request.getAttribute("userId") as? Long)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required")
         val organizer = userRepository.findById(userId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
         }
@@ -108,7 +109,8 @@ class WebinarController(
         @PathVariable id: Long,
         request: HttpServletRequest,
     ): ResponseEntity<Map<String, Boolean>> {
-        val userId   = request.getAttribute("userId") as Long
+        val userId = (request.getAttribute("userId") as? Long)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required")
         val existing = savedEventRepository.findByUserIdAndEventTypeAndEventId(userId, EventType.WEBINAR, id)
 
         return if (existing != null) {
