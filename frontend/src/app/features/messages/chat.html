@@ -11,12 +11,27 @@
           <span class="text-[#888888] text-xs">{{ totalUnread() }} unread</span>
         }
       </div>
-      <button class="flex items-center justify-center w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all">
-        <span class="material-icons-outlined" style="font-size: 20px;">edit</span>
-      </button>
+      <div class="flex items-center gap-1">
+        <!-- New Group Chat button -->
+        <button
+          class="flex items-center justify-center w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all"
+          title="New group chat"
+          (click)="openGcModal()"
+        >
+          <span class="material-icons-outlined" style="font-size: 20px;">group_add</span>
+        </button>
+        <!-- New DM button -->
+        <button
+          class="flex items-center justify-center w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all"
+          title="New message"
+          (click)="openDmModal()"
+        >
+          <span class="material-icons-outlined" style="font-size: 20px;">edit</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Search -->
+    <!-- Search conversations -->
     <div class="px-3 py-2 border-b border-[#2a2a2a]">
       <div class="flex items-center gap-2 bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 h-8">
         <span class="material-icons-outlined text-[#888888]" style="font-size: 16px;">search</span>
@@ -30,12 +45,12 @@
 
     <!-- Conversation items -->
     <div class="flex flex-col overflow-y-auto flex-1">
-      @for (conv of conversations(); track conv.id) {
+      @for (conv of conversations(); track conv.id + conv.type) {
         <div
           class="flex items-center gap-3 px-4 py-3 cursor-pointer transition-all border-b border-[#1e1e1e] hover:bg-[#1e1e1e]"
-          [class.bg-[#1e1e1e]]="activeId() === conv.id"
+          [class.bg-\[#1e1e1e\]]="activeId() === conv.id"
           [class.border-l-2]="activeId() === conv.id"
-          [class.border-l-[#E8593C]]="activeId() === conv.id"
+          [class.border-l-\[#E8593C\]]="activeId() === conv.id"
           (click)="openConversation(conv.id)"
         >
           <!-- Avatar -->
@@ -73,43 +88,49 @@
           </div>
         </div>
       }
+
+      @if (conversations().length === 0) {
+        <div class="flex flex-col items-center justify-center flex-1 gap-2 py-12">
+          <span class="material-icons text-[#2a2a2a]" style="font-size: 40px;">chat_bubble_outline</span>
+          <p class="text-[#555] text-xs m-0">No conversations yet</p>
+        </div>
+      }
     </div>
 
   </div>
 
   <!-- Right: Active conversation -->
-  @if (activeConv()) {
+  @if (activeConv(); as conv) {
     <div class="chat-window">
 
       <!-- Chat header -->
       <div class="flex items-center gap-3 px-4 py-3 border-b border-[#2a2a2a] bg-[#111111]">
-        <!-- Back button mobile -->
         <button
           class="mobile-back flex items-center justify-center w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] transition-all"
-          (click)="activeId.set(null)"
+          (click)="activeId.set(null); chatService.stopPolling()"
         >
           <span class="material-icons" style="font-size: 20px;">arrow_back</span>
         </button>
 
         <div class="relative flex-shrink-0">
           <div class="w-9 h-9 rounded-full bg-[#2a2a2a] flex items-center justify-center">
-            @if (activeConv()!.type === 'group') {
+            @if (conv.type === 'group') {
               <span class="material-icons text-[#888888]" style="font-size: 18px;">group</span>
             } @else {
               <span class="material-icons text-[#888888]" style="font-size: 22px;">account_circle</span>
             }
           </div>
-          @if (activeConv()!.online && activeConv()!.type === 'dm') {
+          @if (conv.online && conv.type === 'dm') {
             <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#28c840] border-2 border-[#111111]"></span>
           }
         </div>
 
         <div class="flex flex-col flex-1">
-          <span class="text-[#f0f0f0] text-sm font-semibold">{{ activeConv()!.name }}</span>
-          @if (activeConv()!.type === 'group') {
-            <span class="text-[#888888] text-xs">{{ activeConv()!.members.length }} members</span>
-          } @else {
-            <span class="text-[#28c840] text-xs" *ngIf="activeConv()!.online">Online</span>
+          <span class="text-[#f0f0f0] text-sm font-semibold">{{ conv.name }}</span>
+          @if (conv.type === 'group') {
+            <span class="text-[#888888] text-xs">{{ conv.members.length }} members</span>
+          } @else if (conv.online) {
+            <span class="text-[#28c840] text-xs">Online</span>
           }
         </div>
 
@@ -120,14 +141,14 @@
 
       <!-- Messages -->
       <div class="messages-container" #messageContainer>
-        @for (msg of activeConv()!.messages; track msg.id) {
+        @for (msg of conv.messages; track msg.id) {
           <div class="flex flex-col mb-3"
                [class.items-end]="isMe(msg.senderId)"
                [class.items-start]="!isMe(msg.senderId)">
 
-            @if (!isMe(msg.senderId) && activeConv()!.type === 'group') {
+            @if (!isMe(msg.senderId) && conv.type === 'group') {
               <span class="text-[#888888] text-[11px] ml-1 mb-0.5">
-                {{ chatService.getMemberName(activeConv()!, msg.senderId) }}
+                {{ msg.senderName ?? chatService.getMemberName(conv, msg.senderId) }}
               </span>
             }
 
@@ -193,7 +214,6 @@
 
     </div>
   } @else {
-    <!-- Empty state -->
     <div class="chat-empty">
       <span class="material-icons text-[#2a2a2a]" style="font-size: 64px;">chat_bubble_outline</span>
       <p class="text-[#888888] text-sm m-0">Select a conversation to start chatting</p>
@@ -201,3 +221,144 @@
   }
 
 </div>
+
+<!-- ── New DM Modal ─────────────────────────────────────────────────────────── -->
+@if (showDmModal()) {
+  <div class="modal-backdrop" (click)="closeDmModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>New Message</h3>
+        <button class="modal-close" (click)="closeDmModal()">
+          <span class="material-icons" style="font-size: 20px;">close</span>
+        </button>
+      </div>
+
+      <div class="modal-search">
+        <span class="material-icons-outlined text-[#888888]" style="font-size: 16px;">search</span>
+        <input
+          class="modal-search-input"
+          placeholder="Search by name or username..."
+          [value]="dmSearch()"
+          (input)="onDmSearch($event)"
+          autofocus
+        />
+        @if (dmLoading()) {
+          <span class="material-icons text-[#888888] animate-spin" style="font-size: 16px;">refresh</span>
+        }
+      </div>
+
+      <div class="modal-results">
+        @for (user of dmResults(); track user.id) {
+          <button class="user-row" (click)="startDm(user)">
+            <div class="w-8 h-8 rounded-full bg-[#2a2a2a] flex items-center justify-center flex-shrink-0">
+              <span class="material-icons text-[#888888]" style="font-size: 18px;">account_circle</span>
+            </div>
+            <div class="flex flex-col flex-1 min-w-0 text-left">
+              <span class="text-[#f0f0f0] text-sm font-medium truncate">{{ user.name }}</span>
+              @if (user.username) {
+                <span class="text-[#888888] text-xs">&#64;{{ user.username }}</span>
+              }
+            </div>
+            @if (user.role) {
+              <span class="text-[#888888] text-xs flex-shrink-0">{{ user.role }}</span>
+            }
+          </button>
+        }
+        @if (dmSearch().length >= 2 && !dmLoading() && dmResults().length === 0) {
+          <p class="text-[#555] text-xs text-center py-6 m-0">No users found</p>
+        }
+        @if (dmSearch().length < 2) {
+          <p class="text-[#555] text-xs text-center py-6 m-0">Type at least 2 characters to search</p>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── New Group Chat Modal ─────────────────────────────────────────────────── -->
+@if (showGcModal()) {
+  <div class="modal-backdrop" (click)="closeGcModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>New Group Chat</h3>
+        <button class="modal-close" (click)="closeGcModal()">
+          <span class="material-icons" style="font-size: 20px;">close</span>
+        </button>
+      </div>
+
+      <!-- Group name -->
+      <div class="px-4 pb-3">
+        <input
+          class="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#f0f0f0] outline-none focus:border-[#E8593C] transition-colors placeholder-[#555]"
+          placeholder="Group name..."
+          [value]="gcName()"
+          (input)="gcName.set($any($event.target).value)"
+        />
+      </div>
+
+      <!-- Selected members chips -->
+      @if (gcSelected().length > 0) {
+        <div class="flex flex-wrap gap-2 px-4 pb-3">
+          @for (user of gcSelected(); track user.id) {
+            <div class="gc-chip">
+              <span>{{ user.name.split(' ')[0] }}</span>
+              <button (click)="removeGcMember(user)">
+                <span class="material-icons" style="font-size: 14px;">close</span>
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Search users to add -->
+      <div class="modal-search">
+        <span class="material-icons-outlined text-[#888888]" style="font-size: 16px;">person_add</span>
+        <input
+          class="modal-search-input"
+          placeholder="Add people..."
+          [value]="gcSearch()"
+          (input)="onGcSearch($event)"
+        />
+        @if (gcLoading()) {
+          <span class="material-icons text-[#888888] animate-spin" style="font-size: 16px;">refresh</span>
+        }
+      </div>
+
+      <div class="modal-results">
+        @for (user of gcResults(); track user.id) {
+          <button class="user-row" (click)="addGcMember(user)">
+            <div class="w-8 h-8 rounded-full bg-[#2a2a2a] flex items-center justify-center flex-shrink-0">
+              <span class="material-icons text-[#888888]" style="font-size: 18px;">account_circle</span>
+            </div>
+            <div class="flex flex-col flex-1 min-w-0 text-left">
+              <span class="text-[#f0f0f0] text-sm font-medium truncate">{{ user.name }}</span>
+              @if (user.username) {
+                <span class="text-[#888888] text-xs">&#64;{{ user.username }}</span>
+              }
+            </div>
+            <span class="material-icons text-[#555]" style="font-size: 18px;">add</span>
+          </button>
+        }
+        @if (gcSearch().length >= 2 && !gcLoading() && gcResults().length === 0) {
+          <p class="text-[#555] text-xs text-center py-4 m-0">No users found</p>
+        }
+        @if (gcSearch().length < 2 && gcSelected().length === 0) {
+          <p class="text-[#555] text-xs text-center py-4 m-0">Search for people to add</p>
+        }
+      </div>
+
+      <!-- Create button -->
+      <div class="px-4 pt-2 pb-4">
+        <button
+          class="w-full py-2.5 rounded-lg text-sm font-semibold transition-all border-none cursor-pointer"
+          [style.background]="gcName().trim() && gcSelected().length ? '#E8593C' : '#2a2a2a'"
+          [style.color]="gcName().trim() && gcSelected().length ? 'white' : '#555'"
+          [disabled]="!gcName().trim() || !gcSelected().length || gcCreating()"
+          (click)="createGroup()"
+        >
+          @if (gcCreating()) { Creating... } @else { Create Group }
+        </button>
+      </div>
+    </div>
+  </div>
+}

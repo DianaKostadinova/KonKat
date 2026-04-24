@@ -103,3 +103,149 @@
     display: none;
   }
 }
+
+/* ── Modals ─────────────────────────────────────────────────────────────────── */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal {
+  background: #161616;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.modal-header h3 {
+  color: #f0f0f0;
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: #888888;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.modal-close:hover {
+  background: #2a2a2a;
+  color: #f0f0f0;
+}
+
+.modal-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 16px 4px;
+  padding: 0 12px;
+  height: 36px;
+  background: #111111;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+}
+
+.modal-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: #f0f0f0;
+}
+
+.modal-search-input::placeholder {
+  color: #555;
+}
+
+.modal-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+  min-height: 120px;
+  max-height: 280px;
+}
+
+.modal-results::-webkit-scrollbar { width: 4px; }
+.modal-results::-webkit-scrollbar-track { background: transparent; }
+.modal-results::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.user-row:hover {
+  background: #1e1e1e;
+}
+
+/* Group member chips */
+.gc-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 10px;
+  background: #E8593C22;
+  border: 1px solid #E8593C55;
+  border-radius: 20px;
+  color: #E8593C;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.gc-chip button {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #E8593C;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}

@@ -1,90 +1,203 @@
-import { Injectable, signal } from '@angular/core';
-import { Conversation, Message } from './chat.model';
+import { Injectable, signal, OnDestroy } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { interval, Subscription } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { Conversation, Message, ConversationDto, MessageDto, UserSearchResult } from './chat.model';
+
+const API = 'http://localhost:8081/api';
 
 @Injectable({ providedIn: 'root' })
-export class ChatService {
-  readonly ME_ID = 0;
+export class ChatService implements OnDestroy {
 
-  private conversations = signal<Conversation[]>([
-    {
-      id: 1, type: 'dm', name: 'Ana Jovanovska', unread: 2, online: true,
-      members: [{ id: 1, name: 'Ana Jovanovska', role: 'Fullstack Dev' }],
-      messages: [
-        { id: 1, senderId: 1, content: 'Hey! Did you see the new CodeFest hackathon?', createdAt: '10:32', read: true },
-        { id: 2, senderId: 0, content: 'Yes! I was thinking of joining. You in?', createdAt: '10:33', read: true },
-        { id: 3, senderId: 1, content: 'Definitely! We should form a team. I can do the backend.', createdAt: '10:35', read: true },
-        { id: 4, senderId: 1, content: 'Do you know anyone good at ML?', createdAt: '10:36', read: false },
-      ],
-    },
-    {
-      id: 2, type: 'dm', name: 'Viktor Risteski', unread: 0, online: false,
-      members: [{ id: 2, name: 'Viktor Risteski', role: 'Backend Engineer' }],
-      messages: [
-        { id: 1, senderId: 2, content: 'Thanks for the code review!', createdAt: 'Yesterday', read: true },
-        { id: 2, senderId: 0, content: 'No problem! Your algorithm was clever.', createdAt: 'Yesterday', read: true },
-      ],
-    },
-    {
-      id: 3, type: 'group', name: 'CodeFest Team 🚀', unread: 5, online: true,
-      members: [
-        { id: 1, name: 'Ana Jovanovska', role: 'Fullstack Dev' },
-        { id: 3, name: 'Marko Dimitrovski', role: 'DevOps' },
-        { id: 4, name: 'Sara Blazevska', role: 'Designer' },
-      ],
-      messages: [
-        { id: 1, senderId: 1, content: 'Alright team, let\'s plan the architecture!', createdAt: '09:00', read: true },
-        { id: 2, senderId: 3, content: 'I\'ll set up the Docker containers.', createdAt: '09:05', read: true },
-        { id: 3, senderId: 4, content: 'I\'ll start on the UI mockups tonight.', createdAt: '09:10', read: true },
-        { id: 4, senderId: 1, content: 'Perfect! Let\'s sync tomorrow morning.', createdAt: '09:15', read: false },
-        { id: 5, senderId: 3, content: 'Sounds good 👍', createdAt: '09:16', read: false },
-      ],
-    },
-    {
-      id: 4, type: 'dm', name: 'Sara Blazevska', unread: 1, online: true,
-      members: [{ id: 4, name: 'Sara Blazevska', role: 'UI/UX Designer' }],
-      messages: [
-        { id: 1, senderId: 4, content: 'Check out my new Figma designs!', createdAt: '08:00', read: false },
-      ],
-    },
-  ]);
+  private _conversations = signal<Conversation[]>([]);
+  meId = signal<number>(0);
 
-  getAll() { return this.conversations(); }
+  private pollSub?: Subscription;
+  private convPollSub?: Subscription;
 
-  getById(id: number) {
-    return this.conversations().find(c => c.id === id);
+  constructor(private http: HttpClient) {
+    this.meId.set(this.decodeUserId());
+    this.loadConversations();
+    this.convPollSub = interval(8000).subscribe(() => this.loadConversations());
   }
 
-  sendMessage(conversationId: number, content: string) {
-    this.conversations.update(convs => convs.map(c => {
-      if (c.id !== conversationId) return c;
-      const msg: Message = {
-        id: Date.now(),
-        senderId: this.ME_ID,
-        content,
-        createdAt: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-        read: true,
-      };
-      return { ...c, messages: [...c.messages, msg], unread: 0 };
-    }));
+  private headers(): HttpHeaders {
+    const token = localStorage.getItem('token') ?? '';
+    return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
-  markAsRead(conversationId: number) {
-    this.conversations.update(convs => convs.map(c =>
-      c.id === conversationId
+  private decodeUserId(): number {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return 0;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.userId ?? 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  loadConversations() {
+    this.http.get<ConversationDto[]>(`${API}/messages/conversations`, { headers: this.headers() })
+      .pipe(catchError(() => of([])))
+      .subscribe(dtos => {
+        this._conversations.update(existing =>
+          dtos.map(dto => {
+            const ex = existing.find(e => e.id === dto.id && e.type === dto.type);
+            return {
+              id: dto.id,
+              type: dto.type as 'dm' | 'group',
+              name: dto.name,
+              members: dto.members,
+              unread: dto.unreadCount,
+              messages: ex?.messages ?? [],
+            };
+          })
+        );
+      });
+  }
+
+  getAll(): Conversation[] { return this._conversations(); }
+
+  getById(id: number): Conversation | undefined {
+    return this._conversations().find(c => c.id === id);
+  }
+
+  loadMessages(convId: number, type: 'dm' | 'group') {
+    const url = type === 'dm'
+      ? `${API}/messages/dm/${convId}/messages`
+      : `${API}/messages/group/${convId}/messages`;
+
+    this.http.get<MessageDto[]>(url, { headers: this.headers() })
+      .pipe(catchError(() => of([])))
+      .subscribe(msgs => {
+        this._conversations.update(convs => convs.map(c =>
+          c.id === convId ? { ...c, messages: msgs.map(m => toMessage(m)), unread: 0 } : c
+        ));
+      });
+  }
+
+  startPolling(convId: number, type: 'dm' | 'group') {
+    this.stopPolling();
+
+    this.pollSub = interval(3000).pipe(
+      switchMap(() => {
+        const conv = this._conversations().find(c => c.id === convId);
+        const lastId = conv?.messages.filter(m => m.id > 0).at(-1)?.id ?? 0;
+        const url = type === 'dm'
+          ? `${API}/messages/dm/${convId}/messages?after=${lastId}`
+          : `${API}/messages/group/${convId}/messages?after=${lastId}`;
+        return this.http.get<MessageDto[]>(url, { headers: this.headers() }).pipe(catchError(() => of([])));
+      })
+    ).subscribe(msgs => {
+      if (!msgs.length) return;
+      this._conversations.update(convs => convs.map(c =>
+        c.id === convId
+          ? { ...c, messages: [...c.messages, ...msgs.map(m => toMessage(m))] }
+          : c
+      ));
+    });
+  }
+
+  stopPolling() {
+    this.pollSub?.unsubscribe();
+    this.pollSub = undefined;
+  }
+
+  sendMessage(convId: number, content: string, type: 'dm' | 'group') {
+    const url = type === 'dm'
+      ? `${API}/messages/dm/${convId}/messages`
+      : `${API}/messages/group/${convId}/messages`;
+
+    const optimistic: Message = {
+      id: -Date.now(),
+      senderId: this.meId(),
+      content,
+      createdAt: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      read: false,
+    };
+
+    this._conversations.update(convs => convs.map(c =>
+      c.id === convId ? { ...c, messages: [...c.messages, optimistic] } : c
+    ));
+
+    this.http.post<MessageDto>(url, { content }, { headers: this.headers() })
+      .pipe(catchError(() => of(null)))
+      .subscribe(msg => {
+        if (!msg) return;
+        this._conversations.update(convs => convs.map(c => {
+          if (c.id !== convId) return c;
+          return { ...c, messages: c.messages.map(m => m.id === optimistic.id ? toMessage(msg) : m) };
+        }));
+      });
+  }
+
+  markAsRead(convId: number, type: 'dm' | 'group') {
+    this._conversations.update(convs => convs.map(c =>
+      c.id === convId
         ? { ...c, unread: 0, messages: c.messages.map(m => ({ ...m, read: true })) }
         : c
     ));
+    const url = type === 'dm'
+      ? `${API}/messages/dm/${convId}/read`
+      : `${API}/messages/group/${convId}/read`;
+    this.http.patch(url, {}, { headers: this.headers() }).pipe(catchError(() => of(null))).subscribe();
+  }
+
+  openOrCreateDm(userId: number): Promise<Conversation> {
+    return new Promise((resolve, reject) => {
+      this.http.post<ConversationDto>(`${API}/messages/dm`, { userId }, { headers: this.headers() })
+        .subscribe({
+          next: dto => {
+            const existing = this._conversations().find(c => c.id === dto.id && c.type === 'dm');
+            if (!existing) {
+              const conv: Conversation = { id: dto.id, type: 'dm', name: dto.name, members: dto.members, unread: dto.unreadCount, messages: [] };
+              this._conversations.update(cs => [conv, ...cs]);
+            }
+            resolve(this._conversations().find(c => c.id === dto.id && c.type === 'dm')!);
+          },
+          error: reject,
+        });
+    });
+  }
+
+  createGroup(name: string, memberIds: number[]): Promise<Conversation> {
+    return new Promise((resolve, reject) => {
+      this.http.post<ConversationDto>(`${API}/messages/group`, { name, memberIds }, { headers: this.headers() })
+        .subscribe({
+          next: dto => {
+            const conv: Conversation = { id: dto.id, type: 'group', name: dto.name, members: dto.members, unread: 0, messages: [] };
+            this._conversations.update(cs => [conv, ...cs]);
+            resolve(conv);
+          },
+          error: reject,
+        });
+    });
+  }
+
+  searchUsers(query: string) {
+    return this.http.get<{ users: UserSearchResult[] }>(`${API}/search?q=${encodeURIComponent(query)}`, { headers: this.headers() });
   }
 
   getMemberName(conv: Conversation, senderId: number): string {
-    if (senderId === this.ME_ID) return 'You';
+    if (senderId === this.meId()) return 'You';
     return conv.members.find(m => m.id === senderId)?.name ?? 'Unknown';
   }
 
   getLastMessage(conv: Conversation): string {
     const last = conv.messages.at(-1);
     if (!last) return '';
-    const name = last.senderId === this.ME_ID ? 'You' : conv.members.find(m => m.id === last.senderId)?.name?.split(' ')[0] ?? '';
+    const name = last.senderId === this.meId() ? 'You' : conv.members.find(m => m.id === last.senderId)?.name?.split(' ')[0] ?? '';
     return conv.type === 'group' ? `${name}: ${last.content}` : last.content;
   }
+
+  ngOnDestroy() {
+    this.pollSub?.unsubscribe();
+    this.convPollSub?.unsubscribe();
+  }
+}
+
+function toMessage(dto: MessageDto): Message {
+  return { id: dto.id, senderId: dto.senderId, senderName: dto.senderName, content: dto.content, createdAt: dto.createdAt, read: dto.read };
 }
