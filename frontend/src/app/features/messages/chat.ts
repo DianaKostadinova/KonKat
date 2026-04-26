@@ -17,6 +17,9 @@ export class Chat implements AfterViewChecked, OnDestroy {
   activeId = signal<number | null>(null);
   newMessage = signal('');
   searchQuery = signal('');
+  searchResults = signal<UserSearchResult[]>([]);
+  searchLoading = signal(false);
+  private searchTimer: any;
   shouldScroll = false;
 
   // ── New DM modal ────────────────────────────────────────────────────────────
@@ -88,7 +91,18 @@ export class Chat implements AfterViewChecked, OnDestroy {
   }
 
   onSearch(e: Event) {
-    this.searchQuery.set((e.target as HTMLInputElement).value);
+    const q = (e.target as HTMLInputElement).value;
+    this.searchQuery.set(q);
+    clearTimeout(this.searchTimer);
+    this.searchResults.set([]);
+    if (q.length < 2) { this.searchLoading.set(false); return; }
+    this.searchLoading.set(true);
+    this.searchTimer = setTimeout(() => {
+      this.chatService.searchUsers(q).subscribe({
+        next: res => { this.searchResults.set(res.users); this.searchLoading.set(false); },
+        error: () => this.searchLoading.set(false),
+      });
+    }, 300);
   }
 
   ngAfterViewChecked() {
@@ -103,6 +117,7 @@ export class Chat implements AfterViewChecked, OnDestroy {
     this.chatService.stopPolling();
     clearTimeout(this.dmTimer);
     clearTimeout(this.gcTimer);
+    clearTimeout(this.searchTimer);
   }
 
   // ── New DM ──────────────────────────────────────────────────────────────────
