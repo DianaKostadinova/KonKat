@@ -1,4 +1,5 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, signal, effect } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { PostService } from '../../shared/post-card/post.service';
 import { AuthService } from '../../shared/auth/auth.service';
 import { PostCard } from '../../shared/post-card/post-card';
@@ -22,7 +23,27 @@ export class HomeFeed {
   constructor(
     private postService: PostService,
     public authService: AuthService,
-  ) {}
+    private route: ActivatedRoute,
+  ) {
+    const postId = this.route.snapshot.queryParamMap.get('post');
+    if (postId) {
+      let scrolled = false;
+      effect(() => {
+        const posts = this.posts();
+        if (!scrolled && posts.some(p => String(p.id) === postId)) {
+          scrolled = true;
+          setTimeout(() => {
+            const el = document.getElementById(`post-${postId}`);
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              el.classList.add('post-highlight');
+              setTimeout(() => el.classList.remove('post-highlight'), 2500);
+            }
+          }, 100);
+        }
+      });
+    }
+  }
 
   get currentUser() {
     return this.authService.user();
