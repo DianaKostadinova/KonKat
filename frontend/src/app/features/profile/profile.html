@@ -63,7 +63,14 @@
             Sign Out
           </button>
         } @else {
-          <!-- Other user's profile: Follow / Following button -->
+          <!-- Other user's profile: Message + Follow / Following buttons -->
+          <button
+            (click)="messageUser()"
+            class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-[#888888] border border-[#2a2a2a] bg-transparent cursor-pointer hover:border-[#3a3a3a] hover:text-[#f0f0f0] transition-all"
+          >
+            <span class="material-icons-outlined" style="font-size: 14px;">chat_bubble_outline</span>
+            Message
+          </button>
           <button
             (click)="toggleFollow()"
             [disabled]="followLoading()"

@@ -1,5 +1,5 @@
 import { Component, signal, computed, OnInit } from '@angular/core';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { ProfileService } from './profile.service';
 import { ProjectService } from '../projects/project.service';
 import { PostCard } from '../../shared/post-card/post-card';
@@ -54,6 +54,7 @@ export class Profile implements OnInit {
     public  authService: AuthService,
     private followService: FollowService,
     private route: ActivatedRoute,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -136,6 +137,11 @@ export class Profile implements OnInit {
   }
 
   // ── Other actions ─────────────────────────────────────────────────────────
+
+  messageUser(): void {
+    if (!this.viewedUserId) return;
+    this.router.navigate(['/chat'], { queryParams: { dm: this.viewedUserId } });
+  }
 
   logout(): void { this.authService.logout(); }
 

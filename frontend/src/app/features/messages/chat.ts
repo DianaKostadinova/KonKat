@@ -1,6 +1,7 @@
-import { Component, signal, computed, ViewChild, ElementRef, AfterViewChecked, OnDestroy } from '@angular/core';
+import { Component, signal, computed, ViewChild, ElementRef, AfterViewChecked, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ChatService } from './chat.service';
 import { UserSearchResult } from './chat.model';
 
@@ -11,7 +12,7 @@ import { UserSearchResult } from './chat.model';
   templateUrl: './chat.html',
   styleUrl: './chat.css',
 })
-export class Chat implements AfterViewChecked, OnDestroy {
+export class Chat implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild('messageContainer') messageContainer!: ElementRef;
 
   activeId = signal<number | null>(null);
@@ -39,7 +40,16 @@ export class Chat implements AfterViewChecked, OnDestroy {
   gcCreating = signal(false);
   private gcTimer: any;
 
-  constructor(public chatService: ChatService) {}
+  constructor(public chatService: ChatService, private route: ActivatedRoute) {}
+
+  ngOnInit(): void {
+    const dm = this.route.snapshot.queryParamMap.get('dm');
+    if (dm) {
+      this.chatService.openOrCreateDm(Number(dm)).then(conv => {
+        this.openConversation(conv.id);
+      }).catch(() => {});
+    }
+  }
 
   conversations = computed(() => {
     const q = this.searchQuery().toLowerCase();
