@@ -27,7 +27,6 @@ export class Profile implements OnInit {
   // Follow state — only relevant when viewing someone else's profile
   isFollowing   = signal(false);
   followLoading = signal(false);
-  followerCount = signal(0);
 
   // Follow list modal
   followListOpen = signal(false);
@@ -68,10 +67,7 @@ export class Profile implements OnInit {
       this.viewedUserId = Number(paramId);
 
       this.profileService.loadPublicProfile(this.viewedUserId).subscribe({
-        next: (p) => {
-          this.isFollowing.set(p.isFollowing ?? false);
-          this.followerCount.set(p.stats.followers);
-        },
+        next: (p) => this.isFollowing.set(p.isFollowing ?? false),
       });
 
       this.profileService.loadMyPosts(this.viewedUserId);
@@ -82,9 +78,7 @@ export class Profile implements OnInit {
       this.isOwnProfile = true;
       this.viewedUserId = currentUserId ?? null;
 
-      this.profileService.loadProfile().subscribe({
-        next: (p) => this.followerCount.set(p.stats.followers),
-      });
+      this.profileService.loadProfile().subscribe();
 
       if (currentUserId) {
         this.profileService.loadMyPosts(currentUserId);
@@ -102,7 +96,9 @@ export class Profile implements OnInit {
     this.followService.toggle(this.viewedUserId).subscribe({
       next: (result) => {
         this.isFollowing.set(result.following);
-        this.followerCount.set(result.followerCount);
+        this.profileService.updateProfile({
+          stats: { ...this.profile().stats, followers: result.followerCount },
+        });
         this.followLoading.set(false);
       },
       error: () => this.followLoading.set(false),

@@ -139,11 +139,12 @@ export class ProfileService {
       avatar:     data.avatar    || undefined,
       coverColor: data.coverColor ?? '#E8593C',
       coverImage: data.coverImage || undefined,
-      stats:      data.stats     ?? EMPTY_PROFILE.stats,
-      interests:  data.interests ?? [],
-      techStack:  data.techStack ?? [],
-      badges:     data.badges    ?? [],
-      joinedAt:   data.joinedAt  ?? '',
+      stats:       data.stats       ?? EMPTY_PROFILE.stats,
+      interests:   data.interests   ?? [],
+      techStack:   data.techStack   ?? [],
+      badges:      data.badges      ?? [],
+      joinedAt:    data.joinedAt    ?? '',
+      isFollowing: data.isFollowing ?? undefined,
     });
   }
 
