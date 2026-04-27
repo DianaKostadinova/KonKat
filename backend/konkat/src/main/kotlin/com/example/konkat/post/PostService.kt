@@ -1,5 +1,7 @@
 package com.example.konkat.post
 
+import com.example.konkat.notification.NotificationSender
+import com.example.konkat.notification.NotificationType
 import com.example.konkat.user.UserRepository
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.data.repository.findByIdOrNull
@@ -18,6 +20,7 @@ class PostService(
     private val postReactionRepository: PostReactionRepository,
     private val postCommentRepository: PostCommentRepository,
     private val userRepository: UserRepository,
+    private val notificationSender: NotificationSender,
 ) {
 
     // ── Feed ──────────────────────────────────────────────────────────────────
@@ -81,6 +84,19 @@ class PostService(
             postReactionRepository.save(PostReaction(post = post, user = user, type = type))
             active = true
         }
+
+        // Notify post author when someone reacts (not on removal, not on self-reaction, not on SAVE)
+        if (active && post.author.id != userId) {
+            val notifType = when (type) {
+                ReactionType.LIKE  -> NotificationType.POST_LIKE
+                ReactionType.SHARE -> NotificationType.POST_SHARE
+                else               -> null
+            }
+            if (notifType != null) {
+                notificationSender.send(recipient = post.author, actor = user, type = notifType, postId = postId)
+            }
+        }
+
         return ReactionResultDto(
             type = type,
             active = active,
@@ -101,7 +117,13 @@ class PostService(
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found")
         val author = userRepository.findByIdOrNull(authorId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
-        return postCommentRepository.save(PostComment(post = post, author = author, text = request.text)).toDto()
+        val comment = postCommentRepository.save(PostComment(post = post, author = author, text = request.text))
+
+        if (post.author.id != authorId) {
+            notificationSender.send(recipient = post.author, actor = author, type = NotificationType.POST_COMMENT, postId = postId)
+        }
+
+        return comment.toDto()
     }
 
     @Transactional

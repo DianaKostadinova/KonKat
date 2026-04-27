@@ -18,6 +18,7 @@ function mapType(t: string): NotificationType {
     case 'HACKATHON_STARTED':  return 'hackathon_reminder';
     case 'PROJECT_INTEREST':   return 'join_request';
     case 'PROJECT_MEMBER':     return 'join_approved';
+    case 'MESSAGE':            return 'comment';
     default:                   return 'mention';
   }
 }
@@ -31,9 +32,11 @@ function buildMessage(dto: any): string {
     case 'HACKATHON_STARTED':  return 'A hackathon you registered for has started!';
     case 'POST_LIKE':          return `${actor} liked your post`;
     case 'POST_COMMENT':       return `${actor} commented on your post`;
+    case 'POST_SHARE':         return `${actor} shared your post`;
     case 'FOLLOW':             return `${actor} started following you`;
     case 'PROJECT_INTEREST':   return `${actor} wants to join your project`;
     case 'PROJECT_MEMBER':     return `${actor} added you to a project`;
+    case 'MESSAGE':            return `${actor} sent you a message`;
     default:                   return `${actor} interacted with you`;
   }
 }
@@ -46,9 +49,11 @@ function buildTitle(type: string): string {
     case 'HACKATHON_STARTED':  return 'Hackathon Started!';
     case 'POST_LIKE':          return 'Post Liked';
     case 'POST_COMMENT':       return 'New Comment';
+    case 'POST_SHARE':         return 'Post Shared';
     case 'FOLLOW':             return 'New Follower';
     case 'PROJECT_INTEREST':   return 'Project Interest';
     case 'PROJECT_MEMBER':     return 'Added to Project';
+    case 'MESSAGE':            return 'New Message';
     default:                   return 'Notification';
   }
 }
@@ -61,17 +66,30 @@ export class NotificationService {
   unreadCount = computed(() => this._notifications().filter(n => !n.read).length);
 
   private auth = inject(AuthService);
+  private pollInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(private http: HttpClient) {
-    // Reload notifications whenever the user logs in (or on page refresh if already logged in)
     effect(() => {
       if (this.auth.isLoggedIn()) {
         this.load();
+        this.startPolling();
       } else {
-        // Clear stale notifications on logout
         this._notifications.set([]);
+        this.stopPolling();
       }
     });
+  }
+
+  private startPolling(): void {
+    this.stopPolling();
+    this.pollInterval = setInterval(() => this.load(), 15_000);
+  }
+
+  private stopPolling(): void {
+    if (this.pollInterval !== null) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
   }
 
   load(): void {
@@ -127,9 +145,10 @@ export class NotificationService {
       createdAt:  dto.timeAgo ?? dto.createdAt ?? '',
       avatar:     dto.actorAvatar ?? undefined,
       fromUser:   dto.actorName   ?? undefined,
-      actionUrl:  dto.hackathonId ? '/hackathons'
-                : dto.postId      ? '/feed'
-                : dto.projectId   ? '/projects'
+      actionUrl:  dto.hackathonId    ? '/hackathons'
+                : dto.postId        ? '/feed'
+                : dto.projectId     ? '/projects'
+                : dto.type === 'MESSAGE' ? '/chat'
                 : undefined,
     };
   }

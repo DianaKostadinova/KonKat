@@ -1,5 +1,7 @@
 package com.example.konkat.social
 
+import com.example.konkat.notification.NotificationSender
+import com.example.konkat.notification.NotificationType
 import com.example.konkat.user.UserRepository
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.HttpStatus
@@ -38,6 +40,7 @@ data class FollowUserDto(
 class FollowService(
     private val followRepository: FollowRepository,
     private val userRepository: UserRepository,
+    private val notificationSender: NotificationSender,
 ) {
 
     /**
@@ -68,6 +71,7 @@ class FollowService(
                 ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
             }
             followRepository.save(UserFollow(follower = follower, following = following))
+            notificationSender.send(recipient = following, actor = follower, type = NotificationType.FOLLOW)
             FollowResultDto(
                 following     = true,
                 followerCount = followRepository.countByFollowingId(targetUserId),

@@ -1,5 +1,7 @@
 package com.example.konkat.message
 
+import com.example.konkat.notification.NotificationSender
+import com.example.konkat.notification.NotificationType
 import com.example.konkat.user.UserRepository
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.HttpStatus
@@ -51,6 +53,7 @@ class MessageController(
     private val groupConversationRepository: GroupConversationRepository,
     private val groupMemberRepository: GroupMemberRepository,
     private val groupMessageRepository: GroupMessageRepository,
+    private val notificationSender: NotificationSender,
 ) {
 
     // ── GET /api/messages/conversations — all DM + group for current user ──────
@@ -164,7 +167,10 @@ class MessageController(
         if (conv.participant1.id != userId && conv.participant2.id != userId)
             throw ResponseStatusException(HttpStatus.FORBIDDEN)
 
-        return messageRepository.save(Message(conversation = conv, sender = me, content = body.content.trim())).toDto()
+        val msg = messageRepository.save(Message(conversation = conv, sender = me, content = body.content.trim()))
+        val recipient = if (conv.participant1.id == userId) conv.participant2 else conv.participant1
+        notificationSender.send(recipient = recipient, actor = me, type = NotificationType.MESSAGE)
+        return msg.toDto()
     }
 
     // ── PATCH /api/messages/dm/{id}/read ──────────────────────────────────────
@@ -246,7 +252,11 @@ class MessageController(
         if (!groupMemberRepository.existsByGroupIdAndUserId(id, userId))
             throw ResponseStatusException(HttpStatus.FORBIDDEN)
 
-        return groupMessageRepository.save(GroupMessage(group = group, sender = me, content = body.content.trim())).toGroupDto()
+        val msg = groupMessageRepository.save(GroupMessage(group = group, sender = me, content = body.content.trim()))
+        groupMemberRepository.findByGroupId(id)
+            .filter { it.user.id != userId }
+            .forEach { gm -> notificationSender.send(recipient = gm.user, actor = me, type = NotificationType.MESSAGE) }
+        return msg.toGroupDto()
     }
 
     // ── PATCH /api/messages/group/{id}/read ───────────────────────────────────
