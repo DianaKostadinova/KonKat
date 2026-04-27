@@ -1,7 +1,7 @@
-import { Component,Output,EventEmitter, signal } from '@angular/core';
-import {RouterLink } from '@angular/router';
+import { Component, Output, EventEmitter, signal } from '@angular/core';
+import { RouterLink, Router } from '@angular/router';
 import { NotificationService } from './notification.service';
-import {Notification,NotificationType} from './notification-bell.model';
+import { Notification, NotificationType } from './notification-bell.model';
 
 @Component({
   selector: 'app-notification-dropdown',
@@ -15,7 +15,7 @@ export class NotificationDropdown {
 
   filter = signal<'all' | 'unread'>('all');
 
-  constructor(public notificationService: NotificationService) {}
+  constructor(public notificationService: NotificationService, private router: Router) {}
 
   filteredNotifications() {
     const all = this.notificationService.getAll();
@@ -27,6 +27,9 @@ export class NotificationDropdown {
   onNotificationClick(notification: Notification) {
     this.notificationService.markAsRead(notification.id);
     this.close.emit();
+    if (notification.actionUrl) {
+      this.router.navigateByUrl(notification.actionUrl);
+    }
   }
 
   onDelete(event: Event, id: number) {

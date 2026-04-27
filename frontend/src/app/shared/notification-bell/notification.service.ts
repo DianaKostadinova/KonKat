@@ -145,10 +145,12 @@ export class NotificationService {
       createdAt:  dto.timeAgo ?? dto.createdAt ?? '',
       avatar:     dto.actorAvatar ?? undefined,
       fromUser:   dto.actorName   ?? undefined,
-      actionUrl:  dto.hackathonId    ? '/hackathons'
-                : dto.postId        ? '/feed'
-                : dto.projectId     ? '/projects'
-                : dto.type === 'MESSAGE' ? '/chat'
+      actionUrl:  dto.type === 'FOLLOW'                                          ? `/profile/${dto.actorId}`
+                : dto.type === 'MESSAGE'                                          ? `/chat?dm=${dto.actorId}`
+                : (dto.type === 'POST_LIKE' || dto.type === 'POST_COMMENT' || dto.type === 'POST_SHARE') && dto.postId
+                                                                                  ? `/feed?post=${dto.postId}`
+                : dto.hackathonId                                                  ? '/hackathons'
+                : dto.projectId                                                    ? '/projects'
                 : undefined,
     };
   }

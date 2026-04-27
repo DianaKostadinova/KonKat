@@ -16,6 +16,7 @@ private val ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 data class NotificationDto(
     val id: Long,
     val type: String,
+    val actorId: Long?,
     val actorName: String?,
     val actorAvatar: String?,
     val hackathonId: Long?,
@@ -89,6 +90,7 @@ class NotificationController(
     private fun Notification.toDto() = NotificationDto(
         id          = id,
         type        = type.name,
+        actorId     = actor?.id,
         actorName   = actor?.displayName,
         actorAvatar = actor?.avatarUrl,
         hackathonId = hackathonId,

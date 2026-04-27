@@ -51,7 +51,9 @@
 
   <!-- Posts -->
   @for (post of posts(); track post.id) {
-    <app-post-card [post]="post" />
+    <div [attr.id]="'post-' + post.id">
+      <app-post-card [post]="post" />
+    </div>
   }
 
 </div>
