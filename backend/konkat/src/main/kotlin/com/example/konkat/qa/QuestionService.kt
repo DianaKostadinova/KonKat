@@ -1,0 +1,224 @@
+package com.example.konkat.qa
+
+import com.example.konkat.user.User
+import com.example.konkat.user.UserRepository
+import org.springframework.data.repository.findByIdOrNull
+import org.springframework.http.HttpStatus
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
+import java.time.format.DateTimeFormatter
+
+private val ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
+@Service
+@Transactional
+class QuestionService(
+    private val questionRepository: QuestionRepository,
+    private val answerRepository: AnswerRepository,
+    private val questionVoteRepository: QuestionVoteRepository,
+    private val answerVoteRepository: AnswerVoteRepository,
+    private val userRepository: UserRepository,
+) {
+
+    fun getAll(currentUserId: Long?, filter: String?): List<QuestionDto> {
+        val questions = when (filter) {
+            "solved"   -> questionRepository.findBySolvedOrderByCreatedAtDesc(true)
+            "unsolved" -> questionRepository.findBySolvedOrderByCreatedAtDesc(false)
+            else       -> questionRepository.findAllByOrderByCreatedAtDesc()
+        }
+        return questions.map { it.toDto(currentUserId, includeAnswers = true) }
+    }
+
+    fun create(authorId: Long, req: CreateQuestionRequest): QuestionDto {
+        val author = userRepository.findByIdOrNull(authorId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+        val question = questionRepository.save(
+            Question(
+                author       = author,
+                title        = req.title,
+                content      = req.content,
+                codeLanguage = req.codeLanguage,
+                codeSnippet  = req.codeSnippet,
+                tags         = req.tags.toMutableList(),
+            )
+        )
+        return question.toDto(authorId, includeAnswers = true)
+    }
+
+    fun addAnswer(questionId: Long, authorId: Long, req: CreateAnswerRequest): AnswerDto {
+        val question = questionRepository.findByIdOrNull(questionId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found")
+        val author = userRepository.findByIdOrNull(authorId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+        val answer = answerRepository.save(
+            Answer(
+                question     = question,
+                author       = author,
+                content      = req.content,
+                codeLanguage = req.codeLanguage,
+                codeSnippet  = req.codeSnippet,
+            )
+        )
+        return answer.toDto(authorId)
+    }
+
+    fun voteQuestion(questionId: Long, userId: Long, direction: VoteDirection): VoteResultDto {
+        val question = questionRepository.findByIdOrNull(questionId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found")
+        val user = userRepository.findByIdOrNull(userId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+
+        val existing = questionVoteRepository.findByQuestionIdAndUserId(questionId, userId)
+        when {
+            existing == null              -> questionVoteRepository.save(QuestionVote(question = question, user = user, direction = direction))
+            existing.direction == direction -> questionVoteRepository.delete(existing)
+            else                          -> { existing.direction = direction; questionVoteRepository.save(existing) }
+        }
+
+        return VoteResultDto(
+            votes    = netQuestionVotes(questionId),
+            userVote = questionVoteRepository.findByQuestionIdAndUserId(questionId, userId)?.direction?.name,
+        )
+    }
+
+    fun voteAnswer(answerId: Long, userId: Long, direction: VoteDirection): VoteResultDto {
+        val answer = answerRepository.findByIdOrNull(answerId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Answer not found")
+        val user = userRepository.findByIdOrNull(userId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+
+        val existing = answerVoteRepository.findByAnswerIdAndUserId(answerId, userId)
+        when {
+            existing == null              -> answerVoteRepository.save(AnswerVote(answer = answer, user = user, direction = direction))
+            existing.direction == direction -> answerVoteRepository.delete(existing)
+            else                          -> { existing.direction = direction; answerVoteRepository.save(existing) }
+        }
+
+        return VoteResultDto(
+            votes    = netAnswerVotes(answerId),
+            userVote = answerVoteRepository.findByAnswerIdAndUserId(answerId, userId)?.direction?.name,
+        )
+    }
+
+    fun acceptAnswer(questionId: Long, answerId: Long, requestingUserId: Long): AnswerDto {
+        val question = questionRepository.findByIdOrNull(questionId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found")
+        if (question.author.id != requestingUserId)
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only the question author can accept answers")
+
+        answerRepository.findByQuestionIdOrderByIsAcceptedDescCreatedAtAsc(questionId)
+            .filter { it.isAccepted }
+            .forEach { it.isAccepted = false; answerRepository.save(it) }
+
+        val answer = answerRepository.findByIdOrNull(answerId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Answer not found")
+        if (answer.question.id != questionId)
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Answer does not belong to this question")
+
+        answer.isAccepted = true
+        question.solved = true
+        questionRepository.save(question)
+        return answerRepository.save(answer).toDto(requestingUserId)
+    }
+
+    // ── Mapping ───────────────────────────────────────────────────────────────
+
+    private fun netQuestionVotes(questionId: Long): Int =
+        (questionVoteRepository.countByQuestionIdAndDirection(questionId, VoteDirection.UP)
+                - questionVoteRepository.countByQuestionIdAndDirection(questionId, VoteDirection.DOWN)).toInt()
+
+    private fun netAnswerVotes(answerId: Long): Int =
+        (answerVoteRepository.countByAnswerIdAndDirection(answerId, VoteDirection.UP)
+                - answerVoteRepository.countByAnswerIdAndDirection(answerId, VoteDirection.DOWN)).toInt()
+
+    private fun Question.toDto(currentUserId: Long?, includeAnswers: Boolean): QuestionDto {
+        val answers = if (includeAnswers)
+            answerRepository.findByQuestionIdOrderByIsAcceptedDescCreatedAtAsc(id).map { it.toDto(currentUserId) }
+        else emptyList()
+
+        return QuestionDto(
+            id           = id,
+            author       = author.toQAAuthorDto(),
+            title        = title,
+            content      = content,
+            codeLanguage = codeLanguage,
+            codeSnippet  = codeSnippet,
+            tags         = tags.toList(),
+            votes        = netQuestionVotes(id),
+            userVote     = currentUserId?.let { questionVoteRepository.findByQuestionIdAndUserId(id, it)?.direction?.name },
+            views        = views,
+            answers      = answers,
+            answerCount  = answerRepository.countByQuestionId(id).toInt(),
+            solved       = solved,
+            createdAt    = createdAt.format(ISO),
+        )
+    }
+
+    private fun Answer.toDto(currentUserId: Long?): AnswerDto = AnswerDto(
+        id           = id,
+        author       = author.toQAAuthorDto(),
+        content      = content,
+        codeLanguage = codeLanguage,
+        codeSnippet  = codeSnippet,
+        votes        = netAnswerVotes(id),
+        userVote     = currentUserId?.let { answerVoteRepository.findByAnswerIdAndUserId(id, it)?.direction?.name },
+        isAccepted   = isAccepted,
+        createdAt    = createdAt.format(ISO),
+    )
+}
+
+// ── DTOs ──────────────────────────────────────────────────────────────────────
+
+private fun User.toQAAuthorDto() = QAAuthorDto(id = id, name = displayName, title = title)
+
+data class QAAuthorDto(val id: Long, val name: String, val title: String?)
+
+data class QuestionDto(
+    val id: Long,
+    val author: QAAuthorDto,
+    val title: String,
+    val content: String,
+    val codeLanguage: String?,
+    val codeSnippet: String?,
+    val tags: List<String>,
+    val votes: Int,
+    val userVote: String?,
+    val views: Long,
+    val answers: List<AnswerDto>,
+    val answerCount: Int,
+    val solved: Boolean,
+    val createdAt: String,
+)
+
+data class AnswerDto(
+    val id: Long,
+    val author: QAAuthorDto,
+    val content: String,
+    val codeLanguage: String?,
+    val codeSnippet: String?,
+    val votes: Int,
+    val userVote: String?,
+    val isAccepted: Boolean,
+    val createdAt: String,
+)
+
+data class VoteResultDto(val votes: Int, val userVote: String?)
+
+// ── Request bodies ────────────────────────────────────────────────────────────
+
+data class CreateQuestionRequest(
+    val title: String,
+    val content: String,
+    val codeLanguage: String? = null,
+    val codeSnippet: String? = null,
+    val tags: List<String> = emptyList(),
+)
+
+data class CreateAnswerRequest(
+    val content: String,
+    val codeLanguage: String? = null,
+    val codeSnippet: String? = null,
+)
+
+data class VoteRequest(val direction: VoteDirection)

@@ -1,6 +1,5 @@
 import { Component, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { QAPost } from './qa.model';
 import { QAService } from './qa.service';
 import { QAPostCard } from './qa-post-card';
 
@@ -16,7 +15,6 @@ export class QA {
   searchQuery = signal('');
   selectedFilter = signal('all');
 
-  // Ask modal form state
   askTitle = '';
   askContent = '';
   askTagsInput = '';
@@ -27,24 +25,24 @@ export class QA {
   readonly languages = ['typescript', 'javascript', 'python', 'java', 'go', 'rust', 'css', 'html', 'yaml', 'bash', 'sql'];
 
   filters = [
-    { value: 'all', label: 'All Questions' },
+    { value: 'all',      label: 'All Questions' },
     { value: 'unsolved', label: 'Unsolved' },
-    { value: 'solved', label: 'Solved' },
+    { value: 'solved',   label: 'Solved' },
   ];
 
-  constructor(private qaService: QAService) {}
+  constructor(readonly qaService: QAService) {}
 
-  filteredPosts = computed(() => {
+  filteredQuestions = computed(() => {
     const q = this.searchQuery().toLowerCase();
     const filter = this.selectedFilter();
-    return this.qaService.getAll().filter(p => {
+    return this.qaService.questions().filter(question => {
       const matchesSearch = !q ||
-        p.title.toLowerCase().includes(q) ||
-        p.tags.some(t => t.includes(q));
+        question.title.toLowerCase().includes(q) ||
+        question.tags.some(t => t.toLowerCase().includes(q));
       const matchesFilter =
-        filter === 'all' ? true :
-          filter === 'solved' ? p.solved :
-            !p.solved;
+        filter === 'all'      ? true :
+        filter === 'solved'   ? question.solved :
+                                !question.solved;
       return matchesSearch && matchesFilter;
     });
   });
@@ -53,16 +51,24 @@ export class QA {
     this.searchQuery.set((e.target as HTMLInputElement).value);
   }
 
-  onVotePost(data: { postId: number; direction: 'up' | 'down' }) {
-    this.qaService.votePost(data.postId, data.direction);
+  onVoteQuestion(data: { questionId: number; direction: 'UP' | 'DOWN' }) {
+    this.qaService.voteQuestion(data.questionId, data.direction);
   }
 
-  onVoteComment(data: { postId: number; commentId: number; direction: 'up' | 'down' }) {
-    this.qaService.voteComment(data.postId, data.commentId, data.direction);
+  onVoteAnswer(data: { questionId: number; answerId: number; direction: 'UP' | 'DOWN' }) {
+    this.qaService.voteAnswer(data.questionId, data.answerId, data.direction);
   }
 
-  onAddComment(data: { postId: number; content: string }) {
-    this.qaService.addComment(data.postId, data.content);
+  onAddAnswer(data: { questionId: number; content: string; codeLanguage?: string; codeSnippet?: string }) {
+    this.qaService.addAnswer(data.questionId, {
+      content: data.content,
+      codeLanguage: data.codeLanguage,
+      codeSnippet: data.codeSnippet,
+    });
+  }
+
+  onAcceptAnswer(data: { questionId: number; answerId: number }) {
+    this.qaService.acceptAnswer(data.questionId, data.answerId);
   }
 
   get canAsk(): boolean {
@@ -72,13 +78,12 @@ export class QA {
   submitQuestion() {
     if (!this.canAsk) return;
     const tags = this.askTagsInput.split(',').map(t => t.trim()).filter(Boolean);
-    this.qaService.addPost({
-      title: this.askTitle.trim(),
-      content: this.askContent.trim(),
+    this.qaService.createQuestion({
+      title:        this.askTitle.trim(),
+      content:      this.askContent.trim(),
       tags,
-      code: this.askAddCode && this.askCode.trim()
-        ? { language: this.askLanguage, snippet: this.askCode.trim() }
-        : undefined,
+      codeLanguage: this.askAddCode && this.askCode.trim() ? this.askLanguage : undefined,
+      codeSnippet:  this.askAddCode && this.askCode.trim() ? this.askCode.trim() : undefined,
     });
     this.closeAskModal();
   }

@@ -1,25 +1,34 @@
-export interface QAComment {
+export interface QAAuthor {
   id: number;
-  author: { name: string; role: string; };
-  content: string;
-  votes: number;
-  voted?: 'up' | 'down' | null;
-  isAccepted?: boolean;
-  createdAt: string;
-  code?: { language: string; snippet: string; };
+  name: string;
+  title?: string;
 }
 
-export interface QAPost {
+export interface QAAnswer {
   id: number;
-  author: { name: string; role: string; };
+  author: QAAuthor;
+  content: string;
+  codeLanguage?: string;
+  codeSnippet?: string;
+  votes: number;
+  userVote?: 'UP' | 'DOWN' | null;
+  isAccepted: boolean;
+  createdAt: string;
+}
+
+export interface QAQuestion {
+  id: number;
+  author: QAAuthor;
   title: string;
   content: string;
-  code?: { language: string; snippet: string; };
+  codeLanguage?: string;
+  codeSnippet?: string;
   tags: string[];
   votes: number;
-  voted?: 'up' | 'down' | null;
+  userVote?: 'UP' | 'DOWN' | null;
   views: number;
-  comments: QAComment[];
+  answers: QAAnswer[];
+  answerCount: number;
   solved: boolean;
   createdAt: string;
 }

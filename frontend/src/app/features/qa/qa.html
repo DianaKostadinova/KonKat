@@ -38,25 +38,36 @@
           {{ filter.label }}
         </button>
       }
-      <span class="ml-auto text-[#888888] text-xs">{{ filteredPosts().length }} questions</span>
+      <span class="ml-auto text-[#888888] text-xs">{{ filteredQuestions().length }} questions</span>
     </div>
   </div>
 
-  <!-- Posts -->
-  @for (post of filteredPosts(); track post.id) {
-    <app-qa-post-card
-      [post]="post"
-      (votePost)="onVotePost($event)"
-      (voteComment)="onVoteComment($event)"
-      (addComment)="onAddComment($event)"
-    />
+  <!-- Loading -->
+  @if (qaService.loading()) {
+    <div class="flex justify-center py-10">
+      <span class="text-[#888888] text-sm">Loading questions...</span>
+    </div>
   }
 
-  @if (filteredPosts().length === 0) {
-    <div class="flex flex-col items-center gap-3 py-16 text-center">
-      <span class="material-icons text-[#2a2a2a]" style="font-size: 48px;">help_outline</span>
-      <p class="text-[#888888] text-sm m-0">No questions found</p>
-    </div>
+  <!-- Questions -->
+  @if (!qaService.loading()) {
+    @for (question of filteredQuestions(); track question.id) {
+      <app-qa-post-card
+        [question]="question"
+        [meId]="qaService.meId"
+        (voteQuestion)="onVoteQuestion($event)"
+        (voteAnswer)="onVoteAnswer($event)"
+        (addAnswer)="onAddAnswer($event)"
+        (acceptAnswer)="onAcceptAnswer($event)"
+      />
+    }
+
+    @if (filteredQuestions().length === 0) {
+      <div class="flex flex-col items-center gap-3 py-16 text-center">
+        <span class="material-icons text-[#2a2a2a]" style="font-size: 48px;">help_outline</span>
+        <p class="text-[#888888] text-sm m-0">No questions found</p>
+      </div>
+    }
   }
 
 </div>
