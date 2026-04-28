@@ -1,88 +1,120 @@
 import { Injectable, signal } from '@angular/core';
-import { Workspace, Task, TaskStatus, WorkspaceMessage } from './workspace.model';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { catchError, of } from 'rxjs';
+import { WorkspaceSummary, WorkspaceDetail, WorkspaceTask, WorkspaceMessage, TaskStatus } from './workspace.model';
+
+const API = 'http://localhost:8081/api';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceService {
+  private _summaries = signal<WorkspaceSummary[]>([]);
+  private _current   = signal<WorkspaceDetail | null>(null);
+  private _messages  = signal<WorkspaceMessage[]>([]);
+  loading = signal(false);
 
-  private workspaces = signal<Workspace[]>([
-    {
-      id: 3,
-      teamName: 'FinTech Rebels',
-      hackathon: 'HackMK Winter Edition',
-      hackathonDate: 'Nov 20 - 22, 2024',
-      members: [
-        { id: 4, name: 'Sara Blazevska',   role: 'UI/UX Designer',  online: true },
-        { id: 5, name: 'Elena Petrovska',  role: 'Mobile Dev',      online: true },
-        { id: 6, name: 'Petar Stojanovski',role: 'Backend Dev',     online: false },
-        { id: 0, name: 'You',              role: 'Frontend Dev',    online: true },
-      ],
-      tasks: [
-        { id: 1,  title: 'Setup project repo',           priority: 'high',   status: 'done',       createdAt: '2d ago', assignee: 'Petar Stojanovski' },
-        { id: 2,  title: 'Design system + components',   priority: 'high',   status: 'done',       createdAt: '2d ago', assignee: 'Sara Blazevska' },
-        { id: 3,  title: 'Auth flow (JWT)',               priority: 'high',   status: 'inprogress', createdAt: '1d ago', assignee: 'Petar Stojanovski', description: 'Login, register, refresh tokens' },
-        { id: 4,  title: 'Investment UI screens',         priority: 'high',   status: 'inprogress', createdAt: '1d ago', assignee: 'You', description: 'Dashboard, invest flow, portfolio' },
-        { id: 5,  title: 'Mobile app skeleton',           priority: 'medium', status: 'inprogress', createdAt: '1d ago', assignee: 'Elena Petrovska' },
-        { id: 6,  title: 'Payment integration (Stripe)',  priority: 'high',   status: 'todo',       createdAt: '1d ago', assignee: 'Petar Stojanovski' },
-        { id: 7,  title: 'Pitch deck slides',             priority: 'medium', status: 'todo',       createdAt: '12h ago', assignee: 'Sara Blazevska' },
-        { id: 8,  title: 'Demo video recording',          priority: 'low',    status: 'todo',       createdAt: '12h ago' },
-      ],
-      files: [
-        { id: 1, name: 'UI Design System.fig',     type: 'figma',  size: '4.2 MB', uploadedBy: 'Sara',  uploadedAt: '2d ago' },
-        { id: 2, name: 'Project Architecture.pdf', type: 'doc',    size: '1.1 MB', uploadedBy: 'Petar', uploadedAt: '1d ago' },
-        { id: 3, name: 'App Screenshots.zip',      type: 'image',  size: '8.7 MB', uploadedBy: 'Elena', uploadedAt: '6h ago' },
-        { id: 4, name: 'Backend API docs.md',      type: 'code',   size: '0.3 MB', uploadedBy: 'Petar', uploadedAt: '4h ago' },
-      ],
-      messages: [
-        { id: 1, senderId: 4, senderName: 'Sara',  content: 'Design system is ready! Check Figma 🎨',         createdAt: '09:00' },
-        { id: 2, senderId: 6, senderName: 'Petar', content: 'Backend API is up at localhost:3000',            createdAt: '09:15' },
-        { id: 3, senderId: 5, senderName: 'Elena', content: 'Starting on mobile screens now',                 createdAt: '09:30' },
-        { id: 4, senderId: 0, senderName: 'You',   content: 'Investment dashboard is 60% done 💪',            createdAt: '10:00' },
-        { id: 5, senderId: 4, senderName: 'Sara',  content: 'Amazing! Can you share a screenshot?',           createdAt: '10:05' },
-      ],
-      progress: 65,
-    },
-  ]);
+  readonly meId:   number;
+  readonly meName: string;
 
-  getById(id: number) {
-    return this.workspaces().find(w => w.id === id);
+  constructor(private http: HttpClient) {
+    const u = this.readUser();
+    this.meId   = u?.id   ?? 0;
+    this.meName = u?.name ?? 'You';
+  }
+
+  private readUser(): { id: number; name: string } | null {
+    try { const r = localStorage.getItem('user'); return r ? JSON.parse(r) : null; }
+    catch { return null; }
+  }
+
+  private headers(): HttpHeaders {
+    const token = localStorage.getItem('token') ?? '';
+    return new HttpHeaders({ Authorization: `Bearer ${token}` });
+  }
+
+  summaries() { return this._summaries(); }
+  current()   { return this._current(); }
+  messages()  { return this._messages(); }
+
+  loadAll() {
+    this.loading.set(true);
+    this.http.get<WorkspaceSummary[]>(`${API}/workspaces`, { headers: this.headers() })
+      .pipe(catchError(() => of([])))
+      .subscribe(list => { this._summaries.set(list); this.loading.set(false); });
+  }
+
+  loadOne(id: number) {
+    this.http.get<WorkspaceDetail>(`${API}/workspaces/${id}`, { headers: this.headers() })
+      .pipe(catchError(() => of(null)))
+      .subscribe(ws => this._current.set(ws));
+  }
+
+  loadMessages(id: number) {
+    this.http.get<WorkspaceMessage[]>(`${API}/workspaces/${id}/messages`, { headers: this.headers() })
+      .pipe(catchError(() => of([])))
+      .subscribe(msgs => this._messages.set(msgs));
+  }
+
+  createWorkspace(name: string) {
+    return this.http.post<WorkspaceSummary>(`${API}/workspaces`, { name }, { headers: this.headers() })
+      .subscribe({ next: ws => this._summaries.update(list => [...list, ws]) });
+  }
+
+  addTask(workspaceId: number, title: string, priority: string) {
+    this.http.post<WorkspaceTask>(
+      `${API}/workspaces/${workspaceId}/tasks`,
+      { title, priority },
+      { headers: this.headers() },
+    ).pipe(catchError(() => of(null)))
+      .subscribe(task => {
+        if (!task) return;
+        this._current.update(ws => ws ? { ...ws, tasks: [...ws.tasks, task] } : ws);
+      });
   }
 
   moveTask(workspaceId: number, taskId: number, status: TaskStatus) {
-    this.workspaces.update(ws => ws.map(w => {
-      if (w.id !== workspaceId) return w;
-      const tasks = w.tasks.map(t => t.id === taskId ? { ...t, status } : t);
-      const done = tasks.filter(t => t.status === 'done').length;
-      const progress = Math.round((done / tasks.length) * 100);
-      return { ...w, tasks, progress };
-    }));
+    this._current.update(ws => ws ? {
+      ...ws,
+      tasks: ws.tasks.map(t => t.id === taskId ? { ...t, status } : t),
+    } : ws);
+
+    this.http.patch<WorkspaceTask>(
+      `${API}/workspaces/${workspaceId}/tasks/${taskId}`,
+      { status },
+      { headers: this.headers() },
+    ).pipe(catchError(() => of(null)))
+      .subscribe(updated => {
+        if (!updated) return;
+        this._current.update(ws => ws ? {
+          ...ws,
+          tasks: ws.tasks.map(t => t.id === taskId ? updated : t),
+        } : ws);
+      });
   }
 
-  addTask(workspaceId: number, title: string, priority: 'low' | 'medium' | 'high') {
-    this.workspaces.update(ws => ws.map(w => {
-      if (w.id !== workspaceId) return w;
-      const task: Task = {
-        id: Date.now(),
-        title,
-        priority,
-        status: 'todo',
-        createdAt: 'just now',
-        assignee: 'You',
-      };
-      return { ...w, tasks: [...w.tasks, task] };
-    }));
+  deleteTask(workspaceId: number, taskId: number) {
+    this._current.update(ws => ws ? { ...ws, tasks: ws.tasks.filter(t => t.id !== taskId) } : ws);
+    this.http.delete(`${API}/workspaces/${workspaceId}/tasks/${taskId}`, { headers: this.headers() })
+      .pipe(catchError(() => of(null))).subscribe();
   }
 
   sendMessage(workspaceId: number, content: string) {
-    this.workspaces.update(ws => ws.map(w => {
-      if (w.id !== workspaceId) return w;
-      const msg: WorkspaceMessage = {
-        id: Date.now(),
-        senderId: 0,
-        senderName: 'You',
-        content,
-        createdAt: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-      };
-      return { ...w, messages: [...w.messages, msg] };
-    }));
+    const tempMsg: WorkspaceMessage = {
+      id: -Date.now(),
+      senderId: this.meId,
+      senderName: this.meName,
+      content,
+      createdAt: new Date().toISOString(),
+    };
+    this._messages.update(msgs => [...msgs, tempMsg]);
+
+    this.http.post<WorkspaceMessage>(
+      `${API}/workspaces/${workspaceId}/messages`,
+      { content },
+      { headers: this.headers() },
+    ).pipe(catchError(() => of(null)))
+      .subscribe(msg => {
+        if (!msg) return;
+        this._messages.update(msgs => msgs.map(m => m.id === tempMsg.id ? msg : m));
+      });
   }
 }

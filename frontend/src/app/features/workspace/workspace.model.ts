@@ -1,24 +1,30 @@
 export type TaskStatus = 'todo' | 'inprogress' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high';
 
-export interface Task {
+export interface WorkspaceSummary {
+  id: number;
+  name: string;
+  hackathonTitle: string | null;
+  memberCount: number;
+  taskCount: number;
+  doneCount: number;
+}
+
+export interface WorkspaceMember {
+  userId: number;
+  name: string;
+  role: string | null;
+  avatarUrl: string | null;
+}
+
+export interface WorkspaceTask {
   id: number;
   title: string;
-  description?: string;
-  assignee?: string;
+  description: string | null;
+  assignee: string | null;
   priority: TaskPriority;
   status: TaskStatus;
   createdAt: string;
-}
-
-export interface WorkspaceFile {
-  id: number;
-  name: string;
-  type: 'figma' | 'doc' | 'image' | 'code' | 'other';
-  size: string;
-  uploadedBy: string;
-  uploadedAt: string;
-  url?: string;
 }
 
 export interface WorkspaceMessage {
@@ -29,14 +35,11 @@ export interface WorkspaceMessage {
   createdAt: string;
 }
 
-export interface Workspace {
+export interface WorkspaceDetail {
   id: number;
-  teamName: string;
-  hackathon: string;
-  hackathonDate: string;
-  members: { id: number; name: string; role: string; online: boolean; }[];
-  tasks: Task[];
-  files: WorkspaceFile[];
-  messages: WorkspaceMessage[];
-  progress: number;
+  name: string;
+  hackathonTitle: string | null;
+  hackathonId: number | null;
+  members: WorkspaceMember[];
+  tasks: WorkspaceTask[];
 }

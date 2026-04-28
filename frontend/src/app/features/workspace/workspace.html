@@ -1,4 +1,4 @@
-@if (!workspace()) {
+@if (!workspace) {
   <div class="flex items-center justify-center h-full">
     <p class="text-[#888888]">Workspace not found</p>
   </div>
@@ -16,30 +16,27 @@
           <span class="material-icons" style="font-size: 20px;">arrow_back</span>
         </button>
         <div>
-          <h1 class="text-[#f0f0f0] text-base font-bold m-0">{{ workspace()!.teamName }}</h1>
-          <div class="flex items-center gap-2 text-[#888888] text-xs">
-            <span class="material-icons-outlined" style="font-size: 12px;">emoji_events</span>
-            {{ workspace()!.hackathon }} · {{ workspace()!.hackathonDate }}
-          </div>
-        </div>
-      </div>
-
-      <!-- Members online -->
-      <div class="flex items-center gap-3">
-        <div class="flex -space-x-2">
-          @for (member of workspace()!.members; track member.id) {
-            <div class="relative">
-              <div class="w-8 h-8 rounded-full bg-[#2a2a2a] border-2 border-[#111111] flex items-center justify-center"
-                   [title]="member.name">
-                <span class="material-icons text-[#888888]" style="font-size: 18px;">account_circle</span>
-              </div>
-              @if (member.online) {
-                <span class="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-[#28c840] border border-[#111111]"></span>
-              }
+          <h1 class="text-[#f0f0f0] text-base font-bold m-0">{{ workspace.name }}</h1>
+          @if (workspace.hackathonTitle) {
+            <div class="flex items-center gap-2 text-[#888888] text-xs">
+              <span class="material-icons-outlined" style="font-size: 12px;">emoji_events</span>
+              {{ workspace.hackathonTitle }}
             </div>
           }
         </div>
-        <span class="text-[#888888] text-xs">{{ onlineCount() }} online</span>
+      </div>
+
+      <!-- Members avatars -->
+      <div class="flex items-center gap-3">
+        <div class="flex -space-x-2">
+          @for (member of workspace.members; track member.userId) {
+            <div class="w-8 h-8 rounded-full bg-[#2a2a2a] border-2 border-[#111111] flex items-center justify-center"
+                 [title]="member.name">
+              <span class="material-icons text-[#888888]" style="font-size: 18px;">account_circle</span>
+            </div>
+          }
+        </div>
+        <span class="text-[#888888] text-xs">{{ workspace.members.length }} members</span>
       </div>
     </div>
 
@@ -64,14 +61,14 @@
       @if (activeTab() === 'overview') {
         <div class="flex flex-col gap-4 p-4">
 
-          <!-- Progress + stats row -->
+          <!-- Stats row -->
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div class="flex flex-col gap-2 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4">
               <span class="text-[#888888] text-xs">Overall Progress</span>
-              <span class="text-[#f0f0f0] text-2xl font-bold">{{ workspace()!.progress }}%</span>
+              <span class="text-[#f0f0f0] text-2xl font-bold">{{ progress() }}%</span>
               <div class="w-full h-1.5 rounded-full bg-[#2a2a2a]">
                 <div class="h-full rounded-full bg-[#E8593C] transition-all duration-500"
-                     [style.width.%]="workspace()!.progress"></div>
+                     [style.width.%]="progress()"></div>
               </div>
             </div>
             <div class="flex flex-col gap-1 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4 items-center justify-center">
@@ -91,29 +88,20 @@
           <!-- Members -->
           <div class="flex flex-col gap-3 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4">
             <span class="text-[#f0f0f0] text-sm font-semibold">Team Members</span>
-            @for (member of workspace()!.members; track member.id) {
+            @for (member of workspace.members; track member.userId) {
               <div class="flex items-center gap-3">
-                <div class="relative flex-shrink-0">
-                  <div class="w-9 h-9 rounded-full bg-[#2a2a2a] flex items-center justify-center">
-                    <span class="material-icons text-[#888888]" style="font-size: 22px;">account_circle</span>
-                  </div>
-                  @if (member.online) {
-                    <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#28c840] border-2 border-[#1a1a1a]"></span>
-                  }
+                <div class="w-9 h-9 rounded-full bg-[#2a2a2a] flex items-center justify-center flex-shrink-0">
+                  <span class="material-icons text-[#888888]" style="font-size: 22px;">account_circle</span>
                 </div>
                 <div class="flex flex-col flex-1">
-                <span class="text-[#f0f0f0] text-sm font-medium">
-                  {{ member.name }}
-                  @if (member.id === 0) {
-                    <span class="text-[#E8593C] text-xs ml-1">(you)</span>
-                  }
-                </span>
-                  <span class="text-[#888888] text-xs">{{ member.role }}</span>
+                  <span class="text-[#f0f0f0] text-sm font-medium">
+                    {{ member.name }}
+                    @if (member.userId === meId) {
+                      <span class="text-[#E8593C] text-xs ml-1">(you)</span>
+                    }
+                  </span>
+                  <span class="text-[#888888] text-xs">{{ member.role ?? 'Member' }}</span>
                 </div>
-                <span class="text-xs"
-                      [style.color]="member.online ? '#28c840' : '#888888'">
-                {{ member.online ? 'Online' : 'Offline' }}
-              </span>
               </div>
             }
           </div>
@@ -125,27 +113,26 @@
               <button
                 class="text-[#E8593C] text-xs bg-transparent border-none cursor-pointer hover:underline"
                 (click)="activeTab.set('kanban')"
-              >
-                View all →
-              </button>
+              >View all →</button>
             </div>
-            @for (task of workspace()!.tasks.slice(0, 5); track task.id) {
+            @for (task of workspace.tasks.slice(0, 5); track task.id) {
               <div class="flex items-center gap-3">
                 <div class="w-2 h-2 rounded-full flex-shrink-0"
                      [style.background]="task.status === 'done' ? '#28c840' : task.status === 'inprogress' ? '#febc2e' : '#888888'">
                 </div>
                 <span class="text-[#d0d0d0] text-xs flex-1"
-                      [class.line-through]="task.status === 'done'"
-                      [class.text-[#888888]]="task.status === 'done'">
-                {{ task.title }}
-              </span>
+                      [class.line-through]="task.status === 'done'">
+                  {{ task.title }}
+                </span>
                 @if (task.assignee) {
                   <span class="text-[#888888] text-[11px]">{{ task.assignee }}</span>
                 }
                 <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                      [style.background]="priorityColor(task.priority)">
-              </span>
+                      [style.background]="priorityColor(task.priority)"></span>
               </div>
+            }
+            @if (workspace.tasks.length === 0) {
+              <span class="text-[#888888] text-xs">No tasks yet</span>
             }
           </div>
 
@@ -156,7 +143,6 @@
       @if (activeTab() === 'kanban') {
         <div class="flex flex-col gap-4 p-4">
 
-          <!-- Add task button -->
           <div class="flex items-center justify-between">
             <span class="text-[#888888] text-xs">{{ totalCount() }} total tasks</span>
             <button
@@ -168,7 +154,6 @@
             </button>
           </div>
 
-          <!-- Add task form -->
           @if (showAddTask()) {
             <div class="flex items-center gap-2 rounded-xl border border-[#E8593C]/30 bg-[#1a1a1a] p-3">
               <input
@@ -196,34 +181,27 @@
             </div>
           }
 
-          <!-- Kanban columns -->
           <div class="kanban-board">
             @for (col of columns; track col.status) {
               <div class="kanban-col">
 
-                <!-- Column header -->
-                <div class="flex items-center justify-between mb-3">
-                  <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full" [style.background]="col.color"></span>
-                    <span class="text-[#f0f0f0] text-xs font-semibold">{{ col.label }}</span>
-                    <span class="rounded-full px-1.5 py-0.5 text-[10px] bg-[#2a2a2a] text-[#888888]">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="w-2 h-2 rounded-full" [style.background]="col.color"></span>
+                  <span class="text-[#f0f0f0] text-xs font-semibold">{{ col.label }}</span>
+                  <span class="rounded-full px-1.5 py-0.5 text-[10px] bg-[#2a2a2a] text-[#888888]">
                     {{ tasksByStatus(col.status).length }}
                   </span>
-                  </div>
                 </div>
 
-                <!-- Tasks -->
                 <div class="flex flex-col gap-2">
                   @for (task of tasksByStatus(col.status); track task.id) {
                     <div class="task-card">
-
-                      <!-- Priority dot + title -->
                       <div class="flex items-start gap-2">
-                      <span class="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
-                            [style.background]="priorityColor(task.priority)"></span>
+                        <span class="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
+                              [style.background]="priorityColor(task.priority)"></span>
                         <span class="text-[#f0f0f0] text-xs font-medium flex-1 leading-relaxed">
-                        {{ task.title }}
-                      </span>
+                          {{ task.title }}
+                        </span>
                       </div>
 
                       @if (task.description) {
@@ -232,7 +210,6 @@
                         </p>
                       }
 
-                      <!-- Assignee + move buttons -->
                       <div class="flex items-center justify-between mt-2">
                         @if (task.assignee) {
                           <span class="text-[#888888] text-[11px]">{{ task.assignee }}</span>
@@ -242,7 +219,7 @@
                             <button
                               class="task-move-btn"
                               title="Move left"
-                              (click)="moveTask(task, col.status === 'done' ? 'inprogress' : 'todo')"
+                              (click)="moveTask(task.id, col.status === 'done' ? 'inprogress' : 'todo')"
                             >
                               <span class="material-icons" style="font-size: 12px;">arrow_back</span>
                             </button>
@@ -251,14 +228,13 @@
                             <button
                               class="task-move-btn task-move-btn--forward"
                               title="Move right"
-                              (click)="moveTask(task, col.status === 'todo' ? 'inprogress' : 'done')"
+                              (click)="moveTask(task.id, col.status === 'todo' ? 'inprogress' : 'done')"
                             >
                               <span class="material-icons" style="font-size: 12px;">arrow_forward</span>
                             </button>
                           }
                         </div>
                       </div>
-
                     </div>
                   }
 
@@ -280,9 +256,8 @@
       @if (activeTab() === 'chat') {
         <div class="workspace-chat">
 
-          <!-- Messages -->
           <div class="workspace-chat__messages" #chatContainer>
-            @for (msg of workspace()!.messages; track msg.id) {
+            @for (msg of messages; track msg.id) {
               <div class="flex flex-col mb-3"
                    [class.items-end]="isMe(msg.senderId)"
                    [class.items-start]="!isMe(msg.senderId)">
@@ -312,23 +287,28 @@
                 <span class="text-[#888888] text-[10px] mt-0.5"
                       [class.mr-1]="isMe(msg.senderId)"
                       [class.ml-9]="!isMe(msg.senderId)">
-                {{ msg.createdAt }}
-              </span>
+                  {{ formatTime(msg.createdAt) }}
+                </span>
 
+              </div>
+            }
+            @if (messages.length === 0) {
+              <div class="flex flex-col items-center justify-center h-32 gap-2">
+                <span class="material-icons text-[#2a2a2a]" style="font-size: 32px;">chat_bubble_outline</span>
+                <span class="text-[#888888] text-xs">No messages yet. Say hi!</span>
               </div>
             }
           </div>
 
-          <!-- Input -->
           <div class="flex items-end gap-2 px-4 py-3 border-t border-[#2a2a2a] bg-[#111111]">
-          <textarea
-            class="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-sm text-[#f0f0f0] outline-none resize-none focus:border-[#E8593C] transition-colors placeholder-[#888888] max-h-32"
-            placeholder="Message your team... (Enter to send)"
-            rows="1"
-            [value]="newMessage()"
-            (input)="onMessageInput($event)"
-            (keydown)="onKeydown($event)"
-          ></textarea>
+            <textarea
+              class="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-sm text-[#f0f0f0] outline-none resize-none focus:border-[#E8593C] transition-colors placeholder-[#888888] max-h-32"
+              placeholder="Message your team... (Enter to send)"
+              rows="1"
+              [value]="newMessage()"
+              (input)="onMessageInput($event)"
+              (keydown)="onKeydown($event)"
+            ></textarea>
             <button
               class="flex items-center justify-center w-9 h-9 rounded-lg border-none cursor-pointer transition-all flex-shrink-0"
               [style.background]="newMessage().trim() ? '#E8593C' : '#2a2a2a'"
@@ -337,52 +317,6 @@
             >
               <span class="material-icons" style="font-size: 20px;">send</span>
             </button>
-          </div>
-
-        </div>
-      }
-
-      <!-- FILES TAB -->
-      @if (activeTab() === 'files') {
-        <div class="flex flex-col gap-4 p-4">
-
-          <!-- Upload button -->
-          <div class="flex items-center justify-between">
-            <span class="text-[#888888] text-xs">{{ workspace()!.files.length }} files</span>
-            <button class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-white bg-[#E8593C] border-none cursor-pointer hover:bg-[#d04a2e] transition-all">
-              <span class="material-icons-outlined" style="font-size: 14px;">upload</span>
-              Upload File
-            </button>
-          </div>
-
-          <!-- Drop zone -->
-          <div class="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-[#2a2a2a] p-8 hover:border-[#E8593C]/50 transition-colors cursor-pointer">
-            <span class="material-icons-outlined text-[#2a2a2a]" style="font-size: 40px;">cloud_upload</span>
-            <span class="text-[#888888] text-sm">Drop files here or click to upload</span>
-            <span class="text-[#888888] text-xs">Max 50MB per file</span>
-          </div>
-
-          <!-- File list -->
-          <div class="flex flex-col gap-2">
-            @for (file of workspace()!.files; track file.id) {
-              <div class="flex items-center gap-3 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-3 hover:border-[#3a3a3a] transition-all cursor-pointer">
-                <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                     [style.background]="file.type === 'figma' ? '#E8593C20' : file.type === 'code' ? '#28c84020' : '#2a2a2a'">
-                <span class="material-icons-outlined"
-                      style="font-size: 20px;"
-                      [style.color]="file.type === 'figma' ? '#E8593C' : file.type === 'code' ? '#28c840' : '#888888'">
-                  {{ fileIcon(file.type) }}
-                </span>
-                </div>
-                <div class="flex flex-col flex-1 min-w-0">
-                  <span class="text-[#f0f0f0] text-sm font-medium truncate">{{ file.name }}</span>
-                  <span class="text-[#888888] text-xs">{{ file.size }} · {{ file.uploadedBy }} · {{ file.uploadedAt }}</span>
-                </div>
-                <button class="flex items-center justify-center w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all">
-                  <span class="material-icons-outlined" style="font-size: 18px;">download</span>
-                </button>
-              </div>
-            }
           </div>
 
         </div>

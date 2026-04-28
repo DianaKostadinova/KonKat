@@ -6,6 +6,7 @@ import com.example.konkat.event.SavedEventRepository
 import com.example.konkat.notification.NotificationSender
 import com.example.konkat.notification.NotificationType
 import com.example.konkat.user.UserRepository
+import com.example.konkat.workspace.WorkspaceService
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -81,6 +82,7 @@ class HackathonController(
     private val savedEventRepository:   SavedEventRepository,
     private val notificationSender:     NotificationSender,  // isolated REQUIRES_NEW transactions
     private val userRepository:         UserRepository,
+    private val workspaceService:       WorkspaceService,
 ) {
 
     /** GET /api/hackathons — list upcoming + open hackathons (public) */
@@ -181,6 +183,10 @@ class HackathonController(
         )
         participantRepository.save(participant)
         val count = participantRepository.countByHackathonId(id)
+
+        if (!participant.teamName.isNullOrBlank()) {
+            workspaceService.getOrCreateHackathonWorkspace(hackathon, user, participant.teamName!!, participant.role)
+        }
 
         if (hackathon.organizer.id != userId) {
             runCatching {
