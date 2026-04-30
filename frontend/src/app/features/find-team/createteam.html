@@ -21,9 +21,29 @@
     <!-- Body -->
     <div class="flex flex-col gap-4 p-5 max-h-[70vh] overflow-y-auto">
 
+      <!-- Hackathon selector -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[#888888] text-xs font-medium">Hackathon <span class="text-[#E8593C]">*</span></label>
+        @if (hackathons().length === 0) {
+          <div class="bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#888888]">
+            Loading hackathons...
+          </div>
+        } @else {
+          <select
+            class="bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#f0f0f0] outline-none focus:border-[#E8593C] transition-colors cursor-pointer"
+            (change)="onHackathonInput($event)"
+          >
+            <option value="" class="bg-[#111111] text-[#888888]">Select a hackathon...</option>
+            @for (h of hackathons(); track h.id) {
+              <option [value]="h.id" class="bg-[#111111]">{{ h.title }}</option>
+            }
+          </select>
+        }
+      </div>
+
       <!-- Title -->
       <div class="flex flex-col gap-1.5">
-        <label class="text-[#888888] text-xs font-medium">Project Title</label>
+        <label class="text-[#888888] text-xs font-medium">Project Title <span class="text-[#E8593C]">*</span></label>
         <input
           class="bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#f0f0f0] outline-none focus:border-[#E8593C] transition-colors placeholder-[#888888]"
           placeholder="e.g. AI-powered accessibility tool..."
@@ -44,13 +64,24 @@
         ></textarea>
       </div>
 
+      <!-- Location -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[#888888] text-xs font-medium">Location</label>
+        <input
+          class="bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#f0f0f0] outline-none focus:border-[#E8593C] transition-colors placeholder-[#888888]"
+          placeholder="e.g. Skopje, Remote, Online..."
+          [value]="location()"
+          (input)="onLocationInput($event)"
+        />
+      </div>
+
       <!-- Tech Stack -->
       <div class="flex flex-col gap-1.5">
         <label class="text-[#888888] text-xs font-medium">Tech Stack</label>
         <div class="flex items-center gap-2">
           <input
             class="flex-1 bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#f0f0f0] outline-none focus:border-[#E8593C] transition-colors placeholder-[#888888]"
-            placeholder="e.g. React, Node.js..."
+            placeholder="e.g. React, Node.js... (Enter to add)"
             [value]="techInput()"
             (input)="onTechInput($event)"
             (keydown)="onTechKeydown($event)"
@@ -81,7 +112,7 @@
         <div class="flex items-center gap-2">
           <input
             class="flex-1 bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#f0f0f0] outline-none focus:border-[#E8593C] transition-colors placeholder-[#888888]"
-            placeholder="e.g. Frontend Dev, UX Designer..."
+            placeholder="e.g. Frontend Dev, UX Designer... (Enter to add)"
             [value]="lookingForInput()"
             (input)="onRoleInput($event)"
             (keydown)="onRoleKeydown($event)"
@@ -121,6 +152,14 @@
         </div>
       </div>
 
+      <!-- Error -->
+      @if (error()) {
+        <div class="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2">
+          <span class="material-icons text-red-400" style="font-size: 16px;">error_outline</span>
+          <span class="text-red-400 text-xs">{{ error() }}</span>
+        </div>
+      }
+
     </div>
 
     <!-- Footer -->
@@ -130,9 +169,19 @@
         (click)="close.emit()"
       >Cancel</button>
       <button
-        class="rounded-lg px-4 py-2 text-sm text-white bg-[#E8593C] border-none cursor-pointer hover:bg-[#d04a2e] transition-all font-medium"
+        class="rounded-lg px-4 py-2 text-sm text-white bg-[#E8593C] border-none cursor-pointer hover:bg-[#d04a2e] transition-all font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+        [disabled]="!canSubmit()"
         (click)="submit()"
-      >Post Team</button>
+      >
+        @if (submitting()) {
+          <span class="flex items-center gap-2">
+            <span class="material-icons animate-spin" style="font-size: 14px;">refresh</span>
+            Posting...
+          </span>
+        } @else {
+          Post Team
+        }
+      </button>
     </div>
 
   </div>

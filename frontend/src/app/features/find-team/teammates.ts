@@ -18,6 +18,9 @@ export class Teammates implements OnInit {
   selectedHackathon = signal('');
   selectedTech = signal('');
   selectedLocation = signal('');
+  teams = signal<TeamPost[]>([]);
+  loading = signal(true);
+  error = signal<string | null>(null);
 
   constructor(
     private teamService: TeamService,
@@ -25,39 +28,45 @@ export class Teammates implements OnInit {
   ) {}
 
   ngOnInit() {
-    // Pre-select hackathon from query param (comes from hackathon card "Find Team" button)
     const hackathon = this.route.snapshot.queryParamMap.get('hackathon');
     if (hackathon) this.selectedHackathon.set(hackathon);
+    this.loadTeams();
   }
 
-  allTeams = computed(() => this.teamService.getAll());
+  loadTeams() {
+    this.loading.set(true);
+    this.error.set(null);
+    this.teamService.getAll().subscribe({
+      next:  (teams) => { this.teams.set(teams); this.loading.set(false); },
+      error: ()      => { this.error.set('Failed to load team posts'); this.loading.set(false); },
+    });
+  }
 
-  // Unique filter options from data
   hackathonOptions = computed(() => {
-    const titles = this.allTeams().map(t => t.hackathon.title);
+    const titles = this.teams().map(t => t.hackathon.title);
     return ['All', ...new Set(titles)];
   });
 
   techOptions = computed(() => {
-    const techs = this.allTeams().flatMap(t => t.techStack);
+    const techs = this.teams().flatMap(t => t.techStack);
     return ['All', ...new Set(techs)];
   });
 
   locationOptions = computed(() => {
-    const locs = this.allTeams().map(t => t.location);
+    const locs = this.teams().map(t => t.location).filter((l): l is string => !!l);
     return ['All', ...new Set(locs)];
   });
 
   filteredTeams = computed(() => {
-    const q = this.searchQuery().toLowerCase();
+    const q        = this.searchQuery().toLowerCase();
     const hackathon = this.selectedHackathon();
-    const tech = this.selectedTech();
-    const location = this.selectedLocation();
+    const tech      = this.selectedTech();
+    const location  = this.selectedLocation();
 
-    return this.allTeams().filter(t => {
+    return this.teams().filter(t => {
       const matchesSearch = !q ||
         t.title.toLowerCase().includes(q) ||
-        t.description.toLowerCase().includes(q) ||
+        (t.description ?? '').toLowerCase().includes(q) ||
         t.author.name.toLowerCase().includes(q) ||
         t.techStack.some(s => s.toLowerCase().includes(q));
 
@@ -91,11 +100,28 @@ export class Teammates implements OnInit {
   }
 
   onJoinRequest(teamId: number) {
-    this.teamService.requestJoin(teamId);
+    this.teamService.requestJoin(teamId).subscribe({
+      next: (res) => {
+        this.teams.update(list =>
+          list.map(t => t.id === teamId ? { ...t, requestStatus: res.status as any } : t)
+        );
+      },
+    });
   }
 
   onCancelRequest(teamId: number) {
-    this.teamService.cancelRequest(teamId);
+    this.teamService.cancelRequest(teamId).subscribe({
+      next: (res) => {
+        this.teams.update(list =>
+          list.map(t => t.id === teamId ? { ...t, requestStatus: res.status as any } : t)
+        );
+      },
+    });
+  }
+
+  onTeamCreated(team: TeamPost) {
+    this.teams.update(list => [team, ...list]);
+    this.showCreateModal.set(false);
   }
 
   clearFilters() {

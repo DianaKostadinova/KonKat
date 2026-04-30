@@ -30,6 +30,7 @@ enum class NotificationType {
     HACKATHON_STARTED,  // a hackathon you registered for has begun
     HACKATHON_REGISTER, // someone registered for your hackathon
     HACKATHON_SAVED,    // someone saved your hackathon
+    TEAM_REQUEST,       // someone requested to join your team post
     BADGE_AWARDED,
     MESSAGE,            // someone sent you a DM or group message
 }

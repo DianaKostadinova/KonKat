@@ -29,57 +29,80 @@
           <span class="text-[#888888] text-[10px]">END DATE</span>
           <span class="text-[#f0f0f0] text-xs">{{ formatDate(team.hackathon.endDate) }}</span>
         </div>
-        <div class="flex flex-col gap-0.5">
-          <span class="text-[#888888] text-[10px]">LOCATION</span>
-          <span class="text-[#f0f0f0] text-xs">{{ team.hackathon.city }}</span>
-        </div>
+        @if (team.hackathon.city) {
+          <div class="flex flex-col gap-0.5">
+            <span class="text-[#888888] text-[10px]">LOCATION</span>
+            <span class="text-[#f0f0f0] text-xs">{{ team.hackathon.city }}</span>
+          </div>
+        }
       </div>
-      <button class="mt-1 w-full rounded-lg border border-[#E8593C] text-[#E8593C] bg-transparent py-1.5 text-xs cursor-pointer hover:bg-[#E8593C] hover:text-white transition-all duration-200">
-        View Hackathon Details
-      </button>
     </div>
   }
 
-  <!-- Author -->
+  <!-- Author row -->
   <div class="flex items-center justify-between">
     <div class="flex items-center gap-2 cursor-pointer group">
-      <div class="w-8 h-8 rounded-full bg-[#2a2a2a] border border-[#3a3a3a] flex items-center justify-center flex-shrink-0">
-        <span class="material-icons text-[#888888]" style="font-size: 20px;">account_circle</span>
-      </div>
+      @if (team.author.avatarUrl) {
+        <img [src]="team.author.avatarUrl" class="w-8 h-8 rounded-full object-cover border border-[#3a3a3a]" />
+      } @else {
+        <div class="w-8 h-8 rounded-full bg-[#2a2a2a] border border-[#3a3a3a] flex items-center justify-center flex-shrink-0">
+          <span class="material-icons text-[#888888]" style="font-size: 20px;">account_circle</span>
+        </div>
+      }
       <div class="flex flex-col">
         <span class="text-[#f0f0f0] text-xs font-medium group-hover:underline">{{ team.author.name }}</span>
-        <span class="text-[#888888] text-[11px]">{{ team.author.role }}</span>
       </div>
     </div>
-    <span class="text-[#888888] text-xs">{{ team.createdAt }}</span>
+    <div class="flex items-center gap-2">
+      @if (team.isOwn) {
+        <span class="rounded-full px-2 py-0.5 text-[10px] bg-[#E8593C]/10 text-[#E8593C] border border-[#E8593C]/30 font-medium">
+          Your Post
+        </span>
+      }
+      <span class="text-[#888888] text-xs">{{ timeAgo(team.createdAt) }}</span>
+    </div>
   </div>
 
   <!-- Title + description -->
   <div class="flex flex-col gap-2">
     <h3 class="text-[#f0f0f0] text-sm font-semibold m-0 leading-snug">{{ team.title }}</h3>
-    <p class="text-[#888888] text-xs leading-relaxed m-0">{{ team.description }}</p>
-  </div>
-
-  <!-- Tech stack -->
-  <div class="flex flex-wrap gap-1.5">
-    @for (tech of team.techStack; track tech) {
-      <span class="rounded-md px-2 py-0.5 text-[11px] bg-[#2a2a2a] text-[#888888] border border-[#3a3a3a]">
-        {{ tech }}
-      </span>
+    @if (team.description) {
+      <p class="text-[#888888] text-xs leading-relaxed m-0">{{ team.description }}</p>
     }
   </div>
 
-  <!-- Looking for -->
-  <div class="flex flex-col gap-2">
-    <span class="text-[#888888] text-[11px] font-medium">LOOKING FOR</span>
+  <!-- Tech stack -->
+  @if (team.techStack.length > 0) {
     <div class="flex flex-wrap gap-1.5">
-      @for (role of team.lookingFor; track role) {
-        <span class="rounded-full px-2.5 py-0.5 text-[11px] bg-[#E8593C]/10 text-[#E8593C] border border-[#E8593C]/30">
-          {{ role }}
+      @for (tech of team.techStack; track tech) {
+        <span class="rounded-md px-2 py-0.5 text-[11px] bg-[#2a2a2a] text-[#888888] border border-[#3a3a3a]">
+          {{ tech }}
         </span>
       }
     </div>
-  </div>
+  }
+
+  <!-- Location -->
+  @if (team.location) {
+    <div class="flex items-center gap-1.5">
+      <span class="material-icons-outlined text-[#888888]" style="font-size: 14px;">location_on</span>
+      <span class="text-[#888888] text-xs">{{ team.location }}</span>
+    </div>
+  }
+
+  <!-- Looking for -->
+  @if (team.lookingFor.length > 0) {
+    <div class="flex flex-col gap-2">
+      <span class="text-[#888888] text-[11px] font-medium">LOOKING FOR</span>
+      <div class="flex flex-wrap gap-1.5">
+        @for (role of team.lookingFor; track role) {
+          <span class="rounded-full px-2.5 py-0.5 text-[11px] bg-[#E8593C]/10 text-[#E8593C] border border-[#E8593C]/30">
+            {{ role }}
+          </span>
+        }
+      </div>
+    </div>
+  }
 
   <!-- Members -->
   <div class="flex flex-col gap-2">
@@ -91,9 +114,13 @@
         <!-- Avatar stack -->
         <div class="flex -space-x-2">
           @for (member of team.members.slice(0, 4); track member.id) {
-            <div class="w-7 h-7 rounded-full bg-[#2a2a2a] border-2 border-[#1a1a1a] flex items-center justify-center">
-              <span class="material-icons text-[#888888]" style="font-size: 16px;">account_circle</span>
-            </div>
+            @if (member.avatarUrl) {
+              <img [src]="member.avatarUrl" class="w-7 h-7 rounded-full object-cover border-2 border-[#1a1a1a]" />
+            } @else {
+              <div class="w-7 h-7 rounded-full bg-[#2a2a2a] border-2 border-[#1a1a1a] flex items-center justify-center">
+                <span class="material-icons text-[#888888]" style="font-size: 16px;">account_circle</span>
+              </div>
+            }
           }
           @if (team.members.length > 4) {
             <div class="w-7 h-7 rounded-full bg-[#2a2a2a] border-2 border-[#1a1a1a] flex items-center justify-center">
@@ -103,7 +130,11 @@
         </div>
         <span class="text-[#888888] text-xs">
           {{ team.members.length }}/{{ team.maxMembers }} members
-          <span class="text-[#28c840] ml-1">· {{ spotsLeft }} spots left</span>
+          @if (spotsLeft > 0) {
+            <span class="text-[#28c840] ml-1">· {{ spotsLeft }} spot{{ spotsLeft === 1 ? '' : 's' }} left</span>
+          } @else {
+            <span class="text-[#888888] ml-1">· Full</span>
+          }
         </span>
       </div>
       <span class="material-icons text-[#888888]" style="font-size: 16px;">
@@ -115,17 +146,17 @@
     @if (showMembers()) {
       <div class="flex flex-col gap-2 rounded-lg bg-[#111111] border border-[#2a2a2a] p-3">
         @for (member of team.members; track member.id) {
-          <div class="flex items-center gap-2 cursor-pointer group">
-            <div class="w-7 h-7 rounded-full bg-[#2a2a2a] flex items-center justify-center flex-shrink-0">
-              <span class="material-icons text-[#888888]" style="font-size: 18px;">account_circle</span>
-            </div>
-            <div class="flex flex-col flex-1">
-              <span class="text-[#f0f0f0] text-xs font-medium group-hover:underline">{{ member.name }}</span>
-              <span class="text-[#888888] text-[11px]">{{ member.role }}</span>
-            </div>
-            <button class="text-[#888888] text-[11px] bg-transparent border border-[#2a2a2a] rounded-lg px-2 py-0.5 cursor-pointer hover:border-[#E8593C] hover:text-[#E8593C] transition-all">
-              View Qa
-            </button>
+          <div class="flex items-center gap-2 group">
+            @if (member.avatarUrl) {
+              <img [src]="member.avatarUrl" class="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+            } @else {
+              <div class="w-7 h-7 rounded-full bg-[#2a2a2a] flex items-center justify-center flex-shrink-0">
+                <span class="material-icons text-[#888888]" style="font-size: 18px;">account_circle</span>
+              </div>
+            }
+            <span class="text-[#f0f0f0] text-xs font-medium group-hover:underline flex-1 cursor-pointer">
+              {{ member.name }}
+            </span>
           </div>
         }
       </div>
@@ -135,36 +166,43 @@
   <!-- Action buttons -->
   <div class="flex items-center gap-2 border-t border-[#2a2a2a] pt-3">
 
-    @if (team.requestStatus === 'none') {
-      <button
-        class="flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-white bg-[#E8593C] border-none cursor-pointer hover:bg-[#d04a2e] transition-all duration-200"
-        (click)="onJoin()"
-      >
-        <span class="material-icons-outlined" style="font-size: 16px;">group_add</span>
-        Request to Join
-      </button>
-    }
-
-    @if (team.requestStatus === 'pending') {
+    @if (team.isOwn) {
+      <div class="flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-[#888888] bg-transparent border border-[#2a2a2a]">
+        <span class="material-icons-outlined" style="font-size: 16px;">manage_accounts</span>
+        Manage Requests
+      </div>
+    } @else if (team.requestStatus === 'none') {
+      @if (spotsLeft > 0) {
+        <button
+          class="flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-white bg-[#E8593C] border-none cursor-pointer hover:bg-[#d04a2e] transition-all duration-200"
+          (click)="onJoin()"
+        >
+          <span class="material-icons-outlined" style="font-size: 16px;">group_add</span>
+          Request to Join
+        </button>
+      } @else {
+        <div class="flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-[#888888] bg-transparent border border-[#2a2a2a]">
+          <span class="material-icons-outlined" style="font-size: 16px;">group_off</span>
+          Team Full
+        </div>
+      }
+    } @else if (team.requestStatus === 'pending') {
       <button
         class="flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-[#febc2e] bg-[#febc2e]/10 border border-[#febc2e]/30 cursor-pointer hover:bg-[#febc2e]/20 transition-all duration-200"
         (click)="onCancel()"
       >
         <span class="material-icons-outlined" style="font-size: 16px;">hourglass_top</span>
-        Pending Approval — Cancel
+        Pending — Cancel
       </button>
-    }
-
-    @if (team.requestStatus === 'approved') {
+    } @else if (team.requestStatus === 'approved') {
       <button
         class="flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-[#28c840] bg-[#28c840]/10 border border-[#28c840]/30 cursor-pointer hover:bg-[#28c840]/20 transition-all"
-        [routerLink]="['/workspace', team.id]"
+        [routerLink]="['/workspace']"
       >
         <span class="material-icons-outlined" style="font-size: 16px;">rocket_launch</span>
         Open Workspace
       </button>
-    }
-    @if (team.requestStatus === 'rejected') {
+    } @else if (team.requestStatus === 'rejected') {
       <div class="flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-[#888888] bg-transparent border border-[#2a2a2a]">
         <span class="material-icons-outlined" style="font-size: 16px;">cancel</span>
         Request Declined
