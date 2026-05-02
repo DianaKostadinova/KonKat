@@ -1,0 +1,150 @@
+<!-- Backdrop -->
+<div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+     (click)="close.emit()">
+
+  <!-- Modal -->
+  <div class="w-full max-w-md bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl overflow-hidden"
+       (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-5 py-4 border-b border-[#2a2a2a]">
+      <div>
+        <h2 class="text-[#f0f0f0] font-semibold text-base m-0">Join Requests</h2>
+        <p class="text-[#888888] text-xs mt-0.5 m-0 line-clamp-1">{{ teamTitle }}</p>
+      </div>
+      <button
+        class="flex items-center justify-center w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all"
+        (click)="close.emit()"
+      >
+        <span class="material-icons" style="font-size: 18px;">close</span>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="flex flex-col max-h-[70vh] overflow-y-auto">
+
+      @if (loading()) {
+        <div class="flex flex-col gap-3 p-5">
+          @for (i of [1,2]; track i) {
+            <div class="flex items-center gap-3 animate-pulse">
+              <div class="w-9 h-9 rounded-full bg-[#2a2a2a] flex-shrink-0"></div>
+              <div class="flex-1 flex flex-col gap-1.5">
+                <div class="h-3 w-1/2 rounded bg-[#2a2a2a]"></div>
+                <div class="h-2.5 w-3/4 rounded bg-[#2a2a2a]"></div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (error()) {
+        <div class="flex flex-col items-center gap-2 py-10 text-center px-5">
+          <span class="material-icons text-[#2a2a2a]" style="font-size: 40px;">cloud_off</span>
+          <p class="text-[#888888] text-sm m-0">{{ error() }}</p>
+          <button class="text-[#E8593C] text-xs hover:underline bg-transparent border-none cursor-pointer" (click)="load()">
+            Try again
+          </button>
+        </div>
+      }
+
+      @if (!loading() && !error()) {
+
+        <!-- Pending requests -->
+        @if (pending().length > 0) {
+          <div class="px-5 pt-4 pb-2">
+            <span class="text-[#888888] text-[10px] font-medium tracking-wide">
+              PENDING ({{ pending().length }})
+            </span>
+          </div>
+          <div class="flex flex-col divide-y divide-[#2a2a2a]">
+            @for (req of pending(); track req.id) {
+              <div class="flex items-start gap-3 px-5 py-4">
+                @if (req.requester.avatarUrl) {
+                  <img [src]="req.requester.avatarUrl"
+                       class="w-9 h-9 rounded-full object-cover flex-shrink-0 mt-0.5" />
+                } @else {
+                  <div class="w-9 h-9 rounded-full bg-[#2a2a2a] flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span class="material-icons text-[#888888]" style="font-size: 20px;">account_circle</span>
+                  </div>
+                }
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-[#f0f0f0] text-sm font-medium">{{ req.requester.name }}</span>
+                    <span class="text-[#888888] text-[11px] flex-shrink-0">{{ timeAgo(req.createdAt) }}</span>
+                  </div>
+                  @if (req.message) {
+                    <p class="text-[#888888] text-xs mt-1 m-0 leading-relaxed">{{ req.message }}</p>
+                  }
+                  <div class="flex items-center gap-2 mt-3">
+                    <button
+                      class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white bg-[#28c840] border-none cursor-pointer hover:bg-[#1fa832] transition-all disabled:opacity-50 disabled:cursor-wait"
+                      [disabled]="responding() === req.id"
+                      (click)="approve(req)"
+                    >
+                      <span class="material-icons-outlined" style="font-size: 14px;">check</span>
+                      Approve
+                    </button>
+                    <button
+                      class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[#888888] bg-transparent border border-[#2a2a2a] cursor-pointer hover:border-red-500 hover:text-red-400 transition-all disabled:opacity-50 disabled:cursor-wait"
+                      [disabled]="responding() === req.id"
+                      (click)="reject(req)"
+                    >
+                      <span class="material-icons-outlined" style="font-size: 14px;">close</span>
+                      Decline
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Resolved requests -->
+        @if (resolved().length > 0) {
+          <div class="px-5 pt-4 pb-2">
+            <span class="text-[#888888] text-[10px] font-medium tracking-wide">
+              RESOLVED ({{ resolved().length }})
+            </span>
+          </div>
+          <div class="flex flex-col divide-y divide-[#2a2a2a]">
+            @for (req of resolved(); track req.id) {
+              <div class="flex items-center gap-3 px-5 py-3">
+                @if (req.requester.avatarUrl) {
+                  <img [src]="req.requester.avatarUrl"
+                       class="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                } @else {
+                  <div class="w-8 h-8 rounded-full bg-[#2a2a2a] flex items-center justify-center flex-shrink-0">
+                    <span class="material-icons text-[#888888]" style="font-size: 18px;">account_circle</span>
+                  </div>
+                }
+                <span class="text-[#888888] text-sm flex-1">{{ req.requester.name }}</span>
+                @if (req.status === 'approved') {
+                  <span class="flex items-center gap-1 text-[#28c840] text-xs">
+                    <span class="material-icons-outlined" style="font-size: 14px;">check_circle</span>
+                    Approved
+                  </span>
+                } @else {
+                  <span class="flex items-center gap-1 text-[#888888] text-xs">
+                    <span class="material-icons-outlined" style="font-size: 14px;">cancel</span>
+                    Declined
+                  </span>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Empty state -->
+        @if (requests().length === 0) {
+          <div class="flex flex-col items-center gap-3 py-14 text-center px-5">
+            <span class="material-icons text-[#2a2a2a]" style="font-size: 48px;">inbox</span>
+            <p class="text-[#888888] text-sm m-0">No join requests yet</p>
+            <p class="text-[#888888] text-xs m-0">When someone requests to join your team, they'll appear here.</p>
+          </div>
+        }
+      }
+
+    </div>
+
+  </div>
+</div>

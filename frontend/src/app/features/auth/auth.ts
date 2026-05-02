@@ -2,18 +2,20 @@ import { Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../shared/auth/auth.service';
+import { ForgotPasswordModal } from './forgot-password-modal';
 
 type Mode = 'login' | 'register';
 
 @Component({
   selector: 'app-auth',
   standalone: true,
-  imports: [RouterLink, FormsModule],
+  imports: [RouterLink, FormsModule, ForgotPasswordModal],
   templateUrl: './auth.html',
   styleUrl: './auth.css',
 })
 export class Auth {
   mode = signal<Mode>('login');
+  showForgotPassword = signal(false);
   loading = signal(false);
   error = signal('');
   showPassword = signal(false);

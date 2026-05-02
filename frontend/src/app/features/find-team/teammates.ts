@@ -124,6 +124,13 @@ export class Teammates implements OnInit {
     this.showCreateModal.set(false);
   }
 
+  onMembersUpdated(teamId: number) {
+    // Re-fetch the full list so the member count and member avatars update
+    this.teamService.getAll().subscribe({
+      next: (teams) => this.teams.set(teams),
+    });
+  }
+
   clearFilters() {
     this.searchQuery.set('');
     this.selectedHackathon.set('');

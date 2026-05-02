@@ -151,7 +151,11 @@
 
         @if (mode() === 'login') {
           <div class="auth-forgot">
-            <a href="#" class="auth-link">Forgot password?</a>
+            <button
+              type="button"
+              class="auth-link"
+              (click)="showForgotPassword.set(true)"
+            >Forgot password?</button>
           </div>
         }
 
@@ -195,3 +199,7 @@
   </div>
 
 </div>
+
+@if (showForgotPassword()) {
+  <app-forgot-password-modal (close)="showForgotPassword.set(false)" />
+}

@@ -19,6 +19,7 @@ function mapType(t: string): NotificationType {
     case 'PROJECT_INTEREST':   return 'join_request';
     case 'PROJECT_MEMBER':     return 'join_approved';
     case 'MESSAGE':            return 'comment';
+    case 'TEAM_REQUEST':       return 'join_request';
     default:                   return 'mention';
   }
 }
@@ -37,6 +38,7 @@ function buildMessage(dto: any): string {
     case 'PROJECT_INTEREST':   return `${actor} wants to join your project`;
     case 'PROJECT_MEMBER':     return `${actor} added you to a project`;
     case 'MESSAGE':            return `${actor} sent you a message`;
+    case 'TEAM_REQUEST':       return `${actor} wants to join your team`;
     default:                   return `${actor} interacted with you`;
   }
 }
@@ -54,6 +56,7 @@ function buildTitle(type: string): string {
     case 'PROJECT_INTEREST':   return 'Project Interest';
     case 'PROJECT_MEMBER':     return 'Added to Project';
     case 'MESSAGE':            return 'New Message';
+    case 'TEAM_REQUEST':       return 'Team Join Request';
     default:                   return 'Notification';
   }
 }
@@ -151,6 +154,7 @@ export class NotificationService {
                                                                                   ? `/feed?post=${dto.postId}`
                 : dto.hackathonId                                                  ? '/hackathons'
                 : dto.projectId                                                    ? '/projects'
+                : dto.type === 'TEAM_REQUEST'                                      ? '/find-team'
                 : undefined,
     };
   }

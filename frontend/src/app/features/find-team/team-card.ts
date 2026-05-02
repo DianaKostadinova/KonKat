@@ -1,24 +1,27 @@
 import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TeamPost } from './teammates.model';
+import { TeamRequestsModal } from './team-requests-modal';
 
 @Component({
   selector: 'app-team-card',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, TeamRequestsModal],
   templateUrl: './team-card.html',
   styleUrl: './team-card.css',
 })
 export class TeamCard {
   @Input() team!: TeamPost;
-  @Output() joinRequest   = new EventEmitter<number>();
-  @Output() cancelRequest = new EventEmitter<number>();
+  @Output() joinRequest    = new EventEmitter<number>();
+  @Output() cancelRequest  = new EventEmitter<number>();
+  @Output() membersUpdated = new EventEmitter<number>();
 
-  showMembers      = signal(false);
+  showMembers       = signal(false);
   showHackathonInfo = signal(false);
+  showRequests      = signal(false);
 
-  toggleMembers()       { this.showMembers.update(v => !v); }
-  toggleHackathonInfo() { this.showHackathonInfo.update(v => !v); }
+  toggleMembers()        { this.showMembers.update(v => !v); }
+  toggleHackathonInfo()  { this.showHackathonInfo.update(v => !v); }
 
   get spotsLeft() {
     return Math.max(0, this.team.maxMembers - this.team.members.length);
@@ -45,4 +48,10 @@ export class TeamCard {
 
   onJoin()   { this.joinRequest.emit(this.team.id); }
   onCancel() { this.cancelRequest.emit(this.team.id); }
+
+  onMembersChanged() {
+    // Signal the parent to refresh the team list so member count updates
+    this.membersUpdated.emit(this.team.id);
+    this.showRequests.set(false);
+  }
 }
