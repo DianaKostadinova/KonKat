@@ -26,6 +26,7 @@ export class PostCard implements OnInit {
 
   goToTag(tag: string) {
     const clean = tag.replace(/^#/, '').toLowerCase().trim();
+    if (!clean) return;
     this.router.navigate(['/trending'], { queryParams: { tag: clean } });
   }
 

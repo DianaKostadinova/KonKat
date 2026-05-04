@@ -1,5 +1,7 @@
 import { Component, computed, signal, effect } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { distinctUntilChanged, map } from 'rxjs';
 import { PostService } from '../../shared/post-card/post.service';
 import { AuthService } from '../../shared/auth/auth.service';
 import { PostCard } from '../../shared/post-card/post-card';
@@ -20,29 +22,37 @@ export class HomeFeed {
   showModal        = signal(false);
   modalInitialType = signal<PostType>('text');
 
+  private pendingPostId = signal<string | null>(null);
+
   constructor(
     private postService: PostService,
     public authService: AuthService,
     private route: ActivatedRoute,
   ) {
-    const postId = this.route.snapshot.queryParamMap.get('post');
-    if (postId) {
-      let scrolled = false;
-      effect(() => {
-        const posts = this.posts();
-        if (!scrolled && posts.some(p => String(p.id) === postId)) {
-          scrolled = true;
-          setTimeout(() => {
-            const el = document.getElementById(`post-${postId}`);
-            if (el) {
-              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              el.classList.add('post-highlight');
-              setTimeout(() => el.classList.remove('post-highlight'), 2500);
-            }
-          }, 100);
-        }
-      });
-    }
+    // React to ?post= param changes even when already on /feed
+    this.route.queryParamMap.pipe(
+      map(p => p.get('post')),
+      distinctUntilChanged(),
+      takeUntilDestroyed(),
+    ).subscribe(postId => this.pendingPostId.set(postId));
+
+    // Scroll to the target post once it appears in the feed
+    effect(() => {
+      const postId = this.pendingPostId();
+      if (!postId) return;
+      const posts = this.posts();
+      if (posts.some(p => String(p.id) === postId)) {
+        this.pendingPostId.set(null);
+        setTimeout(() => {
+          const el = document.getElementById(`post-${postId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('post-highlight');
+            setTimeout(() => el.classList.remove('post-highlight'), 2500);
+          }
+        }, 100);
+      }
+    });
   }
 
   get currentUser() {
@@ -54,7 +64,6 @@ export class HomeFeed {
     this.newPostText.set(input.value);
   }
 
-  // Quick single-line post from the feed input bar
   submitQuickPost(): void {
     const text = this.newPostText().trim();
     if (!text) return;

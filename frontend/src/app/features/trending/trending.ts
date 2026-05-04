@@ -26,9 +26,9 @@ export class Trending implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
   ) {
-    // React to ?tag= param changes even when the component is already rendered
+    // Subscribe to query param changes so same-route navigation always triggers a fetch
     this.route.queryParamMap.pipe(
-      map(p => p.get('tag')),
+      map(p => p.get('tag')?.trim() || null),   // normalise empty / whitespace to null
       distinctUntilChanged(),
       takeUntilDestroyed(),
     ).subscribe(tag => {
@@ -44,9 +44,10 @@ export class Trending implements OnInit {
     });
   }
 
-  // Called from UI (chip click, search) — updates the URL, the subscription drives the fetch
+  // Called from UI (chip click, search) — updates the URL; the subscription drives the fetch
   selectTag(raw: string) {
     const apiTag = raw.replace(/^#/, '').trim().toLowerCase();
+    if (!apiTag) return;  // ignore empty / hash-only input
     this.router.navigate([], { queryParams: { tag: apiTag }, replaceUrl: true });
   }
 
@@ -64,11 +65,12 @@ export class Trending implements OnInit {
     return raw.startsWith('#') ? raw : `#${raw}`;
   }
 
-  // Loads posts for a tag — never touches the URL
+  // Fetches posts for a tag — never touches the URL
   private fetchTag(raw: string) {
     const apiTag     = raw.replace(/^#/, '').trim().toLowerCase();
+    if (!apiTag) { this.resetTagView(); return; }   // guard against empty tag
     const displayTag = `#${apiTag}`;
-    if (this.selectedTag() === displayTag) return; // already showing this tag
+    if (this.selectedTag() === displayTag) return;   // already loaded
     this.selectedTag.set(displayTag);
     this.searchQuery.set(displayTag);
     this.loading.set(true);
