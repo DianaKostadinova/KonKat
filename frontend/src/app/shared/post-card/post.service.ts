@@ -1,8 +1,7 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, tap, map } from 'rxjs';
 import { Post, PostType } from './post.model';
-import { AuthService } from '../auth/auth.service';
 
 const API = 'http://localhost:8081/api';
 
@@ -11,10 +10,7 @@ export class PostService {
 
   private posts = signal<Post[]>([]);
 
-  constructor(
-    private http: HttpClient,
-    private authService: AuthService,
-  ) {
+  constructor(private http: HttpClient) {
     this.loadFeed();
   }
 
@@ -25,7 +21,7 @@ export class PostService {
   }
 
   loadFeed(): void {
-    this.http.get<any[]>(`${API}/posts`, { headers: this.authHeaders() })
+    this.http.get<any[]>(`${API}/posts`)
       .subscribe(dtos => this.posts.set(dtos.map(d => this.mapPost(d))));
   }
 
@@ -44,7 +40,7 @@ export class PostService {
       codeSnippet: postData.code?.snippet ?? null,
       tags: postData.tags ?? [],
     };
-    return this.http.post<any>(`${API}/posts`, body, { headers: this.authHeaders() }).pipe(
+    return this.http.post<any>(`${API}/posts`, body).pipe(
       map(dto => this.mapPost(dto)),
       tap(post => this.posts.update(all => [post, ...all])),
     );
@@ -63,7 +59,7 @@ export class PostService {
       })
     );
     // Persist to backend
-    this.http.post(`${API}/posts/${postId}/react`, { type: 'LIKE' }, { headers: this.authHeaders() })
+    this.http.post(`${API}/posts/${postId}/react`, { type: 'LIKE' }, )
       .subscribe();
   }
 
@@ -73,13 +69,13 @@ export class PostService {
       all.map(p => p.id !== postId ? p : { ...p, saved: !p.saved })
     );
     // Persist to backend
-    this.http.post(`${API}/posts/${postId}/react`, { type: 'SAVE' }, { headers: this.authHeaders() })
+    this.http.post(`${API}/posts/${postId}/react`, { type: 'SAVE' }, )
       .subscribe();
   }
 
   addComment(postId: number, author: string, text: string): void {
     const body = { text };
-    this.http.post<any>(`${API}/posts/${postId}/comments`, body, { headers: this.authHeaders() })
+    this.http.post<any>(`${API}/posts/${postId}/comments`, body, )
       .subscribe(() => {
         this.posts.update(all =>
           all.map(p => {
@@ -96,13 +92,6 @@ export class PostService {
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-
-  private authHeaders(): HttpHeaders {
-    const token = this.authService.getToken();
-    return token
-      ? new HttpHeaders({ Authorization: `Bearer ${token}` })
-      : new HttpHeaders();
-  }
 
   /** Maps a backend PostDto to the frontend Post shape */
   mapPost(dto: any): Post {

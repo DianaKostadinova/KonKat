@@ -10,12 +10,13 @@ import { EditProfile } from './features/profile/edit-profile/edit-profile';
 import { Workspace } from './features/workspace/workspace';
 import { MyWorkspaces } from './features/workspace/myworkspace';
 import { NotificationDropdown } from './shared/notification-bell/notification-bell';
-import { Auth } from './features/auth/auth';
+import { SignIn } from './features/auth/sign-in';
 import { authGuard } from './shared/auth/auth.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'feed', pathMatch: 'full' },
-  { path: 'login', component: Auth },
+  { path: '',        redirectTo: 'feed', pathMatch: 'full' },
+  { path: 'sign-in', component: SignIn },
+  { path: 'login',   redirectTo: 'sign-in', pathMatch: 'full' },  // backward compat
   { path: 'feed',          component: HomeFeed,             canActivate: [authGuard] },
   { path: 'projects',      component: Projects,             canActivate: [authGuard] },
   { path: 'hackathons',    component: Hackathons,           canActivate: [authGuard] },

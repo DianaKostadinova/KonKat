@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, tap, map, share } from 'rxjs';
 import { UserProfile } from './profile.model';
 import { Post } from '../../shared/post-card/post.model';
@@ -41,7 +41,7 @@ export class ProfileService {
    * Returns an Observable so callers can react once data arrives.
    */
   loadProfile(): Observable<UserProfile> {
-    const req$ = this.http.get<any>(`${API}/users/me`, { headers: this.authHeaders() }).pipe(
+    const req$ = this.http.get<any>(`${API}/users/me`).pipe(
       tap(data => this.setFromDto(data)),
       map(() => this.profile()),
       share(),
@@ -56,7 +56,7 @@ export class ProfileService {
    * Updates the same internal signal so the template reacts automatically.
    */
   loadPublicProfile(userId: number): Observable<UserProfile> {
-    const req$ = this.http.get<any>(`${API}/users/${userId}`, { headers: this.authHeaders() }).pipe(
+    const req$ = this.http.get<any>(`${API}/users/${userId}`).pipe(
       tap(data => this.setFromDto(data)),
       map(() => this.profile()),
       share(),
@@ -85,7 +85,7 @@ export class ProfileService {
       techStack:     updates.techStack    ?? undefined,
       interests:     updates.interests    ?? undefined,
     };
-    return this.http.put<any>(`${API}/users/me`, body, { headers: this.authHeaders() }).pipe(
+    return this.http.put<any>(`${API}/users/me`, body).pipe(
       tap(data => this.setFromDto(data)),
       map(() => this.profile()),
     );
@@ -98,7 +98,7 @@ export class ProfileService {
   getLikedPosts() { return this.likedPosts(); }
 
   loadMyPosts(userId: number): void {
-    this.http.get<any[]>(`${API}/posts/user/${userId}`, { headers: this.authHeaders() })
+    this.http.get<any[]>(`${API}/posts/user/${userId}`)
       .subscribe({
         next: dtos => this.myPosts.set(dtos.map(d => this.postService.mapPost(d))),
         error: err => console.error('loadMyPosts failed', err),
@@ -106,7 +106,7 @@ export class ProfileService {
   }
 
   loadSavedPosts(): void {
-    this.http.get<any[]>(`${API}/posts/saved`, { headers: this.authHeaders() })
+    this.http.get<any[]>(`${API}/posts/saved`)
       .subscribe({
         next: dtos => this.savedPosts.set(dtos.map(d => this.postService.mapPost(d))),
         error: err => console.error('loadSavedPosts failed', err),
@@ -114,7 +114,7 @@ export class ProfileService {
   }
 
   loadLikedPosts(): void {
-    this.http.get<any[]>(`${API}/posts`, { headers: this.authHeaders() })
+    this.http.get<any[]>(`${API}/posts`)
       .subscribe({
         next: dtos => this.likedPosts.set(
           dtos.filter(d => d.liked).map(d => this.postService.mapPost(d))
@@ -148,10 +148,4 @@ export class ProfileService {
     });
   }
 
-  private authHeaders(): HttpHeaders {
-    const token = localStorage.getItem('token');
-    return token
-      ? new HttpHeaders({ Authorization: `Bearer ${token}` })
-      : new HttpHeaders();
-  }
 }

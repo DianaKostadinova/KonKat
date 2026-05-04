@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { forkJoin, Observable, tap } from 'rxjs';
 import { Hackathon, Webinar, CreateHackathonPayload, CreateWebinarPayload } from './hackathons.model';
 import { EventService } from '../../shared/event/event.service';
@@ -30,8 +30,8 @@ export class HackathonService {
   loadAll(): void {
     this._loading.set(true);
     forkJoin({
-      hackathons: this.http.get<any[]>(`${API}/hackathons`, { headers: this.authHeaders() }),
-      webinars:   this.http.get<any[]>(`${API}/webinars`,   { headers: this.authHeaders() }),
+      hackathons: this.http.get<any[]>(`${API}/hackathons`),
+      webinars:   this.http.get<any[]>(`${API}/webinars`),
     }).subscribe({
       next: ({ hackathons, webinars }) => {
         this._hackathons.set(hackathons.map(h => this.mapHackathon(h)));
@@ -46,20 +46,20 @@ export class HackathonService {
 
   createHackathon(payload: CreateHackathonPayload): Observable<Hackathon> {
     return this.http
-      .post<any>(`${API}/hackathons`, payload, { headers: this.authHeaders() })
+      .post<any>(`${API}/hackathons`, payload)
       .pipe(tap(h => this._hackathons.update(list => [this.mapHackathon(h), ...list])));
   }
 
   createWebinar(payload: CreateWebinarPayload): Observable<Webinar> {
     return this.http
-      .post<any>(`${API}/webinars`, payload, { headers: this.authHeaders() })
+      .post<any>(`${API}/webinars`, payload)
       .pipe(tap(w => this._webinars.update(list => [this.mapWebinar(w), ...list])));
   }
 
   /** Toggle save — also triggers right-panel refresh via EventService. */
   toggleSaveHackathon(id: number): void {
     this.http
-      .post<{ saved: boolean }>(`${API}/hackathons/${id}/save`, {}, { headers: this.authHeaders() })
+      .post<{ saved: boolean }>(`${API}/hackathons/${id}/save`, {})
       .subscribe({ next: ({ saved }) => {
         this._hackathons.update(list => list.map(h => h.id === id ? { ...h, saved } : h));
         this.eventService.triggerRefresh();   // ← right panel reloads
@@ -68,7 +68,7 @@ export class HackathonService {
 
   toggleSaveWebinar(id: number): void {
     this.http
-      .post<{ saved: boolean }>(`${API}/webinars/${id}/save`, {}, { headers: this.authHeaders() })
+      .post<{ saved: boolean }>(`${API}/webinars/${id}/save`, {})
       .subscribe({ next: ({ saved }) => {
         this._webinars.update(list => list.map(w => w.id === id ? { ...w, saved } : w));
         this.eventService.triggerRefresh();   // ← right panel reloads
@@ -78,7 +78,7 @@ export class HackathonService {
   /** Register (or unregister) for a hackathon. */
   registerForHackathon(id: number, payload: RegisterPayload): Observable<RegisterResult> {
     return this.http
-      .post<RegisterResult>(`${API}/hackathons/${id}/register`, payload, { headers: this.authHeaders() })
+      .post<RegisterResult>(`${API}/hackathons/${id}/register`, payload)
       .pipe(tap(res => {
         this._hackathons.update(list =>
           list.map(h => h.id === id ? { ...h, registered: res.registered } : h)
@@ -89,7 +89,7 @@ export class HackathonService {
 
   /** GET /api/hackathons/registered — upcoming hackathons the user is registered for. */
   getRegisteredUpcoming(): Observable<any[]> {
-    return this.http.get<any[]>(`${API}/hackathons/registered`, { headers: this.authHeaders() });
+    return this.http.get<any[]>(`${API}/hackathons/registered`);
   }
 
   // ── Mappers ───────────────────────────────────────────────────────────────
@@ -143,8 +143,4 @@ export class HackathonService {
     return 'upcoming';
   }
 
-  private authHeaders(): HttpHeaders {
-    const token = localStorage.getItem('token');
-    return token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : new HttpHeaders();
-  }
 }

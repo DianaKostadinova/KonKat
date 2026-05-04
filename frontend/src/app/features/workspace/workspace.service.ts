@@ -1,7 +1,8 @@
-import { Injectable, signal } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable, signal, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 import { WorkspaceSummary, WorkspaceDetail, WorkspaceTask, WorkspaceMessage, TaskStatus } from './workspace.model';
+import { AuthService } from '../../shared/auth/auth.service';
 
 const API = 'http://localhost:8081/api';
 
@@ -12,24 +13,12 @@ export class WorkspaceService {
   private _messages  = signal<WorkspaceMessage[]>([]);
   loading = signal(false);
 
-  readonly meId:   number;
-  readonly meName: string;
+  private auth = inject(AuthService);
 
-  constructor(private http: HttpClient) {
-    const u = this.readUser();
-    this.meId   = u?.id   ?? 0;
-    this.meName = u?.name ?? 'You';
-  }
+  get meId()   { return 0; }   // resolved by backend via JWT
+  get meName() { return this.auth.user()?.name ?? 'You'; }
 
-  private readUser(): { id: number; name: string } | null {
-    try { const r = localStorage.getItem('user'); return r ? JSON.parse(r) : null; }
-    catch { return null; }
-  }
-
-  private headers(): HttpHeaders {
-    const token = localStorage.getItem('token') ?? '';
-    return new HttpHeaders({ Authorization: `Bearer ${token}` });
-  }
+  constructor(private http: HttpClient) {}
 
   summaries() { return this._summaries(); }
   current()   { return this._current(); }
@@ -37,25 +26,25 @@ export class WorkspaceService {
 
   loadAll() {
     this.loading.set(true);
-    this.http.get<WorkspaceSummary[]>(`${API}/workspaces`, { headers: this.headers() })
+    this.http.get<WorkspaceSummary[]>(`${API}/workspaces`)
       .pipe(catchError(() => of([])))
       .subscribe(list => { this._summaries.set(list); this.loading.set(false); });
   }
 
   loadOne(id: number) {
-    this.http.get<WorkspaceDetail>(`${API}/workspaces/${id}`, { headers: this.headers() })
+    this.http.get<WorkspaceDetail>(`${API}/workspaces/${id}`)
       .pipe(catchError(() => of(null)))
       .subscribe(ws => this._current.set(ws));
   }
 
   loadMessages(id: number) {
-    this.http.get<WorkspaceMessage[]>(`${API}/workspaces/${id}/messages`, { headers: this.headers() })
+    this.http.get<WorkspaceMessage[]>(`${API}/workspaces/${id}/messages`)
       .pipe(catchError(() => of([])))
       .subscribe(msgs => this._messages.set(msgs));
   }
 
   createWorkspace(name: string) {
-    return this.http.post<WorkspaceSummary>(`${API}/workspaces`, { name }, { headers: this.headers() })
+    return this.http.post<WorkspaceSummary>(`${API}/workspaces`, { name })
       .subscribe({ next: ws => this._summaries.update(list => [...list, ws]) });
   }
 
@@ -63,7 +52,6 @@ export class WorkspaceService {
     this.http.post<WorkspaceTask>(
       `${API}/workspaces/${workspaceId}/tasks`,
       { title, priority },
-      { headers: this.headers() },
     ).pipe(catchError(() => of(null)))
       .subscribe(task => {
         if (!task) return;
@@ -80,7 +68,6 @@ export class WorkspaceService {
     this.http.patch<WorkspaceTask>(
       `${API}/workspaces/${workspaceId}/tasks/${taskId}`,
       { status },
-      { headers: this.headers() },
     ).pipe(catchError(() => of(null)))
       .subscribe(updated => {
         if (!updated) return;
@@ -93,7 +80,7 @@ export class WorkspaceService {
 
   deleteTask(workspaceId: number, taskId: number) {
     this._current.update(ws => ws ? { ...ws, tasks: ws.tasks.filter(t => t.id !== taskId) } : ws);
-    this.http.delete(`${API}/workspaces/${workspaceId}/tasks/${taskId}`, { headers: this.headers() })
+    this.http.delete(`${API}/workspaces/${workspaceId}/tasks/${taskId}`)
       .pipe(catchError(() => of(null))).subscribe();
   }
 
@@ -110,7 +97,6 @@ export class WorkspaceService {
     this.http.post<WorkspaceMessage>(
       `${API}/workspaces/${workspaceId}/messages`,
       { content },
-      { headers: this.headers() },
     ).pipe(catchError(() => of(null)))
       .subscribe(msg => {
         if (!msg) return;

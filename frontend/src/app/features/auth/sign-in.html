@@ -1,0 +1,45 @@
+<div class="min-h-screen bg-[#111111] flex">
+
+  <!-- Left branding panel -->
+  <div class="hidden lg:flex flex-col justify-center px-16 w-[480px] shrink-0 bg-[#0e0e0e] border-r border-[#1e1e1e]">
+    <div class="flex items-center gap-3 mb-10">
+      <div class="w-10 h-10 rounded-xl bg-[#E8593C] flex items-center justify-center">
+        <span class="material-icons text-white" style="font-size: 22px;">code</span>
+      </div>
+      <span class="text-white text-2xl font-bold tracking-tight">KonKat</span>
+    </div>
+
+    <h1 class="text-white text-4xl font-bold leading-tight mb-4">
+      Where developers<br>connect and build.
+    </h1>
+    <p class="text-[#888888] text-base leading-relaxed mb-10">
+      Join a community of engineers, find your next hackathon team,
+      and ship real projects together.
+    </p>
+
+    <ul class="flex flex-col gap-4">
+      <li class="flex items-center gap-3 text-[#888888] text-sm">
+        <span class="material-icons-outlined text-[#E8593C]" style="font-size: 20px;">rss_feed</span>
+        Share code, ideas, and progress with the community
+      </li>
+      <li class="flex items-center gap-3 text-[#888888] text-sm">
+        <span class="material-icons-outlined text-[#E8593C]" style="font-size: 20px;">group</span>
+        Find teammates for hackathons and side projects
+      </li>
+      <li class="flex items-center gap-3 text-[#888888] text-sm">
+        <span class="material-icons-outlined text-[#E8593C]" style="font-size: 20px;">folder_copy</span>
+        Showcase your projects and get real feedback
+      </li>
+      <li class="flex items-center gap-3 text-[#888888] text-sm">
+        <span class="material-icons-outlined text-[#E8593C]" style="font-size: 20px;">workspace_premium</span>
+        Collaborate in shared team workspaces
+      </li>
+    </ul>
+  </div>
+
+  <!-- Right: Clerk sign-in panel -->
+  <div class="flex-1 flex items-center justify-center p-6">
+    <div #clerkMount></div>
+  </div>
+
+</div>

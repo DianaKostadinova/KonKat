@@ -1,4 +1,4 @@
-package com.example.kon
+package com.example.konkat
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

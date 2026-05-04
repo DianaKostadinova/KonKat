@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AuthService } from '../../shared/auth/auth.service';
 import { CreateTeamPostRequest, TeamPost } from './teammates.model';
 
 const API = 'http://localhost:8081/api';
@@ -17,12 +16,7 @@ export interface TeamRequestDto {
 @Injectable({ providedIn: 'root' })
 export class TeamService {
 
-  constructor(
-    private http: HttpClient,
-    private auth: AuthService,
-  ) {}
-
-  // ── Public reads (no auth needed) ─────────────────────────────────────────
+  constructor(private http: HttpClient) {}
 
   getAll(hackathonId?: number): Observable<TeamPost[]> {
     let params = new HttpParams();
@@ -32,44 +26,26 @@ export class TeamService {
     return this.http.get<TeamPost[]>(`${API}/team-posts`, { params });
   }
 
-  // ── Writes (auth required) ────────────────────────────────────────────────
-
   create(data: CreateTeamPostRequest): Observable<TeamPost> {
-    return this.http.post<TeamPost>(`${API}/team-posts`, data, { headers: this.authHeaders() });
+    return this.http.post<TeamPost>(`${API}/team-posts`, data);
   }
 
   requestJoin(teamId: number): Observable<{ status: string }> {
-    return this.http.post<{ status: string }>(
-      `${API}/team-posts/${teamId}/request`, {}, { headers: this.authHeaders() }
-    );
+    return this.http.post<{ status: string }>(`${API}/team-posts/${teamId}/request`, {});
   }
 
   cancelRequest(teamId: number): Observable<{ status: string }> {
-    return this.http.delete<{ status: string }>(
-      `${API}/team-posts/${teamId}/request`, { headers: this.authHeaders() }
-    );
+    return this.http.delete<{ status: string }>(`${API}/team-posts/${teamId}/request`);
   }
 
-  // ── Author-only ───────────────────────────────────────────────────────────
-
   getRequests(teamId: number): Observable<TeamRequestDto[]> {
-    return this.http.get<TeamRequestDto[]>(
-      `${API}/team-posts/${teamId}/requests`, { headers: this.authHeaders() }
-    );
+    return this.http.get<TeamRequestDto[]>(`${API}/team-posts/${teamId}/requests`);
   }
 
   respond(teamId: number, requestId: number, approve: boolean): Observable<TeamRequestDto> {
     return this.http.post<TeamRequestDto>(
       `${API}/team-posts/${teamId}/requests/${requestId}/respond`,
-      { approve },
-      { headers: this.authHeaders() }
+      { approve }
     );
-  }
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  private authHeaders(): HttpHeaders {
-    const token = this.auth.getToken();
-    return token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : new HttpHeaders();
   }
 }

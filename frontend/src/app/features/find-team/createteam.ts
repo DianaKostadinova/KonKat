@@ -1,7 +1,9 @@
 import { Component, Output, EventEmitter, signal, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { TeamService } from './team.service';
 import { TeamPost } from './teammates.model';
+
+const API = 'http://localhost:8081/api';
 
 interface HackathonOption { id: number; title: string; }
 
@@ -35,7 +37,7 @@ export class CreateTeamModal implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.http.get<any[]>('/api/hackathons').subscribe({
+    this.http.get<any[]>(`${API}/hackathons`).subscribe({
       next: (h) => this.hackathons.set(h.map(x => ({ id: x.id, title: x.title }))),
     });
   }

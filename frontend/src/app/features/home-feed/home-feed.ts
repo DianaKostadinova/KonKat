@@ -61,7 +61,7 @@ export class HomeFeed {
 
     this.postService.addPost({
       author: {
-        id:       this.currentUser?.id,
+        id:       this.currentUser?.dbId,
         name:     this.currentUser?.name ?? 'You',
         role:     '',
         location: '',

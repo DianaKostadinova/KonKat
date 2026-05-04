@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AuthService } from '../auth/auth.service';
 
 const API = 'http://localhost:8081/api';
 
@@ -39,22 +38,9 @@ export interface SearchResults {
 @Injectable({ providedIn: 'root' })
 export class SearchService {
 
-  constructor(
-    private http: HttpClient,
-    private authService: AuthService,
-  ) {}
+  constructor(private http: HttpClient) {}
 
   search(query: string): Observable<SearchResults> {
-    return this.http.get<SearchResults>(
-      `${API}/search?q=${encodeURIComponent(query)}`,
-      { headers: this.authHeaders() },
-    );
-  }
-
-  private authHeaders(): HttpHeaders {
-    const token = this.authService.getToken();
-    return token
-      ? new HttpHeaders({ Authorization: `Bearer ${token}` })
-      : new HttpHeaders();
+    return this.http.get<SearchResults>(`${API}/search?q=${encodeURIComponent(query)}`);
   }
 }

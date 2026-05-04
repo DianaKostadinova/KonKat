@@ -1,8 +1,7 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Project } from './project.model';
-import { AuthService } from '../../../app/shared/auth/auth.service';
 
 const API = 'http://localhost:8081/api';
 
@@ -21,10 +20,7 @@ export class ProjectService {
 
   private projects = signal<Project[]>([]);
 
-  constructor(
-    private http: HttpClient,
-    private authService: AuthService,
-  ) {}
+  constructor(private http: HttpClient) {}
 
   getProjects(): Project[] { return this.projects(); }
 
@@ -32,7 +28,7 @@ export class ProjectService {
 
   /** Load projects for the logged-in user */
   loadMyProjects(): void {
-    this.http.get<any[]>(`${API}/projects/me`, { headers: this.authHeaders() })
+    this.http.get<any[]>(`${API}/projects/me`)
       .subscribe({
         next: dtos => this.projects.set(dtos.map(d => this.mapDto(d))),
         error: err => console.error('loadMyProjects failed', err),
@@ -41,7 +37,7 @@ export class ProjectService {
 
   /** Load projects for any user by ID */
   loadUserProjects(userId: number): void {
-    this.http.get<any[]>(`${API}/projects/user/${userId}`, { headers: this.authHeaders() })
+    this.http.get<any[]>(`${API}/projects/user/${userId}`)
       .subscribe({
         next: dtos => this.projects.set(dtos.map(d => this.mapDto(d))),
         error: err => console.error('loadUserProjects failed', err),
@@ -51,7 +47,7 @@ export class ProjectService {
   // ── Create ────────────────────────────────────────────────────────────────
 
   createProject(data: CreateProjectData): Observable<Project> {
-    return this.http.post<any>(`${API}/projects`, data, { headers: this.authHeaders() }).pipe(
+    return this.http.post<any>(`${API}/projects`, data).pipe(
       tap(dto => {
         // Prepend the new project to the list so it appears at the top immediately
         this.projects.update(list => [this.mapDto(dto), ...list]);
@@ -62,7 +58,7 @@ export class ProjectService {
   // ── Delete ────────────────────────────────────────────────────────────────
 
   deleteProject(projectId: number): Observable<void> {
-    return this.http.delete<void>(`${API}/projects/${projectId}`, { headers: this.authHeaders() }).pipe(
+    return this.http.delete<void>(`${API}/projects/${projectId}`).pipe(
       tap(() => {
         this.projects.update(list => list.filter(p => p.id !== projectId));
       }),
@@ -128,10 +124,4 @@ export class ProjectService {
     return `${Math.floor(days / 7)}w ago`;
   }
 
-  private authHeaders(): HttpHeaders {
-    const token = this.authService.getToken();
-    return token
-      ? new HttpHeaders({ Authorization: `Bearer ${token}` })
-      : new HttpHeaders();
-  }
 }

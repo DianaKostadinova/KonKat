@@ -1,7 +1,8 @@
-import { Injectable, signal } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable, signal, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 import { QAQuestion, QAAnswer } from './qa.model';
+import { AuthService } from '../../shared/auth/auth.service';
 
 const API = 'http://localhost:8081/api';
 
@@ -9,32 +10,21 @@ const API = 'http://localhost:8081/api';
 export class QAService {
   private _questions = signal<QAQuestion[]>([]);
   loading = signal(false);
-  readonly meId: number;
-  readonly meName: string;
+
+  private auth = inject(AuthService);
+
+  get meId()   { return 0; }  // backend resolves via JWT
+  get meName() { return this.auth.user()?.name ?? 'You'; }
 
   constructor(private http: HttpClient) {
-    this.meId   = this.readUser()?.id   ?? 0;
-    this.meName = this.readUser()?.name ?? 'You';
     this.load();
-  }
-
-  private headers(): HttpHeaders {
-    const token = localStorage.getItem('token') ?? '';
-    return new HttpHeaders({ Authorization: `Bearer ${token}` });
-  }
-
-  private readUser(): { id: number; name: string } | null {
-    try {
-      const raw = localStorage.getItem('user');
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
   }
 
   questions() { return this._questions(); }
 
   load() {
     this.loading.set(true);
-    this.http.get<QAQuestion[]>(`${API}/questions`, { headers: this.headers() })
+    this.http.get<QAQuestion[]>(`${API}/questions`)
       .pipe(catchError(err => { console.error('[QA] load failed:', err); return of([]); }))
       .subscribe(qs => { this._questions.set(qs); this.loading.set(false); });
   }
@@ -57,7 +47,7 @@ export class QAService {
     };
     this._questions.update(qs => [optimistic, ...qs]);
 
-    this.http.post<QAQuestion>(`${API}/questions`, data, { headers: this.headers() })
+    this.http.post<QAQuestion>(`${API}/questions`, data)
       .pipe(catchError(err => { console.error('[QA] createQuestion failed:', err); return of(null); }))
       .subscribe(q => {
         if (q) {
@@ -84,7 +74,7 @@ export class QAService {
       q.id === questionId ? { ...q, answers: [...q.answers, optimistic], answerCount: q.answerCount + 1 } : q
     ));
 
-    this.http.post<QAAnswer>(`${API}/questions/${questionId}/answers`, data, { headers: this.headers() })
+    this.http.post<QAAnswer>(`${API}/questions/${questionId}/answers`, data)
       .pipe(catchError(err => { console.error('[QA] addAnswer failed:', err); return of(null); }))
       .subscribe(a => {
         if (a) {
@@ -103,8 +93,7 @@ export class QAService {
 
   voteQuestion(questionId: number, direction: 'UP' | 'DOWN') {
     this.http.post<{ votes: number; userVote: string | null }>(
-      `${API}/questions/${questionId}/vote`, { direction }, { headers: this.headers() }
-    ).pipe(catchError(err => { console.error('[QA] voteQuestion failed:', err); return of(null); }))
+      `${API}/questions/${questionId}/vote`, { direction }    ).pipe(catchError(err => { console.error('[QA] voteQuestion failed:', err); return of(null); }))
       .subscribe(r => {
         if (!r) return;
         this._questions.update(qs => qs.map(q =>
@@ -115,8 +104,7 @@ export class QAService {
 
   voteAnswer(questionId: number, answerId: number, direction: 'UP' | 'DOWN') {
     this.http.post<{ votes: number; userVote: string | null }>(
-      `${API}/questions/${questionId}/answers/${answerId}/vote`, { direction }, { headers: this.headers() }
-    ).pipe(catchError(err => { console.error('[QA] voteAnswer failed:', err); return of(null); }))
+      `${API}/questions/${questionId}/answers/${answerId}/vote`, { direction }    ).pipe(catchError(err => { console.error('[QA] voteAnswer failed:', err); return of(null); }))
       .subscribe(r => {
         if (!r) return;
         this._questions.update(qs => qs.map(q =>
@@ -129,8 +117,7 @@ export class QAService {
 
   acceptAnswer(questionId: number, answerId: number) {
     this.http.post<QAAnswer>(
-      `${API}/questions/${questionId}/answers/${answerId}/accept`, {}, { headers: this.headers() }
-    ).pipe(catchError(err => { console.error('[QA] acceptAnswer failed:', err); return of(null); }))
+      `${API}/questions/${questionId}/answers/${answerId}/accept`, {}    ).pipe(catchError(err => { console.error('[QA] acceptAnswer failed:', err); return of(null); }))
       .subscribe(a => {
         if (!a) return;
         this._questions.update(qs => qs.map(q =>

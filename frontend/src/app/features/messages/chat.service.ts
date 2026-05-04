@@ -1,5 +1,5 @@
 import { Injectable, signal, OnDestroy } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { interval, Subscription } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -17,29 +17,12 @@ export class ChatService implements OnDestroy {
   private convPollSub?: Subscription;
 
   constructor(private http: HttpClient) {
-    this.meId.set(this.decodeUserId());
     this.loadConversations();
     this.convPollSub = interval(8000).subscribe(() => this.loadConversations());
   }
 
-  private headers(): HttpHeaders {
-    const token = localStorage.getItem('token') ?? '';
-    return new HttpHeaders({ Authorization: `Bearer ${token}` });
-  }
-
-  private decodeUserId(): number {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return 0;
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.userId ?? 0;
-    } catch {
-      return 0;
-    }
-  }
-
   loadConversations() {
-    this.http.get<ConversationDto[]>(`${API}/messages/conversations`, { headers: this.headers() })
+    this.http.get<ConversationDto[]>(`${API}/messages/conversations`)
       .pipe(catchError(() => of([])))
       .subscribe(dtos => {
         this._conversations.update(existing =>
@@ -69,7 +52,7 @@ export class ChatService implements OnDestroy {
       ? `${API}/messages/dm/${convId}/messages`
       : `${API}/messages/group/${convId}/messages`;
 
-    this.http.get<MessageDto[]>(url, { headers: this.headers() })
+    this.http.get<MessageDto[]>(url)
       .pipe(catchError(() => of([])))
       .subscribe(msgs => {
         this._conversations.update(convs => convs.map(c =>
@@ -88,7 +71,7 @@ export class ChatService implements OnDestroy {
         const url = type === 'dm'
           ? `${API}/messages/dm/${convId}/messages?after=${lastId}`
           : `${API}/messages/group/${convId}/messages?after=${lastId}`;
-        return this.http.get<MessageDto[]>(url, { headers: this.headers() }).pipe(catchError(() => of([])));
+        return this.http.get<MessageDto[]>(url).pipe(catchError(() => of([])));
       })
     ).subscribe(msgs => {
       if (!msgs.length) return;
@@ -122,7 +105,7 @@ export class ChatService implements OnDestroy {
       c.id === convId ? { ...c, messages: [...c.messages, optimistic] } : c
     ));
 
-    this.http.post<MessageDto>(url, { content }, { headers: this.headers() })
+    this.http.post<MessageDto>(url, { content })
       .pipe(catchError(() => of(null)))
       .subscribe(msg => {
         if (!msg) return;
@@ -142,12 +125,12 @@ export class ChatService implements OnDestroy {
     const url = type === 'dm'
       ? `${API}/messages/dm/${convId}/read`
       : `${API}/messages/group/${convId}/read`;
-    this.http.patch(url, {}, { headers: this.headers() }).pipe(catchError(() => of(null))).subscribe();
+    this.http.patch(url, {}).pipe(catchError(() => of(null))).subscribe();
   }
 
   openOrCreateDm(userId: number): Promise<Conversation> {
     return new Promise((resolve, reject) => {
-      this.http.post<ConversationDto>(`${API}/messages/dm`, { userId }, { headers: this.headers() })
+      this.http.post<ConversationDto>(`${API}/messages/dm`, { userId })
         .subscribe({
           next: dto => {
             const existing = this._conversations().find(c => c.id === dto.id && c.type === 'dm');
@@ -164,7 +147,7 @@ export class ChatService implements OnDestroy {
 
   createGroup(name: string, memberIds: number[]): Promise<Conversation> {
     return new Promise((resolve, reject) => {
-      this.http.post<ConversationDto>(`${API}/messages/group`, { name, memberIds }, { headers: this.headers() })
+      this.http.post<ConversationDto>(`${API}/messages/group`, { name, memberIds })
         .subscribe({
           next: dto => {
             const conv: Conversation = { id: dto.id, type: 'group', name: dto.name, members: dto.members, unread: 0, messages: [] };
@@ -177,7 +160,7 @@ export class ChatService implements OnDestroy {
   }
 
   searchUsers(query: string) {
-    return this.http.get<{ users: UserSearchResult[] }>(`${API}/search?q=${encodeURIComponent(query)}`, { headers: this.headers() });
+    return this.http.get<{ users: UserSearchResult[] }>(`${API}/search?q=${encodeURIComponent(query)}`);
   }
 
   getMemberName(conv: Conversation, senderId: number): string {

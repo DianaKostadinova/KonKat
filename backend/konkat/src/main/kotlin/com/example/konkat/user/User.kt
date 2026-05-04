@@ -8,11 +8,16 @@ data class User(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
+    /** Clerk user ID — set for all Clerk-authenticated users */
+    @Column(unique = true)
+    var clerkId: String? = null,
+
     @Column(unique = true, nullable = false)
     val email: String,
 
+    /** Legacy field — not used for Clerk auth */
     @Column(nullable = false)
-    var password: String,
+    var password: String = "",
 
     @Column(nullable = false)
     var displayName: String,

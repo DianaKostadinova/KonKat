@@ -2,8 +2,7 @@ import {
   Component, Input, Output, EventEmitter, OnInit, signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { AuthService } from '../auth/auth.service';
+import { HttpClient } from '@angular/common/http';
 
 const API = 'http://localhost:8081/api';
 
@@ -185,15 +184,12 @@ export class FollowListModal implements OnInit {
 
   constructor(
     private http: HttpClient,
-    private authService: AuthService,
     private router: Router,
   ) {}
 
   ngOnInit(): void {
     const url = `${API}/users/${this.userId}/${this.type}`;
-    const headers = this.authHeaders();
-
-    this.http.get<FollowUser[]>(url, { headers }).subscribe({
+    this.http.get<FollowUser[]>(url).subscribe({
       next: (list) => { this.users.set(list); this.loading.set(false); },
       error: ()     => this.loading.set(false),
     });
@@ -204,10 +200,4 @@ export class FollowListModal implements OnInit {
     this.router.navigate(['/profile', id]);
   }
 
-  private authHeaders(): HttpHeaders {
-    const token = this.authService.getToken();
-    return token
-      ? new HttpHeaders({ Authorization: `Bearer ${token}` })
-      : new HttpHeaders();
-  }
 }

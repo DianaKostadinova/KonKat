@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
 import { SavedEvent } from './saved-event.model';
 
@@ -19,13 +19,6 @@ export class EventService {
 
   /** GET /api/events/saved — upcoming saved events for logged-in user */
   getSavedUpcoming(): Observable<SavedEvent[]> {
-    return this.http.get<SavedEvent[]>(`${API}/events/saved`, { headers: this.authHeaders() });
-  }
-
-  private authHeaders(): HttpHeaders {
-    const token = localStorage.getItem('token');
-    return token
-      ? new HttpHeaders({ Authorization: `Bearer ${token}` })
-      : new HttpHeaders();
+    return this.http.get<SavedEvent[]>(`${API}/events/saved`);
   }
 }

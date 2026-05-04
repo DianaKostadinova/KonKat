@@ -21,6 +21,7 @@ server:
   port: 8080
 
 app:
-  jwt:
-    secret: "your-long-random-secret-key-here-minimum-32-characters"
-    expiration-ms: 86400000
+  clerk:
+    # Find your Frontend API URL at: https://dashboard.clerk.com → API Keys
+    # Format: https://<your-app>.clerk.accounts.dev
+    jwks-uri: "https://YOUR_CLERK_FRONTEND_API/.well-known/jwks.json"

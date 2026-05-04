@@ -1,108 +1,130 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import type { Clerk } from '@clerk/clerk-js';
+import { environment } from '../../../environments/environment';
 
 export interface AuthUser {
-  id: number;
+  id: string;       // Clerk user ID (e.g. "user_2abc...")
+  dbId?: number;    // numeric DB primary key — populated after /api/users/me
   name: string;
   email: string;
   avatar?: string;
 }
 
-interface AuthResponse {
-  token?: string;
-  user?: { id: number; email: string; displayName: string; avatarUrl?: string };
-  error?: string;
-}
-
-const API = 'http://localhost:8081/api';
-
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+
   private _isLoggedIn = signal(false);
-  private _user = signal<AuthUser | null>(null);
+  private _user       = signal<AuthUser | null>(null);
+  private _ready      = signal(false);
 
   isLoggedIn = this._isLoggedIn.asReadonly();
-  user = this._user.asReadonly();
+  user       = this._user.asReadonly();
+  ready      = this._ready.asReadonly();
 
-  constructor(private http: HttpClient, private router: Router) {
-    this.restoreSession();
-  }
+  private clerk!: Clerk;
 
-  async login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
-    if (!email || !password) return { success: false, error: 'Please fill in all fields.' };
-
+  async init(): Promise<void> {
     try {
-      const res = await firstValueFrom(
-        this.http.post<AuthResponse>(`${API}/auth/login`, { email, password })
-      );
-      if (res.error || !res.token || !res.user) return { success: false, error: res.error ?? 'Login failed' };
-      this.setSession(res.token, res.user);
-      this.router.navigate(['/feed']);
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: this.extractError(err, 'Wrong email or password.') };
+      // Returns the pre-constructed Clerk instance from window.Clerk
+      this.clerk = await this.loadClerkFromCdn();
+      await this.clerk.load();
+      this.syncUser();
+      await this.loadDbId();
+      this.clerk.addListener(() => this.syncUser());
+    } catch (e) {
+      console.error('[Auth] Clerk failed to initialise:', e);
+    } finally {
+      this._ready.set(true);
     }
   }
 
-  async register(name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> {
-    if (!name || !email || !password) return { success: false, error: 'Please fill in all fields.' };
+  // Loads Clerk's full browser bundle from its CDN (the only bundle that includes UI components).
+  // Providing the key via both mechanisms so Clerk's auto-init creates window.Clerk as an instance.
+  private loadClerkFromCdn(): Promise<Clerk> {
+    return new Promise((resolve, reject) => {
+      if ((window as any).__clerk_instance) {
+        resolve((window as any).__clerk_instance);
+        return;
+      }
 
-    try {
-      const res = await firstValueFrom(
-        this.http.post<AuthResponse>(`${API}/auth/register`, { email, password, displayName: name })
-      );
-      if (res.error || !res.token || !res.user) return { success: false, error: res.error ?? 'Registration failed' };
-      this.setSession(res.token, res.user);
-      this.router.navigate(['/profile/edit'], { queryParams: { setup: 'true' } });
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: this.extractError(err, 'Registration failed. Try a different email.') };
-    }
+      const base64      = environment.clerkPublishableKey.replace(/^pk_(test|live)_/, '');
+      const frontendApi = atob(base64).replace(/\$$/, '');
+
+      // Fallback key source Clerk checks when data-clerk-publishable-key can't be read
+      (window as any).__clerk_publishable_key = environment.clerkPublishableKey;
+
+      const s = document.createElement('script');
+      s.src   = `https://${frontendApi}/npm/@clerk/clerk-js@latest/dist/clerk.browser.js`;
+      s.setAttribute('data-clerk-publishable-key', environment.clerkPublishableKey);
+      s.crossOrigin = 'anonymous';
+
+      s.onload = () => {
+        // window.Clerk is now the pre-constructed Clerk instance
+        const instance = (window as any).Clerk;
+        (window as any).__clerk_instance = instance;
+        resolve(instance as Clerk);
+      };
+      s.onerror = () => reject(new Error(`Failed to load Clerk script from ${frontendApi}`));
+      document.head.appendChild(s);
+    });
   }
 
-  loginWithGoogle() {
-    // TODO: implement OAuth flow
-    console.warn('Google login not yet implemented');
-  }
-
-  logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    this._user.set(null);
-    this._isLoggedIn.set(false);
-    this.router.navigate(['/login']);
-  }
-
-  getToken(): string | null {
-    return localStorage.getItem('token');
-  }
-
-  private setSession(token: string, user: { id: number; email: string; displayName: string; avatarUrl?: string }) {
-    localStorage.setItem('token', token);
-    const authUser: AuthUser = { id: user.id, name: user.displayName, email: user.email, avatar: user.avatarUrl };
-    localStorage.setItem('user', JSON.stringify(authUser));
-    this._user.set(authUser);
-    this._isLoggedIn.set(true);
-  }
-
-  private restoreSession() {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    if (token && user) {
-      this._user.set(JSON.parse(user));
+  private syncUser(): void {
+    const u = this.clerk?.user;
+    if (u) {
+      this._user.update(prev => ({
+        dbId:   prev?.dbId,
+        id:     u.id,
+        name:   u.fullName ?? u.primaryEmailAddress?.emailAddress ?? 'User',
+        email:  u.primaryEmailAddress?.emailAddress ?? '',
+        avatar: u.imageUrl ?? undefined,
+      }));
       this._isLoggedIn.set(true);
+    } else {
+      this._user.set(null);
+      this._isLoggedIn.set(false);
     }
   }
 
-  /** Pull the backend's error message out of an HttpErrorResponse, or fall back to a default. */
-  private extractError(err: unknown, fallback: string): string {
-    if (err instanceof HttpErrorResponse) {
-      // Backend sends { error: "..." } in the response body
-      const msg = err.error?.error ?? err.error?.message ?? err.message;
-      if (msg && typeof msg === 'string' && !msg.startsWith('Http failure')) return msg;
+  private async loadDbId(): Promise<void> {
+    const token = await this.getToken();
+    if (!token) return;
+    try {
+      const resp = await fetch('http://localhost:8081/api/users/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (resp.ok) {
+        const me = await resp.json();
+        this._user.update(u => u ? { ...u, dbId: me.id as number } : u);
+      }
+    } catch { /* backend unavailable — dbId stays undefined */ }
+  }
+
+  async getToken(): Promise<string | null> {
+    try {
+      return (await this.clerk?.session?.getToken()) ?? null;
+    } catch {
+      return null;
     }
-    return fallback;
+  }
+
+  async logout(): Promise<void> {
+    await this.clerk?.signOut();
+  }
+
+  mountSignIn(el: HTMLElement): void {
+    this.clerk?.mountSignIn(el as HTMLDivElement);
+  }
+
+  unmountSignIn(el: HTMLElement): void {
+    this.clerk?.unmountSignIn(el as HTMLDivElement);
+  }
+
+  mountUserButton(el: HTMLElement): void {
+    this.clerk?.mountUserButton(el as HTMLDivElement, { afterSignOutUrl: '/sign-in' } as any);
+  }
+
+  unmountUserButton(el: HTMLElement): void {
+    this.clerk?.unmountUserButton(el as HTMLDivElement);
   }
 }

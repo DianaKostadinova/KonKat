@@ -57,11 +57,10 @@ export class Profile implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Read optional :id param from the route
     const paramId = this.route.snapshot.paramMap.get('id');
-    const currentUserId = this.authService.user()?.id;
+    const currentDbId = this.authService.user()?.dbId;
 
-    if (paramId && Number(paramId) !== currentUserId) {
+    if (paramId && Number(paramId) !== currentDbId) {
       // ── Viewing someone else's profile ────────────────────────────────────
       this.isOwnProfile = false;
       this.viewedUserId = Number(paramId);
@@ -76,14 +75,14 @@ export class Profile implements OnInit {
     } else {
       // ── Viewing own profile ───────────────────────────────────────────────
       this.isOwnProfile = true;
-      this.viewedUserId = currentUserId ?? null;
 
-      this.profileService.loadProfile().subscribe();
-
-      if (currentUserId) {
-        this.profileService.loadMyPosts(currentUserId);
-        this.projectService.loadMyProjects();
-      }
+      this.profileService.loadProfile().subscribe({
+        next: profile => {
+          this.viewedUserId = profile.id;
+          this.profileService.loadMyPosts(profile.id);
+          this.projectService.loadMyProjects();
+        },
+      });
     }
   }
 
@@ -116,7 +115,7 @@ export class Profile implements OnInit {
 
   setTab(tab: Tab): void {
     this.activeTab.set(tab);
-    const userId = this.viewedUserId ?? this.authService.user()?.id;
+    const userId = this.viewedUserId ?? this.profileService.getProfile().id;
     if (tab === 'saved'    && this.isOwnProfile)  this.profileService.loadSavedPosts();
     if (tab === 'liked'    && this.isOwnProfile)  this.profileService.loadLikedPosts();
     if (tab === 'posts'    && userId)             this.profileService.loadMyPosts(userId);

@@ -62,7 +62,7 @@ export class CreatePostModal implements OnInit {
 
     this.postService.addPost({
       author: {
-        id:       user?.id,
+        id:       user?.dbId,
         name:     user?.name ?? 'You',
         role:     '',
         location: '',

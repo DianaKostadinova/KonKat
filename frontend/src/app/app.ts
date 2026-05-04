@@ -25,6 +25,6 @@ export class App {
 
   showShell = computed(() => {
     const url = this.currentUrl() ?? '';
-    return !url.startsWith('/login');
+    return !url.startsWith('/login') && !url.startsWith('/sign-in');
   });
 }

@@ -1,5 +1,5 @@
 import { Injectable, signal, computed, effect, inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Notification, NotificationType } from './notification-bell.model';
 import { AuthService } from '../auth/auth.service';
 
@@ -96,46 +96,27 @@ export class NotificationService {
   }
 
   load(): void {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    this.http
-      .get<any[]>(`${API}/notifications`, { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) })
-      .subscribe({
-        next: dtos => this._notifications.set(dtos.map(d => this.mapDto(d))),
-        error: ()  => { /* keep current state on error */ },
-      });
+    this.http.get<any[]>(`${API}/notifications`).subscribe({
+      next: dtos => this._notifications.set(dtos.map(d => this.mapDto(d))),
+      error: ()  => { /* keep current state on error */ },
+    });
   }
 
   getAll() { return this._notifications(); }
 
   markAsRead(id: number): void {
     this._notifications.update(list => list.map(n => n.id === id ? { ...n, read: true } : n));
-    const token = localStorage.getItem('token');
-    if (token) {
-      this.http
-        .post(`${API}/notifications/${id}/read`, {}, { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) })
-        .subscribe();
-    }
+    this.http.post(`${API}/notifications/${id}/read`, {}).subscribe();
   }
 
   markAllAsRead(): void {
     this._notifications.update(list => list.map(n => ({ ...n, read: true })));
-    const token = localStorage.getItem('token');
-    if (token) {
-      this.http
-        .post(`${API}/notifications/read-all`, {}, { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) })
-        .subscribe();
-    }
+    this.http.post(`${API}/notifications/read-all`, {}).subscribe();
   }
 
   delete(id: number): void {
     this._notifications.update(list => list.filter(n => n.id !== id));
-    const token = localStorage.getItem('token');
-    if (token) {
-      this.http
-        .delete(`${API}/notifications/${id}`, { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) })
-        .subscribe();
-    }
+    this.http.delete(`${API}/notifications/${id}`).subscribe();
   }
 
   private mapDto(dto: any): Notification {
