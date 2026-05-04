@@ -153,7 +153,7 @@
 
       @if (isNotifOpen()) {
         <div class="fixed inset-0 z-40" (click)="isNotifOpen.set(false)"></div>
-        <div class="absolute right-0 top-full mt-2 z-50">
+        <div class="notif-popup-wrap">
           <app-notification-dropdown (close)="isNotifOpen.set(false)" />
         </div>
       }

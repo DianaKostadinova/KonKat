@@ -282,8 +282,13 @@
 }
 
 @media (max-width: 1024px) and (min-width: 769px) {
-  .navbar__link span.material-icons-outlined {
-    display: flex;
+  .navbar__link {
+    padding: 6px 8px;
+    font-size: 0; /* hides the text node */
+  }
+
+  .navbar__link span {
+    font-size: 20px !important; /* keeps icon visible */
   }
 
   .navbar__search {
@@ -294,6 +299,23 @@
 /* ── Search wrapper (positions the dropdown relative to the input) ─────────── */
 .navbar__search-wrap {
   position: relative;
+}
+
+/* ── Notification popup wrapper ──────────────────────────────────────────────*/
+.notif-popup-wrap {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 50;
+}
+
+@media (max-width: 640px) {
+  .notif-popup-wrap {
+    position: fixed;
+    right: 16px;
+    left: 16px;
+    top: 68px;
+  }
 }
 
 /* ── Results dropdown ─────────────────────────────────────────────────────── */
