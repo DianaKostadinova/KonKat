@@ -1,11 +1,12 @@
-import { Injectable, signal, computed, effect, inject } from '@angular/core';
+import { Injectable, signal, computed, effect, inject, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 import { Notification, NotificationType } from './notification-bell.model';
 import { AuthService } from '../auth/auth.service';
+import { WsService } from './ws.service';
 
 const API = 'http://localhost:8081/api';
 
-/** Maps backend NotificationType string to frontend NotificationType */
 function mapType(t: string): NotificationType {
   switch (t) {
     case 'FOLLOW':             return 'mention';
@@ -69,23 +70,57 @@ export class NotificationService {
   unreadCount = computed(() => this._notifications().filter(n => !n.read).length);
 
   private auth = inject(AuthService);
+  private ws   = inject(WsService);
+
   private pollInterval: ReturnType<typeof setInterval> | null = null;
+  private wsSub: Subscription | null = null;
 
   constructor(private http: HttpClient) {
     effect(() => {
       if (this.auth.isLoggedIn()) {
         this.load();
         this.startPolling();
+        void this.connectWs();
       } else {
         this._notifications.set([]);
         this.stopPolling();
+        this.disconnectWs();
       }
     });
   }
 
+  // ── WebSocket ────────────────────────────────────────────────────────────
+
+  private async connectWs(): Promise<void> {
+    const token = await this.auth.getToken();
+    if (!token) return;
+
+    this.wsSub?.unsubscribe();
+    this.wsSub = this.ws.message$.subscribe(dto => this.onPush(dto));
+    this.ws.connect(token);
+  }
+
+  private disconnectWs(): void {
+    this.wsSub?.unsubscribe();
+    this.wsSub = null;
+    this.ws.disconnect();
+  }
+
+  private onPush(dto: any): void {
+    const incoming = this.mapDto(dto);
+    this._notifications.update(list => {
+      // Guard against duplicates (e.g. if the polling also fetched it)
+      if (list.some(n => n.id === incoming.id)) return list;
+      return [incoming, ...list];
+    });
+  }
+
+  // ── Polling (safety net) ─────────────────────────────────────────────────
+
   private startPolling(): void {
     this.stopPolling();
-    this.pollInterval = setInterval(() => this.load(), 15_000);
+    // 60 s — WS handles real-time; polling is a fallback for reconnect gaps
+    this.pollInterval = setInterval(() => this.load(), 60_000);
   }
 
   private stopPolling(): void {
@@ -95,10 +130,12 @@ export class NotificationService {
     }
   }
 
+  // ── Public API ───────────────────────────────────────────────────────────
+
   load(): void {
     this.http.get<any[]>(`${API}/notifications`).subscribe({
       next: dtos => this._notifications.set(dtos.map(d => this.mapDto(d))),
-      error: ()  => { /* keep current state on error */ },
+      error: () => { /* keep current state on error */ },
     });
   }
 
@@ -119,24 +156,26 @@ export class NotificationService {
     this.http.delete(`${API}/notifications/${id}`).subscribe();
   }
 
+  // ── Mapping ──────────────────────────────────────────────────────────────
+
   private mapDto(dto: any): Notification {
     return {
-      id:         dto.id,
-      type:       mapType(dto.type),
-      title:      buildTitle(dto.type),
-      message:    buildMessage(dto),
-      read:       dto.read ?? false,
-      createdAt:  dto.timeAgo ?? dto.createdAt ?? '',
-      avatar:     dto.actorAvatar ?? undefined,
-      fromUser:   dto.actorName   ?? undefined,
-      actionUrl:  dto.type === 'FOLLOW'                                          ? `/profile/${dto.actorId}`
-                : dto.type === 'MESSAGE'                                          ? `/chat?dm=${dto.actorId}`
-                : (dto.type === 'POST_LIKE' || dto.type === 'POST_COMMENT' || dto.type === 'POST_SHARE') && dto.postId
-                                                                                  ? `/feed?post=${dto.postId}`
-                : dto.hackathonId                                                  ? '/hackathons'
-                : dto.projectId                                                    ? '/projects'
-                : dto.type === 'TEAM_REQUEST'                                      ? '/find-team'
-                : undefined,
+      id:        dto.id,
+      type:      mapType(dto.type),
+      title:     buildTitle(dto.type),
+      message:   buildMessage(dto),
+      read:      dto.read ?? false,
+      createdAt: dto.timeAgo ?? dto.createdAt ?? '',
+      avatar:    dto.actorAvatar ?? undefined,
+      fromUser:  dto.actorName   ?? undefined,
+      actionUrl: dto.type === 'FOLLOW'                                                              ? `/profile/${dto.actorId}`
+               : dto.type === 'MESSAGE'                                                              ? `/chat?dm=${dto.actorId}`
+               : (dto.type === 'POST_LIKE' || dto.type === 'POST_COMMENT' || dto.type === 'POST_SHARE') && dto.postId
+                                                                                                     ? `/feed?post=${dto.postId}`
+               : dto.hackathonId                                                                     ? '/hackathons'
+               : dto.projectId                                                                       ? '/projects'
+               : dto.type === 'TEAM_REQUEST'                                                         ? '/find-team'
+               : undefined,
     };
   }
 }

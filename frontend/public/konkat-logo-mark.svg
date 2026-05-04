@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <clipPath id="kk">
+      
+      <polygon points="0,0 100,0 72,24 100,48 0,48"></polygon>
+      
+      <polygon points="0,52 100,52 72,76 100,100 0,100"></polygon>
+    </clipPath>
+  </defs>
+  
+  <g clip-path="url(#kk)">
+    <polygon points="0,0 100,0 0,100" fill="#FF7A5C"></polygon>
+    <polygon points="100,0 100,100 0,100" fill="#B83525"></polygon>
+  </g>
+  
+  <circle cx="50" cy="50" r="5" fill="#FF9980"></circle>
+  <circle cx="50" cy="50" r="2.5" fill="#0f0f0f" opacity="0.7"></circle>
+</svg>

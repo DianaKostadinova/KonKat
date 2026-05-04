@@ -22,26 +22,17 @@
   flex-shrink: 0;
 }
 
-.navbar__logo-icon {
-  width: 30px;
-  height: 30px;
-  background-color: #E8593C;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.navbar__logo-icon span {
-  color: white;
-  font-size: 18px !important;
+.navbar__logo-mark {
+  height: 28px;
+  width: auto;
 }
 
 .navbar__logo-text {
   color: #f0f0f0;
-  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
   font-size: 17px;
-  letter-spacing: -0.3px;
+  letter-spacing: -1px;
 }
 
 .navbar__links {

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 60" width="260" height="60">
+  <defs>
+    <clipPath id="kk">
+      <polygon points="0,0 44,0 32,22 44,44 0,44"></polygon>
+      <polygon points="0,48 44,48 32,70 44,92 0,92"></polygon>
+    </clipPath>
+  </defs>
+  
+  <g transform="translate(0, -16)">
+    <g clip-path="url(#kk)">
+      <polygon points="0,0 44,0 0,92" fill="#FF7A5C"></polygon>
+      <polygon points="44,0 44,92 0,92" fill="#B83525"></polygon>
+    </g>
+    <circle cx="22" cy="46" r="4.5" fill="#FF9980"></circle>
+    <circle cx="22" cy="46" r="2.2" fill="#141414" opacity="0.8"></circle>
+  </g>
+  
+  <text x="58" y="42" font-family="Inter, -apple-system, sans-serif" font-size="34" font-weight="800" letter-spacing="-1" fill="#f0f0f0">KonKat</text>
+</svg>

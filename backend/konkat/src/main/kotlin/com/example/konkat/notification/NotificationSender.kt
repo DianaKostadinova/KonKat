@@ -5,25 +5,20 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 
 /**
- * Thin helper that persists a single notification in its **own** transaction
- * (REQUIRES_NEW).
+ * Thin helper that persists a single notification in its own transaction
+ * (REQUIRES_NEW) and then pushes it over WebSocket after the commit.
  *
- * Why a separate bean?  Spring's @Transactional proxy is only applied when a
- * method is called through the Spring proxy — i.e. from *outside* the bean.
- * Calling a @Transactional method on the same class bypasses the proxy, so
- * the propagation contract is ignored.  Putting the save here guarantees the
- * notification runs in an isolated transaction.
- *
- * Why REQUIRES_NEW?  If the notification INSERT fails (e.g. the table hasn't
- * been created yet, or a constraint fires) we want only *this* transaction to
- * roll back, leaving the caller's registration/save-toggle transaction
- * completely unaffected — no "rollback-only" marker, no session corruption.
+ * The push is registered as an afterCommit hook so the DB row is guaranteed
+ * to exist by the time the client receives the event and re-fetches.
  */
 @Service
 class NotificationSender(
     private val notificationRepository: NotificationRepository,
+    private val pushService: NotificationPushService,
 ) {
 
     private val log = LoggerFactory.getLogger(NotificationSender::class.java)
@@ -37,7 +32,7 @@ class NotificationSender(
         projectId:   Long? = null,
         hackathonId: Long? = null,
     ) {
-        try {
+        val saved = try {
             notificationRepository.save(
                 Notification(
                     recipient   = recipient,
@@ -49,10 +44,30 @@ class NotificationSender(
                 )
             )
         } catch (ex: Exception) {
-            // Log but swallow — a failed notification must never break the
-            // calling operation (registration, save-toggle, etc.)
             log.warn("Failed to persist notification type={} for recipient={}: {}",
                 type, recipient.id, ex.message)
+            return
         }
+
+        // Push via WebSocket only after the REQUIRES_NEW transaction commits,
+        // so the client's follow-up GET will always find the row.
+        TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
+            override fun afterCommit() {
+                val dto = NotificationDto(
+                    id          = saved.id,
+                    type        = saved.type.name,
+                    actorId     = saved.actor?.id,
+                    actorName   = saved.actor?.displayName,
+                    actorAvatar = saved.actor?.avatarUrl,
+                    hackathonId = saved.hackathonId,
+                    postId      = saved.postId,
+                    projectId   = saved.projectId,
+                    read        = false,
+                    createdAt   = saved.createdAt?.toString() ?: "",
+                    timeAgo     = "just now",
+                )
+                pushService.push(saved.recipient.id, dto)
+            }
+        })
     }
 }
