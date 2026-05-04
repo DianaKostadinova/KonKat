@@ -13,6 +13,7 @@ import { NotificationDropdown } from './shared/notification-bell/notification-be
 import { SignIn } from './features/auth/sign-in';
 import { SignUp } from './features/auth/sign-up';
 import { authGuard } from './shared/auth/auth.guard';
+import { Trending } from './features/trending/trending';
 
 export const routes: Routes = [
   { path: '',        redirectTo: 'feed', pathMatch: 'full' },
@@ -31,4 +32,5 @@ export const routes: Routes = [
   { path: 'workspace/:id', component: Workspace,            canActivate: [authGuard] },
   { path: 'myworkspaces',  component: MyWorkspaces,         canActivate: [authGuard] },
   { path: 'notifications', component: NotificationDropdown, canActivate: [authGuard] },
+  { path: 'trending',     component: Trending,             canActivate: [authGuard] },
 ];

@@ -3,6 +3,12 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap, map } from 'rxjs';
 import { Post, PostType } from './post.model';
 
+export interface TrendingTag {
+  tag: string;
+  postCount: number;
+  likeCount: number;
+}
+
 const API = 'http://localhost:8081/api';
 
 @Injectable({ providedIn: 'root' })
@@ -23,6 +29,16 @@ export class PostService {
   loadFeed(): void {
     this.http.get<any[]>(`${API}/posts`)
       .subscribe(dtos => this.posts.set(dtos.map(d => this.mapPost(d))));
+  }
+
+  loadPostsByTag(tag: string): Observable<Post[]> {
+    const clean = tag.replace(/^#/, '');
+    return this.http.get<any[]>(`${API}/posts/tag/${encodeURIComponent(clean)}`)
+      .pipe(map(dtos => dtos.map(d => this.mapPost(d))));
+  }
+
+  loadTrendingTags(): Observable<TrendingTag[]> {
+    return this.http.get<TrendingTag[]>(`${API}/tags/trending`);
   }
 
   // ── Mutations ─────────────────────────────────────────────────────────────

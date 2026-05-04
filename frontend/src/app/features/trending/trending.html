@@ -1,0 +1,85 @@
+<div class="trending-page">
+
+  <div class="trending-header">
+    <h1 class="trending-title">Trending</h1>
+    <p class="trending-sub">Discover what developers are talking about</p>
+  </div>
+
+  <!-- Search -->
+  <div class="trending-search-wrap">
+    <span class="material-icons-outlined trending-search-icon">tag</span>
+    <input
+      class="trending-search-input"
+      type="text"
+      placeholder="Search a hashtag…"
+      [ngModel]="searchQuery()"
+      (ngModelChange)="searchQuery.set($event)"
+      (keydown.enter)="onSearch()"
+    />
+    @if (searchQuery()) {
+      <button class="trending-search-clear" (click)="clearTag()">
+        <span class="material-icons" style="font-size:16px;">close</span>
+      </button>
+    }
+  </div>
+
+  <!-- Trending chips -->
+  @if (trendingTags().length > 0) {
+    <div class="trending-chips-section">
+      <p class="trending-chips-label">
+        <span class="material-icons-outlined" style="font-size:15px;">local_fire_department</span>
+        Trending now
+      </p>
+      <div class="trending-chips">
+        @for (item of trendingTags(); track item.tag) {
+          <button
+            class="trending-chip"
+            [class.trending-chip--active]="selectedTag() === displayTag(item.tag)"
+            (click)="selectTag(item.tag)"
+          >
+            {{ displayTag(item.tag) }}
+            <span class="trending-chip-meta">{{ item.likeCount }} likes</span>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Active tag banner -->
+  @if (selectedTag()) {
+    <div class="trending-active-banner">
+      <span class="trending-active-text">
+        Posts tagged <strong>{{ selectedTag() }}</strong>
+      </span>
+      <button class="trending-active-clear" (click)="clearTag()">
+        <span class="material-icons" style="font-size:15px;">close</span>
+        Clear
+      </button>
+    </div>
+  }
+
+  <!-- Posts -->
+  <div class="trending-posts">
+    @if (loading()) {
+      <div class="trending-empty">
+        <span class="material-icons-outlined" style="font-size:36px;color:#444;">hourglass_empty</span>
+        <p>Loading posts…</p>
+      </div>
+    } @else if (!selectedTag()) {
+      <div class="trending-empty">
+        <span class="material-icons-outlined" style="font-size:36px;color:#444;">tag</span>
+        <p>Pick a trending tag or search one above</p>
+      </div>
+    } @else if (tagPosts().length === 0) {
+      <div class="trending-empty">
+        <span class="material-icons-outlined" style="font-size:36px;color:#444;">search_off</span>
+        <p>No posts found for <strong>{{ selectedTag() }}</strong></p>
+      </div>
+    } @else {
+      @for (post of tagPosts(); track post.id) {
+        <app-post-card [post]="post" />
+      }
+    }
+  </div>
+
+</div>

@@ -176,11 +176,17 @@
 
   <!-- ── Trending ───────────────────────────────────────────────────── -->
   <div class="flex flex-col gap-3">
-    <span class="text-[#f0f0f0] text-sm font-semibold">Trending in MK</span>
+    <div class="flex items-center justify-between">
+      <span class="text-[#f0f0f0] text-sm font-semibold">Trending in MK</span>
+      <span class="text-[#E8593C] text-xs cursor-pointer hover:underline" (click)="router.navigate(['/trending'])">See all</span>
+    </div>
+    @if (trending().length === 0) {
+      <p class="text-[#555] text-xs text-center py-1">No trending tags yet</p>
+    }
     @for (item of trending(); track item.tag) {
-      <div class="flex items-center justify-between cursor-pointer group">
-        <span class="text-[#E8593C] text-sm font-medium group-hover:underline">{{ item.tag }}</span>
-        <span class="text-[#888888] text-xs">{{ item.posts }}</span>
+      <div class="flex items-center justify-between cursor-pointer group" (click)="goToTag(item.tag)">
+        <span class="text-[#E8593C] text-sm font-medium group-hover:underline">{{ displayTag(item.tag) }}</span>
+        <span class="text-[#888888] text-xs">{{ item.likeCount }} likes</span>
       </div>
     }
   </div>
@@ -304,11 +310,14 @@
 
       <!-- trending -->
       <div class="flex flex-col gap-3">
-        <span class="text-[#f0f0f0] text-sm font-semibold">Trending in MK</span>
+        <div class="flex items-center justify-between">
+          <span class="text-[#f0f0f0] text-sm font-semibold">Trending in MK</span>
+          <span class="text-[#E8593C] text-xs cursor-pointer hover:underline" (click)="router.navigate(['/trending']); isOpen.set(false)">See all</span>
+        </div>
         @for (item of trending(); track item.tag) {
-          <div class="flex items-center justify-between cursor-pointer">
-            <span class="text-[#E8593C] text-sm font-medium hover:underline">{{ item.tag }}</span>
-            <span class="text-[#888888] text-xs">{{ item.posts }}</span>
+          <div class="flex items-center justify-between cursor-pointer" (click)="goToTag(item.tag)">
+            <span class="text-[#E8593C] text-sm font-medium hover:underline">{{ displayTag(item.tag) }}</span>
+            <span class="text-[#888888] text-xs">{{ item.likeCount }} likes</span>
           </div>
         }
       </div>

@@ -1,6 +1,6 @@
 import { Component, Input, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Post } from './post.model';
 import { PostService } from './post.service';
 import { HighlightModule } from 'ngx-highlightjs';
@@ -22,7 +22,12 @@ export class PostCard implements OnInit {
   showComments = signal(false);
   commentText = signal('');
 
-  constructor(private postService: PostService) {}
+  constructor(private postService: PostService, private router: Router) {}
+
+  goToTag(tag: string) {
+    const clean = tag.replace(/^#/, '').toLowerCase().trim();
+    this.router.navigate(['/trending'], { queryParams: { tag: clean } });
+  }
 
   ngOnInit() {
     this.liked.set(this.post.liked ?? false);

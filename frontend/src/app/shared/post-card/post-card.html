@@ -60,7 +60,10 @@
   @if (post.tags && post.tags.length > 0) {
     <div class="flex flex-wrap gap-2">
       @for (tag of post.tags; track tag) {
-        <span class="text-[#E8593C] text-xs cursor-pointer hover:underline">{{ tag }}</span>
+        <button
+          class="text-[#E8593C] text-xs cursor-pointer hover:underline bg-transparent border-none p-0 font-medium"
+          (click)="goToTag(tag)"
+        >{{ tag.startsWith('#') ? tag : '#' + tag }}</button>
       }
     </div>
   }

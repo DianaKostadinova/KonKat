@@ -43,6 +43,19 @@ class PostController(private val postService: PostService) {
     }
 
     /**
+     * GET /api/posts/tag/{tag}
+     * Returns all posts that have the given tag, newest-first.
+     */
+    @GetMapping("/tag/{tag}")
+    fun getByTag(
+        @PathVariable tag: String,
+        request: HttpServletRequest,
+    ): ResponseEntity<List<PostDto>> {
+        val userId = request.getAttribute("userId") as? Long
+        return ResponseEntity.ok(postService.getPostsByTag(tag, userId))
+    }
+
+    /**
      * GET /api/posts/user/{authorId}
      * Returns all posts by a specific user.
      */

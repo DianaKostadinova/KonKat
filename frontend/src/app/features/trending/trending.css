@@ -1,0 +1,193 @@
+.trending-page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.trending-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.trending-title {
+  color: #f0f0f0;
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.trending-sub {
+  color: #666;
+  font-size: 13px;
+  margin: 0;
+}
+
+/* ── Search ─────────────────────────────────────────────────────────────── */
+.trending-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 0 14px;
+  height: 42px;
+  transition: border-color 0.2s;
+}
+
+.trending-search-wrap:focus-within {
+  border-color: #E8593C;
+}
+
+.trending-search-icon {
+  color: #555;
+  font-size: 20px !important;
+  flex-shrink: 0;
+}
+
+.trending-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #f0f0f0;
+  font-size: 14px;
+}
+
+.trending-search-input::placeholder {
+  color: #555;
+}
+
+.trending-search-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.trending-search-clear:hover {
+  color: #f0f0f0;
+}
+
+/* ── Trending chips ──────────────────────────────────────────────────────── */
+.trending-chips-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trending-chips-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #666;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.trending-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trending-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 20px;
+  padding: 5px 12px;
+  color: #E8593C;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.trending-chip:hover {
+  background: #2a1510;
+  border-color: #E8593C;
+}
+
+.trending-chip--active {
+  background: #2a1510;
+  border-color: #E8593C;
+}
+
+.trending-chip-meta {
+  color: #666;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+/* ── Active banner ───────────────────────────────────────────────────────── */
+.trending-active-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.trending-active-text {
+  color: #888;
+  font-size: 13px;
+}
+
+.trending-active-text strong {
+  color: #E8593C;
+}
+
+.trending-active-clear {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  font-size: 12px;
+  transition: color 0.15s;
+}
+
+.trending-active-clear:hover {
+  color: #f0f0f0;
+}
+
+/* ── Posts ───────────────────────────────────────────────────────────────── */
+.trending-posts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trending-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 0;
+  color: #555;
+  font-size: 14px;
+  text-align: center;
+}
+
+.trending-empty strong {
+  color: #E8593C;
+}

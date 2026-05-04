@@ -41,6 +41,14 @@ class PostService(
         postReactionRepository.findByUserIdAndType(userId, ReactionType.SAVE)
             .map { it.post.toDto(userId) }
 
+    fun getPostsByTag(tag: String, currentUserId: Long?): List<PostDto> =
+        postRepository.findByTagIgnoreCase(tag.trimStart('#')).map { it.toDto(currentUserId) }
+
+    fun getTrendingTags(): List<TrendingTagDto> =
+        postRepository.findTrendingTags().map { row ->
+            TrendingTagDto(tag = row.getTag(), postCount = row.getPostCount(), likeCount = row.getLikeCount())
+        }
+
     // ── Create / Delete ───────────────────────────────────────────────────────
 
     fun createPost(authorId: Long, request: CreatePostRequest): PostDto {
@@ -244,4 +252,10 @@ data class CreatePostRequest(
 
 data class CreateCommentRequest(
     val text: String,
+)
+
+data class TrendingTagDto(
+    val tag: String,
+    val postCount: Long,
+    val likeCount: Long,
 )

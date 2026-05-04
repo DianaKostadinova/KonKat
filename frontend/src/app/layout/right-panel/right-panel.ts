@@ -7,6 +7,7 @@ import { AuthService } from '../../shared/auth/auth.service';
 import { ProfileService } from '../../features/profile/profile.service';
 import { EventService } from '../../shared/event/event.service';
 import { HackathonService } from '../../features/hackathons/hackathons.service';
+import { PostService, TrendingTag } from '../../shared/post-card/post.service';
 import { UserProfile } from '../../features/profile/profile.model';
 import { EventWithCountdown, CountdownTime } from '../../shared/event/saved-event.model';
 
@@ -48,13 +49,7 @@ export class RightPanel implements OnInit, OnDestroy {
   private timer:       ReturnType<typeof setInterval> | null = null;
   private refreshSub: Subscription | null = null;
 
-  trending = signal([
-    { tag: '#nextjs',     posts: '142 posts' },
-    { tag: '#tailwind',   posts: '98 posts'  },
-    { tag: '#angular',    posts: '76 posts'  },
-    { tag: '#ui-design',  posts: '64 posts'  },
-    { tag: '#opensource', posts: '51 posts'  },
-  ]);
+  trending = signal<TrendingTag[]>([]);
 
   constructor(
     private router: Router,
@@ -62,6 +57,7 @@ export class RightPanel implements OnInit, OnDestroy {
     private profileService: ProfileService,
     private eventService: EventService,
     private hackathonService: HackathonService,
+    private postService: PostService,
   ) {
     effect(() => {
       document.body.style.overflow = this.isOpen() ? 'hidden' : '';
@@ -86,6 +82,11 @@ export class RightPanel implements OnInit, OnDestroy {
     } else {
       this.loading.set(false);
     }
+
+    this.postService.loadTrendingTags().subscribe({
+      next: tags => this.trending.set(tags),
+      error: () => {},
+    });
 
     // tick every second to update countdowns
     this.timer = setInterval(() => this.tickCountdowns(), 1000);
@@ -163,6 +164,16 @@ export class RightPanel implements OnInit, OnDestroy {
   goToHackathons() { this.router.navigate(['/hackathons']); }
   goToProfile()  { this.router.navigate(['/profile']); }
   goToLogin()    { this.router.navigate(['/login']); }
+
+  goToTag(raw: string) {
+    const clean = raw.replace(/^#/, '').toLowerCase().trim();
+    this.router.navigate(['/trending'], { queryParams: { tag: clean } });
+    this.isOpen.set(false);
+  }
+
+  displayTag(raw: string): string {
+    return raw.startsWith('#') ? raw : `#${raw}`;
+  }
 
   get repLabel(): string {
     const rep = this.profile()?.stats?.rep ?? 0;
