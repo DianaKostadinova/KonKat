@@ -27,7 +27,18 @@ export class AuthService {
     try {
       // Returns the pre-constructed Clerk instance from window.Clerk
       this.clerk = await this.loadClerkFromCdn();
-      await this.clerk.load();
+      await this.clerk.load({
+        appearance: {
+          variables: {
+            colorPrimary:        '#E8593C',
+            colorBackground:     '#111111',
+            colorText:           '#ffffff',
+            colorTextSecondary:  '#888888',
+            colorInputBackground:'#1a1a1a',
+            colorInputText:      '#ffffff',
+          },
+        },
+      } as any);
       this.syncUser();
       await this.loadDbId();
       this.clerk.addListener(() => this.syncUser());
