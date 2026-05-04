@@ -1,0 +1,71 @@
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #0d0d0d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ── Blobs (same as sign-in) ────────────────────────────────────────── */
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+.blob-1 {
+  width: 480px; height: 480px;
+  background: radial-gradient(circle, #E8593C 0%, #c0392b 60%, transparent 100%);
+  top: -140px; left: -140px;
+  opacity: 0.5;
+}
+.blob-2 {
+  width: 380px; height: 380px;
+  background: radial-gradient(circle, #ff6b35 0%, #e84393 70%, transparent 100%);
+  bottom: -100px; right: -80px;
+  opacity: 0.3;
+}
+.blob-3 {
+  width: 260px; height: 260px;
+  background: radial-gradient(circle, #ff3c3c 0%, #9b1c1c 70%, transparent 100%);
+  top: 60%; left: 8%;
+  opacity: 0.22;
+}
+.blob-4 {
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, #f97316 0%, #E8593C 60%, transparent 100%);
+  top: 15%; right: 15%;
+  opacity: 0.18;
+}
+
+/* ── Logo ────────────────────────────────────────────────────────────── */
+.loading-logo {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: logo-fade-in 0.7s ease forwards;
+}
+
+.loading-logo-img {
+  height: 44px;
+  width: auto;
+}
+
+.loading-logo-text {
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  font-size: 1.6rem;
+  letter-spacing: -1px;
+}
+
+@keyframes logo-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

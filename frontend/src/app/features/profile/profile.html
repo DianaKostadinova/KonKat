@@ -333,4 +333,33 @@
     />
   }
 
+  @if (showLogoutConfirm()) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center"
+      style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);"
+      (click)="showLogoutConfirm.set(false)"
+    >
+      <div
+        class="flex flex-col gap-4 rounded-2xl p-6 w-80"
+        style="background: #161616; border: 1px solid #2a2a2a; box-shadow: 0 20px 50px rgba(0,0,0,0.6);"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="flex flex-col gap-1">
+          <p class="text-white font-semibold text-sm m-0">Sign out of KonKat?</p>
+          <p class="text-[#888] text-xs m-0">You'll be redirected to the sign-in page.</p>
+        </div>
+        <div class="flex gap-2 justify-end">
+          <button
+            (click)="showLogoutConfirm.set(false)"
+            class="rounded-lg px-4 py-1.5 text-xs text-[#888] border border-[#2a2a2a] bg-transparent cursor-pointer hover:border-[#3a3a3a] hover:text-white transition-all"
+          >Cancel</button>
+          <button
+            (click)="confirmLogout()"
+            class="rounded-lg px-4 py-1.5 text-xs text-white border-none bg-red-700 cursor-pointer hover:bg-red-800 transition-all"
+          >Sign Out</button>
+        </div>
+      </div>
+    </div>
+  }
+
 </div>

@@ -1,15 +1,19 @@
-@if (showShell()) {
-  <app-navbar />
-}
-
-@if (showShell()) {
-  <div class="app-shell">
-    <app-sidebar />
-    <main class="main-content">
-      <router-outlet />
-    </main>
-    <app-right-panel />
-  </div>
+@if (isLoading()) {
+  <app-loading-screen />
 } @else {
-  <router-outlet />
+  @if (showShell()) {
+    <app-navbar />
+  }
+
+  @if (showShell()) {
+    <div class="app-shell">
+      <app-sidebar />
+      <main class="main-content">
+        <router-outlet />
+      </main>
+      <app-right-panel />
+    </div>
+  } @else {
+    <router-outlet />
+  }
 }

@@ -35,6 +35,8 @@ export class Profile implements OnInit {
   // Add project modal
   showAddProject = signal(false);
 
+  showLogoutConfirm = signal(false);
+
   // True when the profile shown belongs to the logged-in user
   isOwnProfile = true;
   // The user ID being viewed (may differ from the logged-in user)
@@ -138,7 +140,13 @@ export class Profile implements OnInit {
     this.router.navigate(['/chat'], { queryParams: { dm: this.viewedUserId } });
   }
 
-  logout(): void { this.authService.logout(); }
+  logout(): void {
+    this.showLogoutConfirm.set(true);
+  }
+
+  confirmLogout(): void {
+    this.authService.logout().then(() => this.router.navigate(['/sign-in']));
+  }
 
   onCoverImageChange(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];

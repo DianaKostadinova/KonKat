@@ -52,7 +52,7 @@ export class RightPanel implements OnInit, OnDestroy {
   trending = signal<TrendingTag[]>([]);
 
   constructor(
-    private router: Router,
+    protected router: Router,
     public  auth: AuthService,
     private profileService: ProfileService,
     private eventService: EventService,
