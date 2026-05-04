@@ -50,6 +50,14 @@
   align-items: center;
   text-align: center;
   gap: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: 1rem 0;
+  scrollbar-width: none;
+}
+
+.sign-in-content::-webkit-scrollbar {
+  display: none;
 }
 
 .sign-in-brand {

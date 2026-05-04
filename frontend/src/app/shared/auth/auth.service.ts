@@ -167,11 +167,19 @@ export class AuthService {
   }
 
   mountSignIn(el: HTMLElement): void {
-    this.clerk?.mountSignIn(el as HTMLDivElement);
+    this.clerk?.mountSignIn(el as HTMLDivElement, { signUpUrl: '/sign-up' } as any);
   }
 
   unmountSignIn(el: HTMLElement): void {
     this.clerk?.unmountSignIn(el as HTMLDivElement);
+  }
+
+  mountSignUp(el: HTMLElement): void {
+    this.clerk?.mountSignUp(el as HTMLDivElement, { signInUrl: '/sign-in' } as any);
+  }
+
+  unmountSignUp(el: HTMLElement): void {
+    this.clerk?.unmountSignUp(el as HTMLDivElement);
   }
 
   mountUserButton(el: HTMLElement): void {
