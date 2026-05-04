@@ -7,6 +7,7 @@ import { AuthService } from '../../shared/auth/auth.service';
   standalone: true,
   imports: [],
   templateUrl: './sign-in.html',
+  styleUrl:    './sign-in.css',
 })
 export class SignIn implements OnInit, OnDestroy {
   @ViewChild('clerkMount', { static: true }) clerkMount!: ElementRef<HTMLDivElement>;

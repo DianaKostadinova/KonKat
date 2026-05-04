@@ -40,6 +40,56 @@ class UserController(
     }
 
     /**
+     * POST /api/users/me/clerk-sync
+     * Called once after Clerk login. Links the Clerk account to an existing DB
+     * account by email (handles users who registered before Clerk was added).
+     * Also syncs name / avatar if the DB record is still empty.
+     */
+    @PostMapping("/me/clerk-sync")
+    fun clerkSync(
+        @RequestBody body: ClerkSyncRequest,
+        request: HttpServletRequest,
+    ): ResponseEntity<UserProfileDto> {
+        val clerkUserId = request.getAttribute("userId") as Long
+        val clerkUser   = userRepository.findById(clerkUserId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+        }
+
+        // Find a pre-existing account with the same email
+        val oldUser = if (body.email.isNotBlank())
+            userRepository.findByEmail(body.email).orElse(null)
+        else null
+
+        val finalUser = if (oldUser != null && oldUser.id != clerkUserId) {
+            // Must clear clerk_id from the stub BEFORE setting it on oldUser —
+            // both rows are in scope and the unique constraint fires at flush time.
+            val clerkId = clerkUser.clerkId
+            clerkUser.clerkId = null
+            userRepository.saveAndFlush(clerkUser)   // flush the NULL immediately
+            oldUser.clerkId = clerkId
+            userRepository.save(oldUser)
+            // Remove the empty stub created by ClerkJwtFilter (best-effort)
+            try { userRepository.delete(clerkUser) } catch (_: Exception) { /* FK refs — leave it */ }
+            oldUser
+        } else {
+            clerkUser
+        }
+
+        // Sync Clerk data into blank fields only
+        if (finalUser.displayName.isBlank() && !body.name.isNullOrBlank())
+            finalUser.displayName = body.name
+        if (finalUser.avatarUrl == null && !body.avatarUrl.isNullOrBlank())
+            finalUser.avatarUrl = body.avatarUrl
+
+        val saved = userRepository.save(finalUser)
+        return ResponseEntity.ok(saved.toProfileDto(
+            postCount      = postRepository.countByAuthorId(saved.id),
+            followerCount  = followRepository.countByFollowingId(saved.id),
+            followingCount = followRepository.countByFollowerId(saved.id),
+        ))
+    }
+
+    /**
      * PUT /api/users/me
      * Updates the authenticated user's profile and persists to DB.
      */
@@ -145,6 +195,12 @@ data class StatsDto(
     val rep: Int        = 0,
     val followers: Int  = 0,
     val following: Int  = 0,
+)
+
+data class ClerkSyncRequest(
+    val email: String = "",
+    val name: String? = null,
+    val avatarUrl: String? = null,
 )
 
 data class UpdateProfileRequest(

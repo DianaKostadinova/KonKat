@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
 import org.springframework.stereotype.Component
@@ -23,7 +25,12 @@ class ClerkJwtFilter(
 
     private val log = LoggerFactory.getLogger(ClerkJwtFilter::class.java)
 
-    private val decoder by lazy { NimbusJwtDecoder.withJwkSetUri(jwksUri).build() }
+    private val decoder by lazy {
+        NimbusJwtDecoder.withJwkSetUri(jwksUri)
+            .jwsAlgorithm(SignatureAlgorithm.RS256)
+            .build()
+            .also { it.setJwtValidator(JwtTimestampValidator(java.time.Duration.ofMinutes(1))) }
+    }
 
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -50,21 +57,24 @@ class ClerkJwtFilter(
 
             // Upsert: find existing user or create a new one
             val user = userRepository.findByClerkId(clerkId).orElseGet {
-                // Check if there's an existing legacy user with the same email
-                userRepository.findByEmail(email).orElseGet {
+                // Only attempt email lookup if the JWT includes an email claim
+                val byEmail = if (email.isNotBlank()) userRepository.findByEmail(email).orElse(null) else null
+                if (byEmail != null) {
+                    if (byEmail.clerkId == null) {
+                        byEmail.clerkId = clerkId
+                        userRepository.save(byEmail)
+                    } else {
+                        byEmail
+                    }
+                } else {
+                    // Create a minimal stub — clerkSync will merge it with the real account later
                     userRepository.save(
                         User(
                             clerkId     = clerkId,
-                            email       = email,
-                            displayName = displayName,
+                            email       = if (email.isNotBlank()) email else "$clerkId@clerk.stub",
+                            displayName = displayName.ifBlank { clerkId },
                         )
                     )
-                }.also { existing ->
-                    // Link the Clerk ID to the legacy account
-                    if (existing.clerkId == null) {
-                        existing.clerkId = clerkId
-                        userRepository.save(existing)
-                    }
                 }
             }
 
@@ -76,8 +86,7 @@ class ClerkJwtFilter(
             log.debug("Clerk auth: clerkId={} userId={}", clerkId, user.id)
 
         } catch (ex: Exception) {
-            log.warn("Clerk JWT rejected for {} {}: {}", request.method, request.requestURI, ex.message)
-            // Let Spring Security handle the 401 — do not short-circuit here
+            log.warn("Clerk JWT rejected for {} {} — {}: {}", request.method, request.requestURI, ex.javaClass.simpleName, ex.message, ex)
         }
 
         chain.doFilter(request, response)

@@ -3,8 +3,8 @@ import type { Clerk } from '@clerk/clerk-js';
 import { environment } from '../../../environments/environment';
 
 export interface AuthUser {
-  id: string;       // Clerk user ID (e.g. "user_2abc...")
-  dbId?: number;    // numeric DB primary key — populated after /api/users/me
+  id: string;       // Clerk user ID
+  dbId?: number;    // numeric DB primary key
   name: string;
   email: string;
   avatar?: string;
@@ -25,23 +25,34 @@ export class AuthService {
 
   async init(): Promise<void> {
     try {
-      // Returns the pre-constructed Clerk instance from window.Clerk
       this.clerk = await this.loadClerkFromCdn();
       await this.clerk.load({
         appearance: {
           variables: {
-            colorPrimary:        '#E8593C',
-            colorBackground:     '#111111',
-            colorText:           '#ffffff',
-            colorTextSecondary:  '#888888',
-            colorInputBackground:'#1a1a1a',
-            colorInputText:      '#ffffff',
+            colorPrimary:         '#E8593C',
+            colorBackground:      '#111111',
+            colorText:            '#ffffff',
+            colorTextSecondary:   '#888888',
+            colorInputBackground: '#1a1a1a',
+            colorInputText:       '#ffffff',
           },
         },
       } as any);
+
       this.syncUser();
-      await this.loadDbId();
-      this.clerk.addListener(() => this.syncUser());
+
+      // Session JWT may not be immediately available after load() with CDN approach —
+      // trigger sync once now and again on every auth state change.
+      this.clerk.addListener(() => {
+        this.syncUser();
+        if (this._isLoggedIn() && !this._user()?.dbId) {
+          void this.clerkSync();
+        }
+      });
+
+      // First attempt (non-blocking so APP_INITIALIZER isn't held up)
+      void this.clerkSync();
+
     } catch (e) {
       console.error('[Auth] Clerk failed to initialise:', e);
     } finally {
@@ -49,8 +60,52 @@ export class AuthService {
     }
   }
 
-  // Loads Clerk's full browser bundle from its CDN (the only bundle that includes UI components).
-  // Providing the key via both mechanisms so Clerk's auto-init creates window.Clerk as an instance.
+  // ── DB account linking ───────────────────────────────────────────────
+
+  async clerkSync(): Promise<void> {
+    const clerkUser = this._user();
+    if (!clerkUser) return;
+    if (clerkUser.dbId) return; // already linked
+
+    // Retry getting the token — session JWT may arrive slightly after load()
+    let token: string | null = null;
+    for (let i = 0; i < 6; i++) {
+      token = await this.getToken();
+      if (token) break;
+      await new Promise(r => setTimeout(r, 500));
+    }
+
+    if (!token) {
+      console.warn('[Auth] getToken returned null after retries — skipping clerk-sync');
+      return;
+    }
+
+    try {
+      const resp = await fetch('http://localhost:8081/api/users/me/clerk-sync', {
+        method:  'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email:     clerkUser.email,
+          name:      clerkUser.name,
+          avatarUrl: clerkUser.avatar ?? null,
+        }),
+      });
+
+      if (resp.ok) {
+        const me = await resp.json();
+        this._user.update(u => u ? { ...u, dbId: me.id as number } : u);
+        console.log('[Auth] clerk-sync ok — DB id=%d name=%s', me.id, me.name);
+      } else {
+        const text = await resp.text();
+        console.error('[Auth] clerk-sync %d:', resp.status, text);
+      }
+    } catch (e) {
+      console.error('[Auth] clerk-sync error:', e);
+    }
+  }
+
+  // ── Clerk CDN loader ─────────────────────────────────────────────────
+
   private loadClerkFromCdn(): Promise<Clerk> {
     return new Promise((resolve, reject) => {
       if ((window as any).__clerk_instance) {
@@ -61,7 +116,6 @@ export class AuthService {
       const base64      = environment.clerkPublishableKey.replace(/^pk_(test|live)_/, '');
       const frontendApi = atob(base64).replace(/\$$/, '');
 
-      // Fallback key source Clerk checks when data-clerk-publishable-key can't be read
       (window as any).__clerk_publishable_key = environment.clerkPublishableKey;
 
       const s = document.createElement('script');
@@ -70,15 +124,16 @@ export class AuthService {
       s.crossOrigin = 'anonymous';
 
       s.onload = () => {
-        // window.Clerk is now the pre-constructed Clerk instance
         const instance = (window as any).Clerk;
         (window as any).__clerk_instance = instance;
         resolve(instance as Clerk);
       };
-      s.onerror = () => reject(new Error(`Failed to load Clerk script from ${frontendApi}`));
+      s.onerror = () => reject(new Error(`Failed to load Clerk from ${frontendApi}`));
       document.head.appendChild(s);
     });
   }
+
+  // ── Internal helpers ─────────────────────────────────────────────────
 
   private syncUser(): void {
     const u = this.clerk?.user;
@@ -97,20 +152,6 @@ export class AuthService {
     }
   }
 
-  private async loadDbId(): Promise<void> {
-    const token = await this.getToken();
-    if (!token) return;
-    try {
-      const resp = await fetch('http://localhost:8081/api/users/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (resp.ok) {
-        const me = await resp.json();
-        this._user.update(u => u ? { ...u, dbId: me.id as number } : u);
-      }
-    } catch { /* backend unavailable — dbId stays undefined */ }
-  }
-
   async getToken(): Promise<string | null> {
     try {
       return (await this.clerk?.session?.getToken()) ?? null;
@@ -118,6 +159,8 @@ export class AuthService {
       return null;
     }
   }
+
+  // ── Public API ───────────────────────────────────────────────────────
 
   async logout(): Promise<void> {
     await this.clerk?.signOut();
