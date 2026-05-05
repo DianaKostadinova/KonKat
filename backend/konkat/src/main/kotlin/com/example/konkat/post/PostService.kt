@@ -42,7 +42,7 @@ class PostService(
             .map { it.post.toDto(userId) }
 
     fun getPostsByTag(tag: String, currentUserId: Long?): List<PostDto> =
-        postRepository.findByTagIgnoreCase(tag.trimStart('#')).map { it.toDto(currentUserId) }
+        postRepository.findByTagIgnoreCase("#${tag.trimStart('#')}").map { it.toDto(currentUserId) }
 
     fun getTrendingTags(): List<TrendingTagDto> =
         postRepository.findTrendingTags().map { row ->
