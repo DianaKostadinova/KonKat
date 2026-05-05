@@ -223,7 +223,7 @@ class TeamPostController(
     ): ResponseEntity<Map<String, Long>> {
         val userId = (request.getAttribute("userId") as? Long)
             ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required")
-        val post = teamPostRepository.findById(id).orElseThrow {
+        val post = teamPostRepository.findByIdForUpdate(id).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "Team post not found")
         }
 

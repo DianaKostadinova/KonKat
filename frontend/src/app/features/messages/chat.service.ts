@@ -26,19 +26,29 @@ export class ChatService implements OnDestroy {
     this.http.get<ConversationDto[]>(`${API}/messages/conversations`)
       .pipe(catchError(() => of([])))
       .subscribe(dtos => {
-        this._conversations.update(existing =>
-          dtos.map(dto => {
-            const ex = existing.find(e => e.id === dto.id && e.type === dto.type);
-            return {
-              id: dto.id,
-              type: dto.type as 'dm' | 'group',
-              name: dto.name,
-              members: dto.members,
-              unread: dto.unreadCount,
-              messages: ex?.messages ?? [],
-            };
-          })
-        );
+        const existing = this._conversations();
+
+        // Update metadata for existing convs without changing their order,
+        // then append any new convs the server knows about (sorted by server order).
+        const updated = existing.map(ex => {
+          const dto = dtos.find(d => d.id === ex.id && d.type === ex.type);
+          if (!dto) return ex;
+          return { ...ex, name: dto.name, members: dto.members, unread: dto.unreadCount, lastMessageAt: dto.lastMessageAt };
+        });
+
+        const newOnes = dtos
+          .filter(dto => !existing.some(e => e.id === dto.id && e.type === dto.type))
+          .map(dto => ({
+            id: dto.id,
+            type: dto.type as 'dm' | 'group',
+            name: dto.name,
+            members: dto.members,
+            unread: dto.unreadCount,
+            lastMessageAt: dto.lastMessageAt,
+            messages: [] as import('./chat.model').Message[],
+          }));
+
+        this._conversations.set([...updated, ...newOnes]);
       });
   }
 
@@ -76,11 +86,12 @@ export class ChatService implements OnDestroy {
       })
     ).subscribe(msgs => {
       if (!msgs.length) return;
-      this._conversations.update(convs => convs.map(c =>
-        c.id === convId
-          ? { ...c, messages: [...c.messages, ...msgs.map(m => toMessage(m))] }
-          : c
-      ));
+      this._conversations.update(convs => {
+        const updated = convs.map(c =>
+          c.id === convId ? { ...c, messages: [...c.messages, ...msgs.map(m => toMessage(m))] } : c
+        );
+        return bumpToTop(updated, convId);
+      });
     });
   }
 
@@ -98,12 +109,13 @@ export class ChatService implements OnDestroy {
       id: -Date.now(),
       senderId: this.meId(),
       content,
-      createdAt: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      createdAt: new Date().toISOString().slice(0, 19),
       read: false,
     };
 
-    this._conversations.update(convs => convs.map(c =>
-      c.id === convId ? { ...c, messages: [...c.messages, optimistic] } : c
+    this._conversations.update(convs => bumpToTop(
+      convs.map(c => c.id === convId ? { ...c, messages: [...c.messages, optimistic] } : c),
+      convId
     ));
 
     this.http.post<MessageDto>(url, { content })
@@ -134,11 +146,11 @@ export class ChatService implements OnDestroy {
       this.http.post<ConversationDto>(`${API}/messages/dm`, { userId })
         .subscribe({
           next: dto => {
-            const existing = this._conversations().find(c => c.id === dto.id && c.type === 'dm');
-            if (!existing) {
-              const conv: Conversation = { id: dto.id, type: 'dm', name: dto.name, members: dto.members, unread: dto.unreadCount, messages: [] };
-              this._conversations.update(cs => [conv, ...cs]);
-            }
+            this._conversations.update(cs => {
+              if (cs.some(c => c.id === dto.id && c.type === 'dm')) return cs;
+              const conv: Conversation = { id: dto.id, type: 'dm', name: dto.name, members: dto.members, unread: dto.unreadCount, lastMessageAt: dto.lastMessageAt, messages: [] };
+              return [conv, ...cs];
+            });
             resolve(this._conversations().find(c => c.id === dto.id && c.type === 'dm')!);
           },
           error: reject,
@@ -151,9 +163,12 @@ export class ChatService implements OnDestroy {
       this.http.post<ConversationDto>(`${API}/messages/group`, { name, memberIds })
         .subscribe({
           next: dto => {
-            const conv: Conversation = { id: dto.id, type: 'group', name: dto.name, members: dto.members, unread: 0, messages: [] };
-            this._conversations.update(cs => [conv, ...cs]);
-            resolve(conv);
+            this._conversations.update(cs => {
+              if (cs.some(c => c.id === dto.id && c.type === 'group')) return cs;
+              const conv: Conversation = { id: dto.id, type: 'group', name: dto.name, members: dto.members, unread: 0, lastMessageAt: dto.lastMessageAt, messages: [] };
+              return [conv, ...cs];
+            });
+            resolve(this._conversations().find(c => c.id === dto.id && c.type === 'group')!);
           },
           error: reject,
         });
@@ -165,12 +180,16 @@ export class ChatService implements OnDestroy {
       this.http.get<ConversationDto[]>(`${API}/messages/conversations`)
         .pipe(catchError(() => of([])))
         .subscribe(dtos => {
-          this._conversations.update(existing =>
-            dtos.map(dto => {
-              const ex = existing.find(e => e.id === dto.id && e.type === dto.type);
-              return { id: dto.id, type: dto.type as 'dm' | 'group', name: dto.name, members: dto.members, unread: dto.unreadCount, messages: ex?.messages ?? [] };
-            })
-          );
+          const existing = this._conversations();
+          const updated = existing.map(ex => {
+            const dto = dtos.find(d => d.id === ex.id && d.type === ex.type);
+            if (!dto) return ex;
+            return { ...ex, name: dto.name, members: dto.members, unread: dto.unreadCount, lastMessageAt: dto.lastMessageAt };
+          });
+          const newOnes = dtos
+            .filter(dto => !existing.some(e => e.id === dto.id && e.type === dto.type))
+            .map(dto => ({ id: dto.id, type: dto.type as 'dm' | 'group', name: dto.name, members: dto.members, unread: dto.unreadCount, lastMessageAt: dto.lastMessageAt, messages: [] as import('./chat.model').Message[] }));
+          this._conversations.set([...updated, ...newOnes]);
           const conv = this._conversations().find(c => c.id === groupId && c.type === 'group');
           if (conv) resolve(conv);
           else reject(new Error('Group not found'));
@@ -202,4 +221,10 @@ export class ChatService implements OnDestroy {
 
 function toMessage(dto: MessageDto): Message {
   return { id: dto.id, senderId: dto.senderId, senderName: dto.senderName, content: dto.content, createdAt: dto.createdAt, read: dto.read };
+}
+
+function bumpToTop(convs: Conversation[], convId: number): Conversation[] {
+  const idx = convs.findIndex(c => c.id === convId);
+  if (idx <= 0) return convs;
+  return [convs[idx], ...convs.slice(0, idx), ...convs.slice(idx + 1)];
 }

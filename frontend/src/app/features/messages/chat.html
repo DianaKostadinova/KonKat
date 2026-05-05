@@ -108,7 +108,7 @@
             <div class="flex items-center justify-between">
               <span class="text-[#f0f0f0] text-sm font-medium truncate">{{ conv.name }}</span>
               <span class="text-[#888888] text-[11px] flex-shrink-0 ml-2">
-                {{ conv.messages.at(-1)?.createdAt }}
+                {{ formatTime(conv.messages.at(-1)?.createdAt ?? conv.lastMessageAt) }}
               </span>
             </div>
             <div class="flex items-center justify-between">
@@ -212,7 +212,7 @@
             <span class="text-[#888888] text-[10px] mt-0.5"
                   [class.mr-1]="isMe(msg.senderId)"
                   [class.ml-9]="!isMe(msg.senderId)">
-              {{ msg.createdAt }}
+              {{ formatTime(msg.createdAt) }}
               @if (isMe(msg.senderId)) {
                 <span class="ml-1">{{ msg.read ? '✓✓' : '✓' }}</span>
               }

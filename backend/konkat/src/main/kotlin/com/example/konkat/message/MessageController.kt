@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import java.time.format.DateTimeFormatter
 
-private val TIME_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+private val TIME_FMT: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
 // ── DTOs ──────────────────────────────────────────────────────────────────────
 
@@ -78,22 +78,24 @@ class MessageController(
             )
         }
 
-        val groups = groupMemberRepository.findByUserId(userId).map { gm ->
-            val g = gm.group
-            val members = groupMemberRepository.findByGroupId(g.id)
-                .map { MemberDto(it.user.id, it.user.displayName, it.user.title, it.user.avatarUrl) }
-            val last = groupMessageRepository.findTopByGroupIdOrderByCreatedAtDesc(g.id)
-            ConversationDto(
-                id = g.id,
-                type = "group",
-                name = g.name,
-                members = members,
-                unreadCount = 0,
-                lastMessageContent = last?.content,
-                lastMessageAt = last?.createdAt?.format(TIME_FMT),
-                lastMessageSenderId = last?.sender?.id,
-            )
-        }
+        val groups = groupMemberRepository.findByUserId(userId)
+            .distinctBy { it.group.id }          // guard against duplicate rows if DB constraint is missing
+            .map { gm ->
+                val g = gm.group
+                val members = groupMemberRepository.findByGroupId(g.id)
+                    .map { MemberDto(it.user.id, it.user.displayName, it.user.title, it.user.avatarUrl) }
+                val last = groupMessageRepository.findTopByGroupIdOrderByCreatedAtDesc(g.id)
+                ConversationDto(
+                    id = g.id,
+                    type = "group",
+                    name = g.name,
+                    members = members,
+                    unreadCount = 0,
+                    lastMessageContent = last?.content,
+                    lastMessageAt = last?.createdAt?.format(TIME_FMT),
+                    lastMessageSenderId = last?.sender?.id,
+                )
+            }
 
         return (dms + groups).sortedByDescending { it.lastMessageAt ?: "" }
     }

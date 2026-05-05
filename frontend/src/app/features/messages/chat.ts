@@ -77,6 +77,23 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
     return senderId === this.chatService.meId();
   }
 
+  formatTime(iso: string | undefined): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = d.toDateString() === yesterday.toDateString();
+    const hm = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    if (isToday) return hm;
+    if (isYesterday) return `Yest ${hm}`;
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
+    if (diffDays < 7) return d.toLocaleDateString('en-GB', { weekday: 'short' }) + ` ${hm}`;
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  }
+
   openConversation(id: number) {
     const conv = this.chatService.getById(id);
     if (!conv) return;

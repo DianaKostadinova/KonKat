@@ -21,6 +21,7 @@ export interface Conversation {
   members: ConversationMember[];
   messages: Message[];
   unread: number;
+  lastMessageAt?: string;
   online?: boolean;
 }
 

@@ -14,7 +14,7 @@ export class Sidebar {
     { type: 'divider' },
     { label: 'Ask Help (Q&A)', icon: 'contact_support',       route: '/qa' },
     { type: 'divider' },
-    { label: 'Chat',           icon: 'chat_bubble_outline',   route: '/chat', badge: 3 },
+    { label: 'Chat',           icon: 'chat_bubble_outline',   route: '/chat' },
     { type: 'divider' },
     { label: 'Workspace',      icon: 'group',                 route: '/myworkspaces' },
   ];
