@@ -1,9 +1,10 @@
-import { Component, Output, EventEmitter, signal, OnInit } from '@angular/core';
+﻿import { Component, Output, EventEmitter, signal, OnInit } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { TeamService } from './team.service';
 import { TeamPost } from './teammates.model';
+import { environment } from '../../../environments/environment';
 
-const API = 'http://localhost:8081/api';
+const API = environment.apiUrl;
 
 interface HackathonOption { id: number; title: string; }
 

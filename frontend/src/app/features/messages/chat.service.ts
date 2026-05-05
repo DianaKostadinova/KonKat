@@ -1,11 +1,12 @@
-import { Injectable, signal, OnDestroy } from '@angular/core';
+﻿import { Injectable, signal, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { interval, Subscription } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { Conversation, Message, ConversationDto, MessageDto, UserSearchResult } from './chat.model';
+import { environment } from '../../../environments/environment';
 
-const API = 'http://localhost:8081/api';
+const API = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class ChatService implements OnDestroy {

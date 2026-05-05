@@ -1,9 +1,10 @@
-import { Injectable, signal } from '@angular/core';
+﻿import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Project } from './project.model';
+import { environment } from '../../../environments/environment';
 
-const API = 'http://localhost:8081/api';
+const API = environment.apiUrl;
 
 export interface CreateProjectData {
   title: string;

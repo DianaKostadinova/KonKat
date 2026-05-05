@@ -1,11 +1,12 @@
-import { Injectable, signal, computed, effect, inject, OnDestroy } from '@angular/core';
+﻿import { Injectable, signal, computed, effect, inject, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { Notification, NotificationType } from './notification-bell.model';
 import { AuthService } from '../auth/auth.service';
 import { WsService } from './ws.service';
+import { environment } from '../../../environments/environment';
 
-const API = 'http://localhost:8081/api';
+const API = environment.apiUrl;
 
 function mapType(t: string): NotificationType {
   switch (t) {

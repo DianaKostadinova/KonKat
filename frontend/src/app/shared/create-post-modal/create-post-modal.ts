@@ -20,10 +20,11 @@ export class CreatePostModal implements OnInit {
   submitting = signal(false);
   error      = signal('');
 
-  content     = '';
-  codeSnippet = '';
-  language    = 'typescript';
-  tagsInput   = '';
+  content      = '';
+  codeSnippet  = '';
+  language     = 'typescript';
+  tagsInput    = '';
+  imagePreview = signal<string | null>(null);
 
   readonly types: { value: PostType; label: string; icon: string }[] = [
     { value: 'text',  label: 'Text',  icon: 'notes' },
@@ -48,7 +49,21 @@ export class CreatePostModal implements OnInit {
   get canPost(): boolean {
     if (!this.content.trim()) return false;
     if (this.type() === 'code' && !this.codeSnippet.trim()) return false;
+    if (this.type() === 'media' && !this.imagePreview()) return false;
     return true;
+  }
+
+  onFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file  = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => this.imagePreview.set(reader.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  removeImage(): void {
+    this.imagePreview.set(null);
   }
 
   submit(): void {
@@ -73,6 +88,7 @@ export class CreatePostModal implements OnInit {
       code: this.type() === 'code'
         ? { language: this.language, snippet: this.codeSnippet }
         : undefined,
+      imageUrl: this.type() === 'media' ? (this.imagePreview() ?? undefined) : undefined,
       tags:      tags.length ? tags : [],
       reactions: { likes: 0, comments: 0, shares: 0 },
       liked:     false,

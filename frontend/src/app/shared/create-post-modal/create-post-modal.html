@@ -60,13 +60,22 @@
       ></textarea>
     }
 
-    <!-- Media placeholder -->
+    <!-- Media upload -->
     @if (type() === 'media') {
-      <label class="media-upload">
-        <span class="material-icons-outlined" style="font-size: 28px; color: #555;">add_photo_alternate</span>
-        <span class="media-label">Click to attach an image</span>
-        <input type="file" accept="image/*" style="display:none" />
-      </label>
+      @if (imagePreview()) {
+        <div class="image-preview-wrap">
+          <img [src]="imagePreview()" class="image-preview" alt="preview" />
+          <button class="image-remove-btn" (click)="removeImage()" type="button">
+            <span class="material-icons" style="font-size: 16px;">close</span>
+          </button>
+        </div>
+      } @else {
+        <label class="media-upload">
+          <span class="material-icons-outlined" style="font-size: 28px; color: #555;">add_photo_alternate</span>
+          <span class="media-label">Click to attach an image</span>
+          <input type="file" accept="image/*" style="display:none" (change)="onFileChange($event)" />
+        </label>
+      }
     }
 
     <!-- Tags -->

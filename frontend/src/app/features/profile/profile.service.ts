@@ -1,11 +1,12 @@
-import { Injectable, signal } from '@angular/core';
+﻿import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, map, share } from 'rxjs';
 import { UserProfile } from './profile.model';
 import { Post } from '../../shared/post-card/post.model';
 import { PostService } from '../../shared/post-card/post.service';
+import { environment } from '../../../environments/environment';
 
-const API = 'http://localhost:8081/api';
+const API = environment.apiUrl;
 
 const EMPTY_PROFILE: UserProfile = {
   id: 0, name: '', username: '', role: '', company: '', location: '',

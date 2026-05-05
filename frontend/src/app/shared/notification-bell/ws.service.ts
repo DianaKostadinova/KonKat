@@ -2,8 +2,9 @@ import { Injectable, OnDestroy, inject } from '@angular/core';
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import { Subject } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
+import { environment } from '../../../environments/environment';
 
-const WS_URL = 'ws://localhost:8081/ws';
+const WS_URL = environment.wsUrl;
 
 @Injectable({ providedIn: 'root' })
 export class WsService implements OnDestroy {

@@ -25,6 +25,9 @@ data class Post(
     @Column(columnDefinition = "TEXT")
     var codeSnippet: String? = null,
 
+    @Column(columnDefinition = "TEXT")
+    var imageUrl: String? = null,
+
     @ElementCollection
     @CollectionTable(name = "post_tags", joinColumns = [JoinColumn(name = "post_id")])
     @Column(name = "tag")

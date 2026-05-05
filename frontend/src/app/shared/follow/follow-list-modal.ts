@@ -1,10 +1,11 @@
-import {
+﻿import {
   Component, Input, Output, EventEmitter, OnInit, signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
-const API = 'http://localhost:8081/api';
+const API = environment.apiUrl;
 
 export interface FollowUser {
   id: number;

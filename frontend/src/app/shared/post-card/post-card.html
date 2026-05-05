@@ -56,6 +56,12 @@
     </div>
   }
 
+  @if (post.type === 'media' && post.imageUrl) {
+    <div class="rounded-lg overflow-hidden border border-[#2a2a2a] bg-[#0d0d0d]">
+      <img [src]="post.imageUrl" alt="post image" class="w-full max-h-[480px] object-contain block" />
+    </div>
+  }
+
   <!-- Tags -->
   @if (post.tags && post.tags.length > 0) {
     <div class="flex flex-wrap gap-2">

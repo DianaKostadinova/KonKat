@@ -23,6 +23,7 @@ export interface Post {
     language: string;
     snippet: string;
   };
+  imageUrl?: string;
   tags?: string[];
   reactions: {
     likes: number;

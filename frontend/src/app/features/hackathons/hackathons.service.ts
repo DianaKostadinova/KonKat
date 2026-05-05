@@ -1,10 +1,11 @@
-import { Injectable, signal } from '@angular/core';
+﻿import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, Observable, tap } from 'rxjs';
 import { Hackathon, Webinar, CreateHackathonPayload, CreateWebinarPayload } from './hackathons.model';
 import { EventService } from '../../shared/event/event.service';
+import { environment } from '../../../environments/environment';
 
-const API = 'http://localhost:8081/api';
+const API = environment.apiUrl;
 
 export interface RegisterPayload { teamName?: string; role?: string; }
 export interface RegisterResult  { registered: boolean; teamName: string | null; role: string | null; participantCount: number; }

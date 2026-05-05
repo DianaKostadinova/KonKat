@@ -2,6 +2,8 @@ import { Injectable, signal } from '@angular/core';
 import type { Clerk } from '@clerk/clerk-js';
 import { environment } from '../../../environments/environment';
 
+const API = environment.apiUrl;
+
 export interface AuthUser {
   id: string;       // Clerk user ID
   dbId?: number;    // numeric DB primary key
@@ -81,7 +83,7 @@ export class AuthService {
     }
 
     try {
-      const resp = await fetch('http://localhost:8081/api/users/me/clerk-sync', {
+      const resp = await fetch(`${API}/users/me/clerk-sync`, {
         method:  'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({

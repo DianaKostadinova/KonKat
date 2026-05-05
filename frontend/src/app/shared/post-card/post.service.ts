@@ -1,7 +1,8 @@
-import { Injectable, signal } from '@angular/core';
+﻿import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, map } from 'rxjs';
 import { Post, PostType } from './post.model';
+import { environment } from '../../../environments/environment';
 
 export interface TrendingTag {
   tag: string;
@@ -9,7 +10,7 @@ export interface TrendingTag {
   likeCount: number;
 }
 
-const API = 'http://localhost:8081/api';
+const API = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class PostService {
@@ -54,6 +55,7 @@ export class PostService {
       type: postData.type.toUpperCase(),
       codeLanguage: postData.code?.language ?? null,
       codeSnippet: postData.code?.snippet ?? null,
+      imageUrl: postData.imageUrl ?? null,
       tags: postData.tags ?? [],
     };
     return this.http.post<any>(`${API}/posts`, body).pipe(
@@ -125,6 +127,7 @@ export class PostService {
       code: dto.codeLanguage
         ? { language: dto.codeLanguage, snippet: dto.codeSnippet ?? '' }
         : undefined,
+      imageUrl: dto.imageUrl ?? undefined,
       tags: dto.tags ?? [],
       reactions: {
         likes: Number(dto.reactions?.likes ?? 0),

@@ -60,6 +60,7 @@ class PostService(
             type = request.type,
             codeLanguage = request.codeLanguage,
             codeSnippet = request.codeSnippet,
+            imageUrl = request.imageUrl,
             tags = request.tags.toMutableList(),
         )
         return postRepository.save(post).toDto(authorId)
@@ -169,6 +170,7 @@ class PostService(
             type         = type,
             codeLanguage = codeLanguage,
             codeSnippet  = codeSnippet,
+            imageUrl     = imageUrl,
             tags         = tags.toList(),
             reactions    = ReactionsDto(likes = likes, saves = saves, shares = shares),
             liked        = liked,
@@ -218,6 +220,7 @@ data class PostDto(
     val type: PostType,
     val codeLanguage: String?,
     val codeSnippet: String?,
+    val imageUrl: String?,
     val tags: List<String>,
     val reactions: ReactionsDto,
     val liked: Boolean,
@@ -247,6 +250,7 @@ data class CreatePostRequest(
     val type: PostType = PostType.TEXT,
     val codeLanguage: String? = null,
     val codeSnippet: String? = null,
+    val imageUrl: String? = null,
     val tags: List<String> = emptyList(),
 )
 
