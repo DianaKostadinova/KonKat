@@ -160,7 +160,11 @@
     </div>
 
     <button class="navbar__avatar" routerLink="/profile">
-      <span class="material-icons">account_circle</span>
+      @if (avatarUrl()) {
+        <img [src]="avatarUrl()" alt="profile" class="navbar__avatar-img" />
+      } @else {
+        <span class="material-icons">account_circle</span>
+      }
     </button>
 
     <button class="navbar__mobile-toggle" (click)="toggleMobileMenu()">

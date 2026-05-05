@@ -16,6 +16,7 @@ export interface Post {
     location: string;
     time: string;
     badge?: string;
+    avatarUrl?: string;
   };
   content: string;
   type: PostType;

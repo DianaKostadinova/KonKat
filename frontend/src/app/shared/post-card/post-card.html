@@ -3,8 +3,12 @@
   <!-- Header -->
   <div class="flex items-start justify-between">
     <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-      <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#2a2a2a] border border-[#3a3a3a] flex items-center justify-center flex-shrink-0">
-        <span class="material-icons text-[#888888]" style="font-size: 24px;">account_circle</span>
+      <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#2a2a2a] border border-[#3a3a3a] flex items-center justify-center flex-shrink-0 overflow-hidden">
+        @if (post.author.avatarUrl) {
+          <img [src]="post.author.avatarUrl" [alt]="post.author.name" class="w-full h-full object-cover" />
+        } @else {
+          <span class="material-icons text-[#888888]" style="font-size: 24px;">account_circle</span>
+        }
       </div>
       <div class="flex flex-col min-w-0">
         <div class="flex items-center gap-2 flex-wrap">

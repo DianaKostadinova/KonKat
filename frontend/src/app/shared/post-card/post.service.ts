@@ -121,6 +121,7 @@ export class PostService {
         role: dto.author.username ?? '',
         location: dto.author.location ?? '',
         time: this.timeAgo(dto.createdAt),
+        avatarUrl: dto.author.avatarUrl ?? undefined,
       },
       content: dto.content,
       type: dto.type.toLowerCase() as PostType,

@@ -10,6 +10,8 @@ import { of } from 'rxjs';
 import { NotificationDropdown } from '../../shared/notification-bell/notification-bell';
 import { NotificationService } from '../../shared/notification-bell/notification.service';
 import { SearchService, SearchResults } from '../../shared/search/search.service';
+import { AuthService } from '../../shared/auth/auth.service';
+import { ProfileService } from '../../features/profile/profile.service';
 
 @Component({
   selector: 'app-navbar',
@@ -49,13 +51,21 @@ export class Navbar implements OnInit, OnDestroy {
     { label: 'Find Team',  icon: 'group',          route: '/find-team'  },
   ];
 
+  avatarUrl = computed(() => this.profileService.getProfile()?.avatar);
+
   constructor(
     public  notificationService: NotificationService,
     private searchService: SearchService,
     private router: Router,
+    private authService: AuthService,
+    private profileService: ProfileService,
   ) {}
 
   ngOnInit(): void {
+    if (this.authService.isLoggedIn() && !this.profileService.getProfile()?.avatar) {
+      this.profileService.loadProfile().subscribe();
+    }
+
     // Debounce — wait 300 ms after the user stops typing, then fire the API call.
     // switchMap cancels any in-flight request if a new query arrives before the response.
     this.searchSub = this.searchSubject.pipe(
