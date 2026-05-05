@@ -27,6 +27,7 @@ export interface TeamPost {
   requestStatus: RequestStatus;
   isOwn: boolean;
   createdAt: string;
+  groupConversationId?: number;
 }
 
 export interface CreateTeamPostRequest {

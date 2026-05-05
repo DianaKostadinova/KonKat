@@ -1,6 +1,10 @@
 package com.example.konkat.teampost
 
 import com.example.konkat.hackathon.HackathonRepository
+import com.example.konkat.message.GroupConversation
+import com.example.konkat.message.GroupConversationRepository
+import com.example.konkat.message.GroupMember
+import com.example.konkat.message.GroupMemberRepository
 import com.example.konkat.notification.NotificationSender
 import com.example.konkat.notification.NotificationType
 import com.example.konkat.user.UserRepository
@@ -37,6 +41,7 @@ data class TeamPostDto(
     val requestStatus: String,  // none | pending | approved | rejected | own
     val isOwn: Boolean,
     val createdAt: String,
+    val groupConversationId: Long?,
 )
 
 data class TeamRequestDto(
@@ -72,6 +77,8 @@ class TeamPostController(
     private val hackathonRepository: HackathonRepository,
     private val userRepository: UserRepository,
     private val notificationSender: NotificationSender,
+    private val groupConversationRepository: GroupConversationRepository,
+    private val groupMemberRepository: GroupMemberRepository,
 ) {
 
     /** GET /api/team-posts — list all team posts, optionally filtered by hackathonId */
@@ -208,6 +215,47 @@ class TeamPostController(
         return ResponseEntity.ok(teamRequestRepository.save(req).toDto())
     }
 
+    /** POST /api/team-posts/{id}/chat — get or create the team's group chat */
+    @PostMapping("/{id}/chat")
+    fun getOrCreateChat(
+        @PathVariable id: Long,
+        request: HttpServletRequest,
+    ): ResponseEntity<Map<String, Long>> {
+        val userId = (request.getAttribute("userId") as? Long)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required")
+        val post = teamPostRepository.findById(id).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Team post not found")
+        }
+
+        val isAuthor   = post.author.id == userId
+        val isApproved = teamRequestRepository.findByTeamPostIdAndRequesterId(id, userId)
+            ?.status == RequestStatus.APPROVED
+        if (!isAuthor && !isApproved)
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only team members can access the chat")
+
+        // Return existing group chat if already created
+        if (post.groupConversationId != null)
+            return ResponseEntity.ok(mapOf("groupId" to post.groupConversationId!!))
+
+        // Create a new group conversation named after the team post
+        val author = userRepository.findById(post.author.id).orElseThrow()
+        val group  = groupConversationRepository.save(GroupConversation(name = post.title, createdBy = author))
+
+        // Add author + all approved members
+        val approvedIds = teamRequestRepository
+            .findByTeamPostIdAndStatus(id, RequestStatus.APPROVED)
+            .map { it.requester.id }
+        (listOf(post.author.id) + approvedIds).distinct().forEach { memberId ->
+            val user = userRepository.findById(memberId).orElse(null) ?: return@forEach
+            groupMemberRepository.save(GroupMember(group = group, user = user))
+        }
+
+        post.groupConversationId = group.id
+        teamPostRepository.save(post)
+
+        return ResponseEntity.ok(mapOf("groupId" to group.id))
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private fun TeamPost.toDto(currentUserId: Long?): TeamPostDto {
@@ -243,9 +291,10 @@ class TeamPostController(
             maxMembers    = maxMembers,
             members       = members,
             lookingFor    = lookingFor.toList(),
-            requestStatus = requestStatus,
-            isOwn         = currentUserId == author.id,
-            createdAt     = createdAt?.format(ISO) ?: "",
+            requestStatus       = requestStatus,
+            isOwn               = currentUserId == author.id,
+            createdAt           = createdAt?.format(ISO) ?: "",
+            groupConversationId = groupConversationId,
         )
     }
 

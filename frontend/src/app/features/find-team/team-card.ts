@@ -1,7 +1,11 @@
 import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { TeamPost } from './teammates.model';
 import { TeamRequestsModal } from './team-requests-modal';
+import { environment } from '../../../environments/environment';
+
+const API = environment.apiUrl;
 
 @Component({
   selector: 'app-team-card',
@@ -19,6 +23,9 @@ export class TeamCard {
   showMembers       = signal(false);
   showHackathonInfo = signal(false);
   showRequests      = signal(false);
+  openingChat       = signal(false);
+
+  constructor(private http: HttpClient, private router: Router) {}
 
   toggleMembers()        { this.showMembers.update(v => !v); }
   toggleHackathonInfo()  { this.showHackathonInfo.update(v => !v); }
@@ -48,6 +55,19 @@ export class TeamCard {
 
   onJoin()   { this.joinRequest.emit(this.team.id); }
   onCancel() { this.cancelRequest.emit(this.team.id); }
+
+  openChat(): void {
+    if (this.openingChat()) return;
+    this.openingChat.set(true);
+    this.http.post<{ groupId: number }>(`${API}/team-posts/${this.team.id}/chat`, {})
+      .subscribe({
+        next: ({ groupId }) => {
+          this.openingChat.set(false);
+          this.router.navigate(['/chat'], { queryParams: { group: groupId } });
+        },
+        error: () => this.openingChat.set(false),
+      });
+  }
 
   onMembersChanged() {
     // Signal the parent to refresh the team list so member count updates

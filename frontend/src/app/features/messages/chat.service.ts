@@ -160,6 +160,24 @@ export class ChatService implements OnDestroy {
     });
   }
 
+  openGroupById(groupId: number): Promise<Conversation> {
+    return new Promise((resolve, reject) => {
+      this.http.get<ConversationDto[]>(`${API}/messages/conversations`)
+        .pipe(catchError(() => of([])))
+        .subscribe(dtos => {
+          this._conversations.update(existing =>
+            dtos.map(dto => {
+              const ex = existing.find(e => e.id === dto.id && e.type === dto.type);
+              return { id: dto.id, type: dto.type as 'dm' | 'group', name: dto.name, members: dto.members, unread: dto.unreadCount, messages: ex?.messages ?? [] };
+            })
+          );
+          const conv = this._conversations().find(c => c.id === groupId && c.type === 'group');
+          if (conv) resolve(conv);
+          else reject(new Error('Group not found'));
+        });
+    });
+  }
+
   searchUsers(query: string) {
     return this.http.get<{ users: UserSearchResult[] }>(`${API}/search?q=${encodeURIComponent(query)}`);
   }

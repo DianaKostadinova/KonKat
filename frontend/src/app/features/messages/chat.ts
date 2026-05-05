@@ -49,6 +49,13 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
         this.openConversation(conv.id);
       }).catch(() => {});
     }
+
+    const group = this.route.snapshot.queryParamMap.get('group');
+    if (group) {
+      this.chatService.openGroupById(Number(group)).then(conv => {
+        this.openConversation(conv.id);
+      }).catch(() => {});
+    }
   }
 
   conversations = computed(() => {

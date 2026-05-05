@@ -42,6 +42,8 @@ class TeamPost(
     @Column(name = "role")
     var lookingFor: MutableList<String> = mutableListOf(),
 
+    var groupConversationId: Long? = null,
+
     @CreationTimestamp
     val createdAt: LocalDateTime? = null,
 )
