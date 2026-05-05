@@ -22,6 +22,9 @@ function mapType(t: string): NotificationType {
     case 'PROJECT_MEMBER':     return 'join_approved';
     case 'MESSAGE':            return 'comment';
     case 'TEAM_REQUEST':       return 'join_request';
+    case 'QA_ANSWER':          return 'comment';
+    case 'QA_ANSWER_ACCEPTED': return 'join_approved';
+    case 'QA_VOTE':            return 'like';
     default:                   return 'mention';
   }
 }
@@ -41,6 +44,9 @@ function buildMessage(dto: any): string {
     case 'PROJECT_MEMBER':     return `${actor} added you to a project`;
     case 'MESSAGE':            return `${actor} sent you a message`;
     case 'TEAM_REQUEST':       return `${actor} wants to join your team`;
+    case 'QA_ANSWER':          return `${actor} answered your question`;
+    case 'QA_ANSWER_ACCEPTED': return 'Your answer was accepted as the solution!';
+    case 'QA_VOTE':            return `${actor} upvoted your question`;
     default:                   return `${actor} interacted with you`;
   }
 }
@@ -59,6 +65,9 @@ function buildTitle(type: string): string {
     case 'PROJECT_MEMBER':     return 'Added to Project';
     case 'MESSAGE':            return 'New Message';
     case 'TEAM_REQUEST':       return 'Team Join Request';
+    case 'QA_ANSWER':          return 'New Answer';
+    case 'QA_ANSWER_ACCEPTED': return 'Answer Accepted!';
+    case 'QA_VOTE':            return 'Question Upvoted';
     default:                   return 'Notification';
   }
 }
@@ -173,6 +182,8 @@ export class NotificationService {
                : dto.type === 'MESSAGE'                                                              ? `/chat?dm=${dto.actorId}`
                : (dto.type === 'POST_LIKE' || dto.type === 'POST_COMMENT' || dto.type === 'POST_SHARE') && dto.postId
                                                                                                      ? `/feed?post=${dto.postId}`
+               : (dto.type === 'QA_ANSWER' || dto.type === 'QA_ANSWER_ACCEPTED' || dto.type === 'QA_VOTE')
+                                                                                                     ? '/qa'
                : dto.hackathonId                                                                     ? '/hackathons'
                : dto.projectId                                                                       ? '/projects'
                : dto.type === 'TEAM_REQUEST'                                                         ? '/find-team'

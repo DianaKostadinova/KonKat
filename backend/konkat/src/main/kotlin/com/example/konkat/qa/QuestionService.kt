@@ -1,5 +1,7 @@
 package com.example.konkat.qa
 
+import com.example.konkat.notification.NotificationSender
+import com.example.konkat.notification.NotificationType
 import com.example.konkat.user.User
 import com.example.konkat.user.UserRepository
 import org.springframework.data.repository.findByIdOrNull
@@ -19,6 +21,7 @@ class QuestionService(
     private val questionVoteRepository: QuestionVoteRepository,
     private val answerVoteRepository: AnswerVoteRepository,
     private val userRepository: UserRepository,
+    private val notificationSender: NotificationSender,
 ) {
 
     fun getAll(currentUserId: Long?, filter: String?): List<QuestionDto> {
@@ -60,6 +63,14 @@ class QuestionService(
                 codeSnippet  = req.codeSnippet,
             )
         )
+        if (question.author.id != authorId) {
+            notificationSender.send(
+                recipient = question.author,
+                actor     = author,
+                type      = NotificationType.QA_ANSWER,
+                postId    = questionId,
+            )
+        }
         return answer.toDto(authorId)
     }
 
@@ -70,10 +81,19 @@ class QuestionService(
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
 
         val existing = questionVoteRepository.findByQuestionIdAndUserId(questionId, userId)
+        val isNewUpvote = existing == null && direction == VoteDirection.UP
         when {
             existing == null              -> questionVoteRepository.save(QuestionVote(question = question, user = user, direction = direction))
             existing.direction == direction -> questionVoteRepository.delete(existing)
             else                          -> { existing.direction = direction; questionVoteRepository.save(existing) }
+        }
+        if (isNewUpvote && question.author.id != userId) {
+            notificationSender.send(
+                recipient = question.author,
+                actor     = user,
+                type      = NotificationType.QA_VOTE,
+                postId    = questionId,
+            )
         }
 
         return VoteResultDto(
@@ -89,10 +109,19 @@ class QuestionService(
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
 
         val existing = answerVoteRepository.findByAnswerIdAndUserId(answerId, userId)
+        val isNewUpvote = existing == null && direction == VoteDirection.UP
         when {
             existing == null              -> answerVoteRepository.save(AnswerVote(answer = answer, user = user, direction = direction))
             existing.direction == direction -> answerVoteRepository.delete(existing)
             else                          -> { existing.direction = direction; answerVoteRepository.save(existing) }
+        }
+        if (isNewUpvote && answer.author.id != userId) {
+            notificationSender.send(
+                recipient = answer.author,
+                actor     = user,
+                type      = NotificationType.QA_VOTE,
+                postId    = answer.question.id,
+            )
         }
 
         return VoteResultDto(
@@ -119,7 +148,16 @@ class QuestionService(
         answer.isAccepted = true
         question.solved = true
         questionRepository.save(question)
-        return answerRepository.save(answer).toDto(requestingUserId)
+        val saved = answerRepository.save(answer)
+        if (answer.author.id != requestingUserId) {
+            notificationSender.send(
+                recipient = answer.author,
+                actor     = question.author,
+                type      = NotificationType.QA_ANSWER_ACCEPTED,
+                postId    = questionId,
+            )
+        }
+        return saved.toDto(requestingUserId)
     }
 
     // ── Mapping ───────────────────────────────────────────────────────────────

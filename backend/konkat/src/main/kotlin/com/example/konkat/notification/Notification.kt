@@ -33,6 +33,9 @@ enum class NotificationType {
     TEAM_REQUEST,       // someone requested to join your team post
     BADGE_AWARDED,
     MESSAGE,            // someone sent you a DM or group message
+    QA_ANSWER,          // someone answered your question
+    QA_ANSWER_ACCEPTED, // your answer was accepted as the solution
+    QA_VOTE,            // someone upvoted your question or answer
 }
 
 // ── Entity ────────────────────────────────────────────────────────────────────
