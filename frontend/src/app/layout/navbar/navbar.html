@@ -178,13 +178,11 @@
   </div>
 </nav>
 
-@if (isMobileMenuOpen()) {
-  <div class="navbar__mobile-menu">
-    @for (link of navLinks; track link.route) {
-      <a [routerLink]="link.route" (click)="toggleMobileMenu()">
-        <span class="material-icons-outlined">{{ link.icon }}</span>
-        {{ link.label }}
-      </a>
-    }
-  </div>
-}
+<div class="navbar__mobile-menu" [class.open]="isMobileMenuOpen()">
+  @for (link of navLinks; track link.route) {
+    <a [routerLink]="link.route" (click)="toggleMobileMenu()">
+      <span class="material-icons-outlined">{{ link.icon }}</span>
+      {{ link.label }}
+    </a>
+  }
+</div>

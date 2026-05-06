@@ -17,8 +17,13 @@ export class SignUp implements OnInit, OnDestroy {
     private router: Router,
   ) {
     effect(() => {
-      if (this.auth.isLoggedIn()) {
-        this.router.navigate(['/feed']);
+      const u = this.auth.user();
+      if (u?.dbId != null) {
+        if (u.username) {
+          this.router.navigate(['/feed']);
+        } else {
+          this.router.navigate(['/profile/edit'], { queryParams: { setup: 'true' } });
+        }
       }
     });
   }

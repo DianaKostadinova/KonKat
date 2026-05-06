@@ -144,6 +144,14 @@
 }
 .prefix-input:focus-within { border-color: #E8593C; }
 
+.username-hint {
+  font-size: 11px;
+  margin: 4px 0 0;
+}
+.username-hint--checking { color: #888; }
+.username-hint--available { color: #10b981; }
+.username-hint--taken     { color: #e05a3a; }
+
 .prefix {
   font-size: 12px;
   color: #555;

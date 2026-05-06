@@ -133,6 +133,18 @@ class UserController(
         ))
     }
 
+    // ── Username availability ─────────────────────────────────────────────────
+
+    /**
+     * GET /api/users/check-username?username=...
+     * Public endpoint — returns whether the username is available.
+     */
+    @GetMapping("/check-username")
+    fun checkUsername(@RequestParam username: String): ResponseEntity<Map<String, Boolean>> {
+        val available = username.isNotBlank() && !userRepository.existsByUsername(username)
+        return ResponseEntity.ok(mapOf("available" to available))
+    }
+
     // ── Public profile ────────────────────────────────────────────────────────
 
     /**

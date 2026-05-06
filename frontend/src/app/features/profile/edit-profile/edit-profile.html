@@ -73,11 +73,27 @@
           <input class="field-input" type="text" [(ngModel)]="name" placeholder="Your name" />
         </div>
         <div class="field-group">
-          <label class="field-label">Username</label>
+          <label class="field-label">
+            Username
+            @if (isSetup()) { <span style="color:#e05a3a; font-size:11px; margin-left:4px;">required</span> }
+          </label>
           <div class="prefix-input">
             <span class="prefix">&#64;</span>
-            <input class="field-input prefix-field" type="text" [(ngModel)]="username" placeholder="username" />
+            <input
+              class="field-input prefix-field"
+              type="text"
+              [(ngModel)]="username"
+              (input)="onUsernameInput()"
+              placeholder="username"
+            />
           </div>
+          @if (usernameStatus() === 'checking') {
+            <p class="username-hint username-hint--checking">Checking availability…</p>
+          } @else if (usernameStatus() === 'available') {
+            <p class="username-hint username-hint--available">&#10003; Available</p>
+          } @else if (usernameStatus() === 'taken') {
+            <p class="username-hint username-hint--taken">&#10007; Already taken</p>
+          }
         </div>
       </div>
 

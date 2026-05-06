@@ -16,10 +16,15 @@ export class SignIn implements OnInit, OnDestroy {
     private auth: AuthService,
     private router: Router,
   ) {
-    // Redirect once the user signs in
+    // Wait for clerkSync (dbId set), then route based on whether profile is complete
     effect(() => {
-      if (this.auth.isLoggedIn()) {
-        this.router.navigate(['/feed']);
+      const u = this.auth.user();
+      if (u?.dbId != null) {
+        if (u.username) {
+          this.router.navigate(['/feed']);
+        } else {
+          this.router.navigate(['/profile/edit'], { queryParams: { setup: 'true' } });
+        }
       }
     });
   }

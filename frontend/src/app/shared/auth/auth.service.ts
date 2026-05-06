@@ -7,6 +7,7 @@ const API = environment.apiUrl;
 export interface AuthUser {
   id: string;       // Clerk user ID
   dbId?: number;    // numeric DB primary key
+  username?: string; // set after clerkSync if user has chosen one
   name: string;
   email: string;
   avatar?: string;
@@ -52,8 +53,8 @@ export class AuthService {
         }
       });
 
-      // First attempt (non-blocking so APP_INITIALIZER isn't held up)
-      void this.clerkSync();
+      // Await so routes know the user's DB username before the guard runs
+      await this.clerkSync();
 
     } catch (e) {
       console.error('[Auth] Clerk failed to initialise:', e);
@@ -95,8 +96,8 @@ export class AuthService {
 
       if (resp.ok) {
         const me = await resp.json();
-        this._user.update(u => u ? { ...u, dbId: me.id as number } : u);
-        console.log('[Auth] clerk-sync ok — DB id=%d name=%s', me.id, me.name);
+        this._user.update(u => u ? { ...u, dbId: me.id as number, username: me.username ?? undefined } : u);
+        console.log('[Auth] clerk-sync ok — DB id=%d name=%s username=%s', me.id, me.name, me.username);
       } else {
         const text = await resp.text();
         console.error('[Auth] clerk-sync %d:', resp.status, text);
@@ -163,6 +164,10 @@ export class AuthService {
   }
 
   // ── Public API ───────────────────────────────────────────────────────
+
+  setUsername(username: string): void {
+    this._user.update(u => u ? { ...u, username: username || undefined } : u);
+  }
 
   async logout(): Promise<void> {
     await this.clerk?.signOut();
