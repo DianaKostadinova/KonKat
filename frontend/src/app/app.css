@@ -12,6 +12,7 @@
   padding-top: 60px;
   min-height: calc(100vh - 60px);
   align-items: start;
+  overflow-x: clip;
 }
 
 /* ── Sidebar host ─────────────────────────────────────────────────────────── */
@@ -47,10 +48,8 @@ app-right-panel {
 
   /* Right panel becomes a fixed FAB+sheet — zero out its grid footprint */
   app-right-panel {
-    position: static;
     height: 0;
     overflow: visible;
-    align-self: auto;
   }
 
   .main-content {

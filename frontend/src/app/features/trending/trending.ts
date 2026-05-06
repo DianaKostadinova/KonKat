@@ -21,8 +21,10 @@ export class Trending implements OnInit {
   tagPosts     = signal<Post[]>([]);
   loading      = signal(false);
 
-  // When no tag is selected, show the general feed (already loaded by PostService)
-  feedPosts = computed(() => this.postService.posts());
+  // When no tag is selected, show only posts that have at least one hashtag
+  feedPosts = computed(() =>
+    this.postService.posts().filter(p => p.tags && p.tags.length > 0)
+  );
 
   constructor(
     private postService: PostService,

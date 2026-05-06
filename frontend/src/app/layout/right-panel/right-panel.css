@@ -4,8 +4,7 @@
   flex-direction: column;
   gap: 16px;
   width: 300px;
-  height: calc(100vh - 60px);
-  overflow-y: auto;
+  min-height: calc(100vh - 60px);
   border-left: 1px solid #2a2a2a;
   background-color: #111111;
   padding: 16px;

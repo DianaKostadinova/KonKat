@@ -1,11 +1,10 @@
 /* Desktop sidebar */
 .desktop-sidebar {
   width: 240px;
-  height: calc(100vh - 60px);
+  min-height: calc(100vh - 60px);
   background-color: #111111;
   border-right: 1px solid #2a2a2a;
   padding: 12px;
-  overflow-y: auto;
 }
 
 .sidebar__link--active {

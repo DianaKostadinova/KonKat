@@ -78,15 +78,15 @@
         }
       }
     } @else {
-      <!-- Default feed with all posts -->
+      <!-- Default feed: posts with hashtags only -->
       <p class="trending-feed-label">
-        <span class="material-icons-outlined" style="font-size:15px;">bolt</span>
-        Recent posts
+        <span class="material-icons-outlined" style="font-size:15px;">tag</span>
+        Posts with hashtags
       </p>
       @if (feedPosts().length === 0) {
         <div class="trending-empty">
-          <span class="material-icons-outlined" style="font-size:36px;color:#444;">article</span>
-          <p>No posts yet</p>
+          <span class="material-icons-outlined" style="font-size:36px;color:#444;">tag</span>
+          <p>No tagged posts yet</p>
         </div>
       } @else {
         @for (post of feedPosts(); track post.id) {
