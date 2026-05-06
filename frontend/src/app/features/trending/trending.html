@@ -65,19 +65,33 @@
         <span class="material-icons-outlined" style="font-size:36px;color:#444;">hourglass_empty</span>
         <p>Loading posts…</p>
       </div>
-    } @else if (!selectedTag()) {
-      <div class="trending-empty">
-        <span class="material-icons-outlined" style="font-size:36px;color:#444;">tag</span>
-        <p>Pick a trending tag or search one above</p>
-      </div>
-    } @else if (tagPosts().length === 0) {
-      <div class="trending-empty">
-        <span class="material-icons-outlined" style="font-size:36px;color:#444;">search_off</span>
-        <p>No posts found for <strong>{{ selectedTag() }}</strong></p>
-      </div>
+    } @else if (selectedTag()) {
+      <!-- Tag-filtered posts -->
+      @if (tagPosts().length === 0) {
+        <div class="trending-empty">
+          <span class="material-icons-outlined" style="font-size:36px;color:#444;">search_off</span>
+          <p>No posts found for <strong>{{ selectedTag() }}</strong></p>
+        </div>
+      } @else {
+        @for (post of tagPosts(); track post.id) {
+          <app-post-card [post]="post" />
+        }
+      }
     } @else {
-      @for (post of tagPosts(); track post.id) {
-        <app-post-card [post]="post" />
+      <!-- Default feed with all posts -->
+      <p class="trending-feed-label">
+        <span class="material-icons-outlined" style="font-size:15px;">bolt</span>
+        Recent posts
+      </p>
+      @if (feedPosts().length === 0) {
+        <div class="trending-empty">
+          <span class="material-icons-outlined" style="font-size:36px;color:#444;">article</span>
+          <p>No posts yet</p>
+        </div>
+      } @else {
+        @for (post of feedPosts(); track post.id) {
+          <app-post-card [post]="post" />
+        }
       }
     }
   </div>

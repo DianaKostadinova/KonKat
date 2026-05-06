@@ -1,20 +1,5 @@
 :host {
   display: block;
-  overflow-y: auto;
-  height: calc(100vh - 60px);
-}
-
-:host::-webkit-scrollbar {
-  width: 4px;
-}
-
-:host::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-:host::-webkit-scrollbar-thumb {
-  background-color: #2a2a2a;
-  border-radius: 4px;
 }
 
 .post-highlight {

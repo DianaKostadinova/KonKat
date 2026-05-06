@@ -15,7 +15,8 @@ const API = environment.apiUrl;
 @Injectable({ providedIn: 'root' })
 export class PostService {
 
-  private posts = signal<Post[]>([]);
+  private _posts = signal<Post[]>([]);
+  readonly posts = this._posts.asReadonly();
 
   constructor(private http: HttpClient) {
     this.loadFeed();
@@ -24,12 +25,12 @@ export class PostService {
   // ── Queries ───────────────────────────────────────────────────────────────
 
   getPosts(): Post[] {
-    return this.posts();
+    return this._posts();
   }
 
   loadFeed(): void {
     this.http.get<any[]>(`${API}/posts`)
-      .subscribe(dtos => this.posts.set(dtos.map(d => this.mapPost(d))));
+      .subscribe(dtos => this._posts.set(dtos.map(d => this.mapPost(d))));
   }
 
   loadPostsByTag(tag: string): Observable<Post[]> {
@@ -60,13 +61,13 @@ export class PostService {
     };
     return this.http.post<any>(`${API}/posts`, body).pipe(
       map(dto => this.mapPost(dto)),
-      tap(post => this.posts.update(all => [post, ...all])),
+      tap(post => this._posts.update(all => [post, ...all])),
     );
   }
 
   toggleLike(postId: number): void {
     // Optimistic update
-    this.posts.update(all =>
+    this._posts.update(all =>
       all.map(p => p.id !== postId ? p : {
         ...p,
         liked: !p.liked,
@@ -83,7 +84,7 @@ export class PostService {
 
   toggleSave(postId: number): void {
     // Optimistic update
-    this.posts.update(all =>
+    this._posts.update(all =>
       all.map(p => p.id !== postId ? p : { ...p, saved: !p.saved })
     );
     // Persist to backend
@@ -95,7 +96,7 @@ export class PostService {
     const body = { text };
     this.http.post<any>(`${API}/posts/${postId}/comments`, body, )
       .subscribe(() => {
-        this.posts.update(all =>
+        this._posts.update(all =>
           all.map(p => {
             if (p.id !== postId) return p;
             const comment = { id: Date.now(), author, text, time: 'just now' };

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -20,6 +20,9 @@ export class Trending implements OnInit {
   searchQuery  = signal('');
   tagPosts     = signal<Post[]>([]);
   loading      = signal(false);
+
+  // When no tag is selected, show the general feed (already loaded by PostService)
+  feedPosts = computed(() => this.postService.posts());
 
   constructor(
     private postService: PostService,
