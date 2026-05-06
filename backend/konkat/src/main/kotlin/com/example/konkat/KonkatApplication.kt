@@ -8,5 +8,6 @@ class KonkatApplication
 
 fun main(args: Array<String>) {
 	runApplication<
-                                                                          KonkatApplication>(*args)
+
+            KonkatApplication>(*args)
 }

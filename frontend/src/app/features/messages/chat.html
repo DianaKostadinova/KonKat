@@ -162,7 +162,12 @@
         </div>
 
         <div class="flex flex-col flex-1">
-          <span class="text-[#f0f0f0] text-sm font-semibold">{{ conv.name }}</span>
+          @if (conv.type === 'dm' && getOtherMember(conv); as other) {
+            <button class="text-[#f0f0f0] text-sm font-semibold text-left bg-transparent border-none p-0 cursor-pointer hover:underline w-fit"
+                    (click)="goToProfile(other.id, $event)">{{ conv.name }}</button>
+          } @else {
+            <span class="text-[#f0f0f0] text-sm font-semibold">{{ conv.name }}</span>
+          }
           @if (conv.type === 'group') {
             <span class="text-[#888888] text-xs">{{ conv.members.length }} members</span>
           } @else if (conv.online) {
