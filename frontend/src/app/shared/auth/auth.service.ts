@@ -142,11 +142,12 @@ export class AuthService {
     const u = this.clerk?.user;
     if (u) {
       this._user.update(prev => ({
-        dbId:   prev?.dbId,
-        id:     u.id,
-        name:   u.fullName ?? u.primaryEmailAddress?.emailAddress ?? 'User',
-        email:  u.primaryEmailAddress?.emailAddress ?? '',
-        avatar: u.imageUrl ?? undefined,
+        dbId:     prev?.dbId,
+        username: prev?.username,
+        id:       u.id,
+        name:     u.fullName ?? u.primaryEmailAddress?.emailAddress ?? 'User',
+        email:    u.primaryEmailAddress?.emailAddress ?? '',
+        avatar:   u.imageUrl ?? undefined,
       }));
       this._isLoggedIn.set(true);
     } else {

@@ -4,6 +4,7 @@ import { interval, Subscription } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { Conversation, Message, ConversationDto, MessageDto, UserSearchResult } from './chat.model';
+import { WsService } from '../../shared/notification-bell/ws.service';
 import { environment } from '../../../environments/environment';
 
 const API = environment.apiUrl;
@@ -16,10 +17,17 @@ export class ChatService implements OnDestroy {
 
   private pollSub?: Subscription;
   private convPollSub?: Subscription;
+  private wsSub?: Subscription;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private ws: WsService) {
     this.loadConversations();
     this.convPollSub = interval(8000).subscribe(() => this.loadConversations());
+
+    // Refresh conversation list immediately when a message push arrives
+    // so the new conversation/unread count shows without waiting for the 8s poll.
+    this.wsSub = this.ws.message$.subscribe(dto => {
+      if (dto?.type === 'MESSAGE') this.loadConversations();
+    });
   }
 
   loadConversations() {
@@ -216,6 +224,7 @@ export class ChatService implements OnDestroy {
   ngOnDestroy() {
     this.pollSub?.unsubscribe();
     this.convPollSub?.unsubscribe();
+    this.wsSub?.unsubscribe();
   }
 }
 

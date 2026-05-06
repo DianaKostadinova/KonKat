@@ -192,9 +192,15 @@
                  [class.flex-row-reverse]="isMe(msg.senderId)">
 
               @if (!isMe(msg.senderId)) {
-                <div class="w-7 h-7 rounded-full bg-[#2a2a2a] flex items-center justify-center flex-shrink-0 mb-1">
-                  <span class="material-icons text-[#888888]" style="font-size: 16px;">account_circle</span>
-                </div>
+                <button class="w-7 h-7 rounded-full bg-[#2a2a2a] flex items-center justify-center flex-shrink-0 mb-1 overflow-hidden border-none p-0 cursor-pointer"
+                        (click)="goToProfile(msg.senderId, $event)"
+                        title="View profile">
+                  @if (getMember(conv, msg.senderId)?.avatarUrl) {
+                    <img [src]="getMember(conv, msg.senderId)!.avatarUrl!" class="w-full h-full object-cover" alt="" />
+                  } @else {
+                    <span class="material-icons text-[#888888]" style="font-size: 16px;">account_circle</span>
+                  }
+                </button>
               }
 
               <div

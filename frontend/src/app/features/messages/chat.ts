@@ -1,14 +1,15 @@
 import { Component, signal, computed, ViewChild, ElementRef, AfterViewChecked, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { ChatService } from './chat.service';
-import { UserSearchResult } from './chat.model';
+import { Conversation, ConversationMember, UserSearchResult } from './chat.model';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './chat.html',
   styleUrl: './chat.css',
 })
@@ -40,22 +41,29 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
   gcCreating = signal(false);
   private gcTimer: any;
 
-  constructor(public chatService: ChatService, private route: ActivatedRoute) {}
+  private queryParamSub?: Subscription;
+
+  constructor(public chatService: ChatService, private route: ActivatedRoute, private router: Router) {}
 
   ngOnInit(): void {
-    const dm = this.route.snapshot.queryParamMap.get('dm');
-    if (dm) {
-      this.chatService.openOrCreateDm(Number(dm)).then(conv => {
-        this.openConversation(conv.id);
-      }).catch(() => {});
-    }
+    // Use queryParamMap Observable (not snapshot) so navigating to /chat?dm=X
+    // while already on the chat page still opens the right conversation.
+    this.queryParamSub = this.route.queryParamMap.subscribe(params => {
+      const dm = params.get('dm');
+      if (dm) {
+        this.chatService.openOrCreateDm(Number(dm)).then(conv => {
+          this.openConversation(conv.id);
+        }).catch(() => {});
+        return;
+      }
 
-    const group = this.route.snapshot.queryParamMap.get('group');
-    if (group) {
-      this.chatService.openGroupById(Number(group)).then(conv => {
-        this.openConversation(conv.id);
-      }).catch(() => {});
-    }
+      const group = params.get('group');
+      if (group) {
+        this.chatService.openGroupById(Number(group)).then(conv => {
+          this.openConversation(conv.id);
+        }).catch(() => {});
+      }
+    });
   }
 
   conversations = computed(() => {
@@ -75,6 +83,19 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
 
   isMe(senderId: number): boolean {
     return senderId === this.chatService.meId();
+  }
+
+  getMember(conv: Conversation, senderId: number): ConversationMember | undefined {
+    return conv.members.find(m => m.id === senderId);
+  }
+
+  getOtherMember(conv: Conversation): ConversationMember | undefined {
+    return conv.members.find(m => m.id !== this.chatService.meId());
+  }
+
+  goToProfile(userId: number, event: Event): void {
+    event.stopPropagation();
+    this.router.navigate(['/profile', userId]);
   }
 
   formatTime(iso: string | undefined): string {
@@ -149,6 +170,7 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
 
   ngOnDestroy() {
     this.chatService.stopPolling();
+    this.queryParamSub?.unsubscribe();
     clearTimeout(this.dmTimer);
     clearTimeout(this.gcTimer);
     clearTimeout(this.searchTimer);
