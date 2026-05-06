@@ -1,7 +1,7 @@
 ﻿import { Injectable, signal, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { interval, Subscription } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { Conversation, Message, ConversationDto, MessageDto, UserSearchResult } from './chat.model';
 import { WsService } from '../../shared/notification-bell/ws.service';
@@ -15,17 +15,43 @@ export class ChatService implements OnDestroy {
   private _conversations = signal<Conversation[]>([]);
   meId = signal<number>(0);
 
-  private pollSub?: Subscription;
+  private _activeConvId: number | null = null;
+  private _activeConvType: 'dm' | 'group' | null = null;
+
   private convPollSub?: Subscription;
-  private wsSub?: Subscription;
+  private msgWsSub?: Subscription;
+  private notifWsSub?: Subscription;
 
   constructor(private http: HttpClient, private ws: WsService) {
     this.loadConversations();
+    // Fallback poll for reconnect gaps and tab visibility changes
     this.convPollSub = interval(8000).subscribe(() => this.loadConversations());
 
-    // Refresh conversation list immediately when a message push arrives
-    // so the new conversation/unread count shows without waiting for the 8s poll.
-    this.wsSub = this.ws.message$.subscribe(dto => {
+    // Real-time message delivery via WebSocket
+    this.msgWsSub = this.ws.incomingMessage$.subscribe(delivery => {
+      const { conversationId, type, message } = delivery;
+      if (conversationId === this._activeConvId) {
+        // Append to open conversation and auto-mark as read
+        this._conversations.update(convs => bumpToTop(
+          convs.map(c => c.id === conversationId
+            ? { ...c, messages: [...c.messages, toMessage(message)] }
+            : c),
+          conversationId
+        ));
+        this.markAsRead(conversationId, type);
+      } else {
+        // Increment unread badge and bump to top
+        this._conversations.update(convs => bumpToTop(
+          convs.map(c => c.id === conversationId
+            ? { ...c, unread: c.unread + 1 }
+            : c),
+          conversationId
+        ));
+      }
+    });
+
+    // Refresh conversation list on notification push (catches edge cases)
+    this.notifWsSub = this.ws.message$.subscribe(dto => {
       if (dto?.type === 'MESSAGE') this.loadConversations();
     });
   }
@@ -81,31 +107,13 @@ export class ChatService implements OnDestroy {
   }
 
   startPolling(convId: number, type: 'dm' | 'group') {
-    this.stopPolling();
-
-    this.pollSub = interval(3000).pipe(
-      switchMap(() => {
-        const conv = this._conversations().find(c => c.id === convId);
-        const lastId = conv?.messages.filter(m => m.id > 0).at(-1)?.id ?? 0;
-        const url = type === 'dm'
-          ? `${API}/messages/dm/${convId}/messages?after=${lastId}`
-          : `${API}/messages/group/${convId}/messages?after=${lastId}`;
-        return this.http.get<MessageDto[]>(url).pipe(catchError(() => of([])));
-      })
-    ).subscribe(msgs => {
-      if (!msgs.length) return;
-      this._conversations.update(convs => {
-        const updated = convs.map(c =>
-          c.id === convId ? { ...c, messages: [...c.messages, ...msgs.map(m => toMessage(m))] } : c
-        );
-        return bumpToTop(updated, convId);
-      });
-    });
+    this._activeConvId = convId;
+    this._activeConvType = type;
   }
 
   stopPolling() {
-    this.pollSub?.unsubscribe();
-    this.pollSub = undefined;
+    this._activeConvId = null;
+    this._activeConvType = null;
   }
 
   sendMessage(convId: number, content: string, type: 'dm' | 'group') {
@@ -222,9 +230,9 @@ export class ChatService implements OnDestroy {
   }
 
   ngOnDestroy() {
-    this.pollSub?.unsubscribe();
     this.convPollSub?.unsubscribe();
-    this.wsSub?.unsubscribe();
+    this.msgWsSub?.unsubscribe();
+    this.notifWsSub?.unsubscribe();
   }
 }
 

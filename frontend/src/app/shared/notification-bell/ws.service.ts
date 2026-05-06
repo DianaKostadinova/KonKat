@@ -12,8 +12,10 @@ export class WsService implements OnDestroy {
   private client: Client | null = null;
   private auth = inject(AuthService);
 
-  /** Emits raw STOMP message bodies as parsed objects */
+  /** Emits notification push payloads */
   readonly message$ = new Subject<any>();
+  /** Emits incoming message delivery payloads { conversationId, type, message } */
+  readonly incomingMessage$ = new Subject<any>();
 
   connect(token: string): void {
     if (this.client?.active) return;
@@ -24,11 +26,10 @@ export class WsService implements OnDestroy {
       reconnectDelay: 5000,
       onConnect: () => {
         this.client!.subscribe('/user/queue/notifications', (msg: IMessage) => {
-          try {
-            this.message$.next(JSON.parse(msg.body));
-          } catch {
-            // ignore malformed frames
-          }
+          try { this.message$.next(JSON.parse(msg.body)); } catch { /* ignore */ }
+        });
+        this.client!.subscribe('/user/queue/messages', (msg: IMessage) => {
+          try { this.incomingMessage$.next(JSON.parse(msg.body)); } catch { /* ignore */ }
         });
       },
       onStompError: frame => {

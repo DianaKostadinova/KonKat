@@ -6,6 +6,7 @@ export type NotificationType =
   | 'like'
   | 'hackathon_reminder'
   | 'team_message'
+  | 'message'
   | 'mention';
 
 export interface Notification {

@@ -81,4 +81,5 @@ interface GroupMessageRepository : JpaRepository<GroupMessage, Long> {
     fun findByGroupIdOrderByCreatedAtAsc(groupId: Long): List<GroupMessage>
     fun findByGroupIdAndIdGreaterThanOrderByCreatedAtAsc(groupId: Long, afterId: Long): List<GroupMessage>
     fun findTopByGroupIdOrderByCreatedAtDesc(groupId: Long): GroupMessage?
+    fun countByGroupIdAndIdGreaterThanAndSenderIdNot(groupId: Long, afterId: Long, senderId: Long): Long
 }

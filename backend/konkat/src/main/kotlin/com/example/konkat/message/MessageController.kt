@@ -6,6 +6,7 @@ import com.example.konkat.user.UserRepository
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
@@ -40,6 +41,7 @@ data class MessageDto(
 data class SendMessageRequest(val content: String)
 data class CreateDmRequest(val userId: Long)
 data class CreateGroupRequest(val name: String, val memberIds: List<Long>)
+data class MessageDeliveryDto(val conversationId: Long, val type: String, val message: MessageDto)
 
 // ── Controller ────────────────────────────────────────────────────────────────
 
@@ -53,7 +55,9 @@ class MessageController(
     private val groupConversationRepository: GroupConversationRepository,
     private val groupMemberRepository: GroupMemberRepository,
     private val groupMessageRepository: GroupMessageRepository,
+    private val groupMessageReadRepository: GroupMessageReadRepository,
     private val notificationSender: NotificationSender,
+    private val messagingTemplate: SimpMessagingTemplate,
 ) {
 
     // ── GET /api/messages/conversations — all DM + group for current user ──────
@@ -78,24 +82,29 @@ class MessageController(
             )
         }
 
-        val groups = groupMemberRepository.findByUserId(userId)
-            .distinctBy { it.group.id }          // guard against duplicate rows if DB constraint is missing
-            .map { gm ->
-                val g = gm.group
-                val members = groupMemberRepository.findByGroupId(g.id)
-                    .map { MemberDto(it.user.id, it.user.displayName, it.user.title, it.user.avatarUrl) }
-                val last = groupMessageRepository.findTopByGroupIdOrderByCreatedAtDesc(g.id)
-                ConversationDto(
-                    id = g.id,
-                    type = "group",
-                    name = g.name,
-                    members = members,
-                    unreadCount = 0,
-                    lastMessageContent = last?.content,
-                    lastMessageAt = last?.createdAt?.format(TIME_FMT),
-                    lastMessageSenderId = last?.sender?.id,
-                )
-            }
+        val groupMemberships = groupMemberRepository.findByUserId(userId).distinctBy { it.group.id }
+        val groupIds = groupMemberships.map { it.group.id }
+        val readMarks = groupMessageReadRepository.findByUserIdAndGroupIdIn(userId, groupIds)
+            .associateBy { it.groupId }
+
+        val groups = groupMemberships.map { gm ->
+            val g = gm.group
+            val members = groupMemberRepository.findByGroupId(g.id)
+                .map { MemberDto(it.user.id, it.user.displayName, it.user.title, it.user.avatarUrl) }
+            val last = groupMessageRepository.findTopByGroupIdOrderByCreatedAtDesc(g.id)
+            val lastReadId = readMarks[g.id]?.lastReadMessageId ?: 0L
+            val unread = groupMessageRepository.countByGroupIdAndIdGreaterThanAndSenderIdNot(g.id, lastReadId, userId)
+            ConversationDto(
+                id = g.id,
+                type = "group",
+                name = g.name,
+                members = members,
+                unreadCount = unread,
+                lastMessageContent = last?.content,
+                lastMessageAt = last?.createdAt?.format(TIME_FMT),
+                lastMessageSenderId = last?.sender?.id,
+            )
+        }
 
         return (dms + groups).sortedByDescending { it.lastMessageAt ?: "" }
     }
@@ -171,8 +180,13 @@ class MessageController(
 
         val msg = messageRepository.save(Message(conversation = conv, sender = me, content = body.content.trim()))
         val recipient = if (conv.participant1.id == userId) conv.participant2 else conv.participant1
+        val dto = msg.toDto()
+        messagingTemplate.convertAndSendToUser(
+            recipient.id.toString(), "/queue/messages",
+            MessageDeliveryDto(conversationId = conv.id, type = "dm", message = dto)
+        )
         notificationSender.send(recipient = recipient, actor = me, type = NotificationType.MESSAGE)
-        return msg.toDto()
+        return dto
     }
 
     // ── PATCH /api/messages/dm/{id}/read ──────────────────────────────────────
@@ -255,17 +269,33 @@ class MessageController(
             throw ResponseStatusException(HttpStatus.FORBIDDEN)
 
         val msg = groupMessageRepository.save(GroupMessage(group = group, sender = me, content = body.content.trim()))
-        groupMemberRepository.findByGroupId(id)
-            .filter { it.user.id != userId }
-            .forEach { gm -> notificationSender.send(recipient = gm.user, actor = me, type = NotificationType.MESSAGE) }
-        return msg.toGroupDto()
+        val dto = msg.toGroupDto()
+        val otherMembers = groupMemberRepository.findByGroupId(id).filter { it.user.id != userId }
+        otherMembers.forEach { gm ->
+            messagingTemplate.convertAndSendToUser(
+                gm.user.id.toString(), "/queue/messages",
+                MessageDeliveryDto(conversationId = id, type = "group", message = dto)
+            )
+            notificationSender.send(recipient = gm.user, actor = me, type = NotificationType.MESSAGE)
+        }
+        return dto
     }
 
     // ── PATCH /api/messages/group/{id}/read ───────────────────────────────────
 
     @PatchMapping("/group/{id}/read")
     fun markGroupRead(@PathVariable id: Long, request: HttpServletRequest): ResponseEntity<Void> {
-        // Simplified: no per-user read tracking for groups yet
+        val userId = request.getAttribute("userId") as Long
+        if (!groupMemberRepository.existsByGroupIdAndUserId(id, userId))
+            throw ResponseStatusException(HttpStatus.FORBIDDEN)
+
+        val lastMsg = groupMessageRepository.findTopByGroupIdOrderByCreatedAtDesc(id)
+        if (lastMsg != null) {
+            val mark = groupMessageReadRepository.findByGroupIdAndUserId(id, userId)
+                ?: GroupMessageRead(groupId = id, userId = userId)
+            mark.lastReadMessageId = lastMsg.id
+            groupMessageReadRepository.save(mark)
+        }
         return ResponseEntity.noContent().build()
     }
 

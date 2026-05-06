@@ -20,7 +20,7 @@ function mapType(t: string): NotificationType {
     case 'HACKATHON_STARTED':  return 'hackathon_reminder';
     case 'PROJECT_INTEREST':   return 'join_request';
     case 'PROJECT_MEMBER':     return 'join_approved';
-    case 'MESSAGE':            return 'comment';
+    case 'MESSAGE':            return 'message';
     case 'TEAM_REQUEST':       return 'join_request';
     case 'QA_ANSWER':          return 'comment';
     case 'QA_ANSWER_ACCEPTED': return 'join_approved';
