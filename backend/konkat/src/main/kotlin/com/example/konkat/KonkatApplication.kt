@@ -7,7 +7,5 @@ import org.springframework.boot.runApplication
 class KonkatApplication
 
 fun main(args: Array<String>) {
-	runApplication<
-
-            KonkatApplication>(*args)
+	runApplication<KonkatApplication>(*args)
 }
