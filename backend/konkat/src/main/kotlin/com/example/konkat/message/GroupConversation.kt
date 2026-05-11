@@ -63,6 +63,12 @@ class GroupMessage(
     @Column(columnDefinition = "TEXT", nullable = false)
     val content: String,
 
+    @Column(name = "file_url")
+    val fileUrl: String? = null,
+
+    @Column(name = "file_name")
+    val fileName: String? = null,
+
     @CreationTimestamp
     val createdAt: LocalDateTime? = null,
 )

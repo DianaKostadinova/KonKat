@@ -4,13 +4,18 @@ import com.example.konkat.notification.NotificationSender
 import com.example.konkat.notification.NotificationType
 import com.example.konkat.user.UserRepository
 import jakarta.servlet.http.HttpServletRequest
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 private val TIME_FMT: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
@@ -36,9 +41,15 @@ data class MessageDto(
     val content: String,
     val createdAt: String,
     val read: Boolean,
+    val fileUrl: String? = null,
+    val fileName: String? = null,
 )
 
-data class SendMessageRequest(val content: String)
+data class SendMessageRequest(
+    val content: String = "",
+    val fileUrl: String? = null,
+    val fileName: String? = null,
+)
 data class CreateDmRequest(val userId: Long)
 data class CreateGroupRequest(val name: String, val memberIds: List<Long>)
 data class MessageDeliveryDto(val conversationId: Long, val type: String, val message: MessageDto)
@@ -58,7 +69,31 @@ class MessageController(
     private val groupMessageReadRepository: GroupMessageReadRepository,
     private val notificationSender: NotificationSender,
     private val messagingTemplate: SimpMessagingTemplate,
+    @Value("\${app.upload-dir:uploads/chat}") private val uploadDir: String,
 ) {
+
+    // ── POST /api/messages/upload — save a file and return its URL ────────────
+
+    @PostMapping("/upload", consumes = ["multipart/form-data"])
+    fun uploadFile(
+        @RequestParam("file") file: MultipartFile,
+        request: HttpServletRequest,
+    ): ResponseEntity<Map<String, String>> {
+        if (file.isEmpty) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Empty file")
+        val maxBytes = 10 * 1024 * 1024L
+        if (file.size > maxBytes) throw ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Max 10 MB")
+
+        val original = file.originalFilename?.replace(Regex("[^a-zA-Z0-9._-]"), "_") ?: "file"
+        val ext = original.substringAfterLast('.', "")
+        val stored = if (ext.isNotBlank()) "${UUID.randomUUID()}.$ext" else UUID.randomUUID().toString()
+
+        val dir = Paths.get(uploadDir)
+        Files.createDirectories(dir)
+        file.transferTo(dir.resolve(stored).toFile())
+
+        val url = "/uploads/chat/$stored"
+        return ResponseEntity.ok(mapOf("url" to url, "fileName" to original))
+    }
 
     // ── GET /api/messages/conversations — all DM + group for current user ──────
 

@@ -81,6 +81,12 @@ class Message(
     @Column(columnDefinition = "TEXT", nullable = false)
     val content: String,
 
+    @Column(name = "file_url")
+    val fileUrl: String? = null,
+
+    @Column(name = "file_name")
+    val fileName: String? = null,
+
     /** Flipped to true when the other participant reads the message */
     var read: Boolean = false,
 
