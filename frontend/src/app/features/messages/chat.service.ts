@@ -1,7 +1,7 @@
 ﻿import { Injectable, signal, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { interval, Subscription } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { Conversation, Message, ConversationDto, MessageDto, UserSearchResult } from './chat.model';
 import { WsService } from '../../shared/notification-bell/ws.service';
@@ -150,7 +150,13 @@ export class ChatService implements OnDestroy {
   uploadFile(file: File) {
     const form = new FormData();
     form.append('file', file);
-    return this.http.post<{ url: string; fileName: string }>(`${API}/messages/upload`, form);
+    const base = environment.apiUrl.replace(/\/api$/, ''); // e.g. http://localhost:8082
+    return this.http.post<{ url: string; fileName: string }>(`${API}/messages/upload`, form).pipe(
+      map(res => ({
+        ...res,
+        url: res.url.startsWith('/') ? `${base}${res.url}` : res.url,
+      }))
+    );
   }
 
   markAsRead(convId: number, type: 'dm' | 'group') {
@@ -234,7 +240,8 @@ export class ChatService implements OnDestroy {
     const last = conv.messages.at(-1);
     if (!last) return '';
     const name = last.senderId === this.meId() ? 'You' : conv.members.find(m => m.id === last.senderId)?.name?.split(' ')[0] ?? '';
-    return conv.type === 'group' ? `${name}: ${last.content}` : last.content;
+    const preview = last.content || (last.fileName ? `📎 ${last.fileName}` : last.fileUrl ? '📎 File' : '');
+    return conv.type === 'group' ? `${name}: ${preview}` : preview;
   }
 
   ngOnDestroy() {

@@ -217,18 +217,28 @@
               >
                 @if (msg.fileUrl) {
                   @if (isImage(msg.fileUrl)) {
-                    <a [href]="msg.fileUrl" target="_blank" rel="noopener">
+                    <div class="relative group">
                       <img [src]="msg.fileUrl" [alt]="msg.fileName || 'image'"
-                           class="block max-w-full max-h-48 object-contain" />
-                    </a>
+                           class="block max-w-full max-h-48 object-contain cursor-pointer"
+                           (click)="downloadFile(msg.fileUrl, msg.fileName || 'image')" />
+                      <!-- Download overlay button -->
+                      <button
+                        class="absolute top-1.5 right-1.5 flex items-center justify-center w-7 h-7 rounded-full border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                        style="background: rgba(0,0,0,0.55); color: white;"
+                        title="Download"
+                        (click)="downloadFile(msg.fileUrl, msg.fileName || 'image')">
+                        <span class="material-icons-outlined" style="font-size: 16px;">download</span>
+                      </button>
+                    </div>
                   } @else {
-                    <a [href]="msg.fileUrl" [download]="msg.fileName" target="_blank" rel="noopener"
-                       class="flex items-center gap-2 px-3 py-2 no-underline"
-                       [style.color]="isMe(msg.senderId) ? 'white' : '#f0f0f0'">
+                    <button
+                      class="flex items-center gap-2 px-3 py-2 w-full bg-transparent border-none cursor-pointer text-left"
+                      [style.color]="isMe(msg.senderId) ? 'white' : '#f0f0f0'"
+                      (click)="downloadFile(msg.fileUrl, msg.fileName || 'file')">
                       <span class="material-icons-outlined" style="font-size: 20px; flex-shrink:0">insert_drive_file</span>
-                      <span class="truncate text-xs">{{ msg.fileName || 'File' }}</span>
+                      <span class="truncate text-xs flex-1">{{ msg.fileName || 'File' }}</span>
                       <span class="material-icons-outlined flex-shrink-0" style="font-size: 16px;">download</span>
-                    </a>
+                    </button>
                   }
                 }
                 @if (msg.content) {

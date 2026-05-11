@@ -5,6 +5,46 @@
   background-color: var(--color-bg);
 }
 
+/* ── Global red-fuzz blobs (all authenticated pages) ─────────────────── */
+.g-blob {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(110px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Top-left warm red */
+.g-blob-1 {
+  width: 540px; height: 540px;
+  background: radial-gradient(circle, #E8593C 0%, #c0392b 60%, transparent 100%);
+  top: -210px; left: -210px;
+  opacity: 0.09;
+}
+
+/* Bottom-right pink/orange */
+.g-blob-2 {
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, #ff6b35 0%, #e84393 70%, transparent 100%);
+  bottom: -130px; right: -110px;
+  opacity: 0.065;
+}
+
+/* Mid-left deep red */
+.g-blob-3 {
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, #ff3c3c 0%, #9b1c1c 70%, transparent 100%);
+  top: 52%; left: 2%;
+  opacity: 0.055;
+}
+
+/* Mobile — smaller blobs, much lower opacity */
+@media (max-width: 768px) {
+  .g-blob-1 { width: 320px; height: 320px; opacity: 0.07; }
+  .g-blob-2 { width: 260px; height: 260px; opacity: 0.05; }
+  .g-blob-3 { display: none; }
+}
+
 /* ── Shell grid ───────────────────────────────────────────────────────────── */
 .app-shell {
   display: grid;

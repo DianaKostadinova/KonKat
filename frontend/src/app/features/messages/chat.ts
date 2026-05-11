@@ -194,6 +194,21 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
     return /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(url);
   }
 
+  downloadFile(url: string, fileName: string) {
+    fetch(url)
+      .then(r => r.blob())
+      .then(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fileName || 'file';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+      })
+      .catch(() => window.open(url, '_blank'));
+  }
+
   onSearch(e: Event) {
     const q = (e.target as HTMLInputElement).value;
     this.searchQuery.set(q);

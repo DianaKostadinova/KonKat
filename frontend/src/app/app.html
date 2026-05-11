@@ -2,6 +2,10 @@
   <app-loading-screen />
 } @else {
   @if (showShell()) {
+    <!-- Global red-fuzz blobs — visible on all authenticated pages -->
+    <div class="g-blob g-blob-1"></div>
+    <div class="g-blob g-blob-2"></div>
+    <div class="g-blob g-blob-3"></div>
     <app-navbar />
   }
 
