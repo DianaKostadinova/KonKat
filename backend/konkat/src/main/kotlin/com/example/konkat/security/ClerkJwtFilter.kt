@@ -38,6 +38,8 @@ class ClerkJwtFilter(
         chain: FilterChain,
     ) {
         val header = request.getHeader("Authorization")
+        log.debug("JWT filter: {} {} — Authorization header: {}", request.method, request.requestURI,
+            if (header == null) "MISSING" else if (header.startsWith("Bearer ")) "present" else "invalid ('${header.take(20)}')")
         if (header == null || !header.startsWith("Bearer ")) {
             chain.doFilter(request, response)
             return

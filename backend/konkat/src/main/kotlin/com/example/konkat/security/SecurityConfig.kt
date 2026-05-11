@@ -21,7 +21,7 @@ class SecurityConfig(private val clerkJwtFilter: ClerkJwtFilter) {
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain =
         http
-            .cors { it.configurationSource(corsSource()) }
+            .cors { it.disable() }
             .csrf { it.disable() }
             .httpBasic { it.disable() }
             .formLogin { it.disable() }
