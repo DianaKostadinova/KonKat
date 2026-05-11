@@ -5,6 +5,8 @@ export interface Message {
   content: string;
   createdAt: string;
   read: boolean;
+  fileUrl?: string;
+  fileName?: string;
 }
 
 export interface ConversationMember {
@@ -43,6 +45,8 @@ export interface MessageDto {
   content: string;
   createdAt: string;
   read: boolean;
+  fileUrl?: string;
+  fileName?: string;
 }
 
 export interface UserSearchResult {

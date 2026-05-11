@@ -116,7 +116,7 @@ export class ChatService implements OnDestroy {
     this._activeConvType = null;
   }
 
-  sendMessage(convId: number, content: string, type: 'dm' | 'group') {
+  sendMessage(convId: number, content: string, type: 'dm' | 'group', fileUrl?: string, fileName?: string) {
     const url = type === 'dm'
       ? `${API}/messages/dm/${convId}/messages`
       : `${API}/messages/group/${convId}/messages`;
@@ -127,6 +127,8 @@ export class ChatService implements OnDestroy {
       content,
       createdAt: new Date().toISOString().slice(0, 19),
       read: false,
+      fileUrl,
+      fileName,
     };
 
     this._conversations.update(convs => bumpToTop(
@@ -134,7 +136,7 @@ export class ChatService implements OnDestroy {
       convId
     ));
 
-    this.http.post<MessageDto>(url, { content })
+    this.http.post<MessageDto>(url, { content, fileUrl, fileName })
       .pipe(catchError(() => of(null)))
       .subscribe(msg => {
         if (!msg) return;
@@ -143,6 +145,12 @@ export class ChatService implements OnDestroy {
           return { ...c, messages: c.messages.map(m => m.id === optimistic.id ? toMessage(msg) : m) };
         }));
       });
+  }
+
+  uploadFile(file: File) {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<{ url: string; fileName: string }>(`${API}/messages/upload`, form);
   }
 
   markAsRead(convId: number, type: 'dm' | 'group') {
@@ -237,7 +245,7 @@ export class ChatService implements OnDestroy {
 }
 
 function toMessage(dto: MessageDto): Message {
-  return { id: dto.id, senderId: dto.senderId, senderName: dto.senderName, content: dto.content, createdAt: dto.createdAt, read: dto.read };
+  return { id: dto.id, senderId: dto.senderId, senderName: dto.senderName, content: dto.content, createdAt: dto.createdAt, read: dto.read, fileUrl: dto.fileUrl, fileName: dto.fileName };
 }
 
 function bumpToTop(convs: Conversation[], convId: number): Conversation[] {

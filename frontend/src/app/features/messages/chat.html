@@ -209,13 +209,31 @@
               }
 
               <div
-                class="max-w-xs px-3 py-2 rounded-2xl text-sm leading-relaxed"
+                class="max-w-xs rounded-2xl text-sm leading-relaxed overflow-hidden"
                 [class.rounded-br-sm]="isMe(msg.senderId)"
                 [class.rounded-bl-sm]="!isMe(msg.senderId)"
                 [style.background]="isMe(msg.senderId) ? '#E8593C' : '#2a2a2a'"
                 [style.color]="isMe(msg.senderId) ? 'white' : '#f0f0f0'"
               >
-                {{ msg.content }}
+                @if (msg.fileUrl) {
+                  @if (isImage(msg.fileUrl)) {
+                    <a [href]="msg.fileUrl" target="_blank" rel="noopener">
+                      <img [src]="msg.fileUrl" [alt]="msg.fileName || 'image'"
+                           class="block max-w-full max-h-48 object-contain" />
+                    </a>
+                  } @else {
+                    <a [href]="msg.fileUrl" [download]="msg.fileName" target="_blank" rel="noopener"
+                       class="flex items-center gap-2 px-3 py-2 no-underline"
+                       [style.color]="isMe(msg.senderId) ? 'white' : '#f0f0f0'">
+                      <span class="material-icons-outlined" style="font-size: 20px; flex-shrink:0">insert_drive_file</span>
+                      <span class="truncate text-xs">{{ msg.fileName || 'File' }}</span>
+                      <span class="material-icons-outlined flex-shrink-0" style="font-size: 16px;">download</span>
+                    </a>
+                  }
+                }
+                @if (msg.content) {
+                  <span class="block px-3 py-2">{{ msg.content }}</span>
+                }
               </div>
 
             </div>
@@ -234,29 +252,65 @@
       </div>
 
       <!-- Input -->
-      <div class="flex items-end gap-2 px-4 py-3 border-t border-[#2a2a2a] bg-[#111111]">
-        <button class="flex items-center justify-center w-9 h-9 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all flex-shrink-0">
-          <span class="material-icons-outlined" style="font-size: 20px;">attach_file</span>
-        </button>
+      <div class="border-t border-[#2a2a2a] bg-[#111111]">
 
-        <textarea
-          class="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-sm text-[#f0f0f0] outline-none resize-none focus:border-[#E8593C] transition-colors placeholder-[#888888] max-h-32"
-          placeholder="Type a message... (Enter to send)"
-          rows="1"
-          [value]="newMessage()"
-          (input)="onMessageInput($event)"
-          (keydown)="onKeydown($event)"
-        ></textarea>
+        <!-- Pending file preview -->
+        @if (pendingFile(); as file) {
+          <div class="flex items-center gap-2 px-4 pt-2">
+            <div class="flex items-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 max-w-xs">
+              @if (pendingFilePreviewUrl(); as previewUrl) {
+                <img [src]="previewUrl" class="h-10 w-10 object-cover rounded" alt="" />
+              } @else {
+                <span class="material-icons text-[#888888]" style="font-size: 20px;">insert_drive_file</span>
+              }
+              <span class="text-[#f0f0f0] text-xs truncate max-w-[140px]">{{ file.name }}</span>
+              <button class="text-[#888888] hover:text-[#f0f0f0] bg-transparent border-none cursor-pointer p-0 ml-1"
+                      (click)="clearPendingFile()">
+                <span class="material-icons" style="font-size: 16px;">close</span>
+              </button>
+            </div>
+            @if (uploading()) {
+              <span class="text-[#888888] text-xs">Uploading…</span>
+            }
+            @if (uploadError()) {
+              <span class="text-red-400 text-xs">{{ uploadError() }}</span>
+            }
+          </div>
+        }
 
-        <button
-          class="flex items-center justify-center w-9 h-9 rounded-lg border-none cursor-pointer transition-all flex-shrink-0"
-          [style.background]="newMessage().trim() ? '#E8593C' : '#2a2a2a'"
-          [style.color]="newMessage().trim() ? 'white' : '#888888'"
-          [disabled]="!newMessage().trim()"
-          (click)="sendMessage()"
-        >
-          <span class="material-icons" style="font-size: 20px;">send</span>
-        </button>
+        <div class="flex items-end gap-2 px-4 py-3">
+          <!-- Hidden file input -->
+          <input type="file" #fileInput class="hidden" (change)="onFileSelected($event)" />
+
+          <button
+            class="flex items-center justify-center w-9 h-9 rounded-lg border-none cursor-pointer hover:bg-[#2a2a2a] transition-all flex-shrink-0"
+            [style.background]="pendingFile() ? '#2a2a2a' : 'transparent'"
+            [style.color]="pendingFile() ? '#E8593C' : '#888888'"
+            title="Attach file"
+            (click)="onAttachClick()"
+          >
+            <span class="material-icons-outlined" style="font-size: 20px;">attach_file</span>
+          </button>
+
+          <textarea
+            class="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-sm text-[#f0f0f0] outline-none resize-none focus:border-[#E8593C] transition-colors placeholder-[#888888] max-h-32"
+            placeholder="Type a message… (Enter to send)"
+            rows="1"
+            [value]="newMessage()"
+            (input)="onMessageInput($event)"
+            (keydown)="onKeydown($event)"
+          ></textarea>
+
+          <button
+            class="flex items-center justify-center w-9 h-9 rounded-lg border-none cursor-pointer transition-all flex-shrink-0"
+            [style.background]="(newMessage().trim() || pendingFile()) && !uploading() ? '#E8593C' : '#2a2a2a'"
+            [style.color]="(newMessage().trim() || pendingFile()) && !uploading() ? 'white' : '#888888'"
+            [disabled]="(!newMessage().trim() && !pendingFile()) || uploading()"
+            (click)="sendMessage()"
+          >
+            <span class="material-icons" style="font-size: 20px;">{{ uploading() ? 'hourglass_empty' : 'send' }}</span>
+          </button>
+        </div>
       </div>
 
     </div>

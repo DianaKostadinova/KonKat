@@ -41,6 +41,8 @@ class SecurityConfig(private val clerkJwtFilter: ClerkJwtFilter) {
                     .requestMatchers(HttpMethod.GET, "/api/team-posts", "/api/team-posts/**").permitAll()
                     // Users — public profile lookup
                     .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
+                    // Uploaded chat files — public so browsers can display them
+                    .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                     // WebSocket upgrade — auth is handled by the STOMP ChannelInterceptor
                     .requestMatchers("/ws/**").permitAll()
                     .anyRequest().authenticated()

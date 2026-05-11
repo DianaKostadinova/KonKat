@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.messaging.simp.SimpMessagingTemplate
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
@@ -75,6 +76,7 @@ class MessageController(
     // ── POST /api/messages/upload — save a file and return its URL ────────────
 
     @PostMapping("/upload", consumes = ["multipart/form-data"])
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun uploadFile(
         @RequestParam("file") file: MultipartFile,
         request: HttpServletRequest,
@@ -213,7 +215,10 @@ class MessageController(
         if (conv.participant1.id != userId && conv.participant2.id != userId)
             throw ResponseStatusException(HttpStatus.FORBIDDEN)
 
-        val msg = messageRepository.save(Message(conversation = conv, sender = me, content = body.content.trim()))
+        val content = body.content.trim()
+        if (content.isBlank() && body.fileUrl.isNullOrBlank())
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Message must have content or a file")
+        val msg = messageRepository.save(Message(conversation = conv, sender = me, content = content, fileUrl = body.fileUrl, fileName = body.fileName))
         val recipient = if (conv.participant1.id == userId) conv.participant2 else conv.participant1
         val dto = msg.toDto()
         messagingTemplate.convertAndSendToUser(
@@ -303,7 +308,10 @@ class MessageController(
         if (!groupMemberRepository.existsByGroupIdAndUserId(id, userId))
             throw ResponseStatusException(HttpStatus.FORBIDDEN)
 
-        val msg = groupMessageRepository.save(GroupMessage(group = group, sender = me, content = body.content.trim()))
+        val content = body.content.trim()
+        if (content.isBlank() && body.fileUrl.isNullOrBlank())
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Message must have content or a file")
+        val msg = groupMessageRepository.save(GroupMessage(group = group, sender = me, content = content, fileUrl = body.fileUrl, fileName = body.fileName))
         val dto = msg.toGroupDto()
         val otherMembers = groupMemberRepository.findByGroupId(id).filter { it.user.id != userId }
         otherMembers.forEach { gm ->
@@ -343,6 +351,8 @@ class MessageController(
         content = content,
         createdAt = createdAt?.format(TIME_FMT) ?: "",
         read = read,
+        fileUrl = fileUrl,
+        fileName = fileName,
     )
 
     private fun GroupMessage.toGroupDto() = MessageDto(
@@ -352,5 +362,7 @@ class MessageController(
         content = content,
         createdAt = createdAt?.format(TIME_FMT) ?: "",
         read = true,
+        fileUrl = fileUrl,
+        fileName = fileName,
     )
 }

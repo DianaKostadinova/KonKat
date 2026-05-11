@@ -1,4 +1,4 @@
-import { Component, signal, computed, ViewChild, ElementRef, AfterViewChecked, OnDestroy, OnInit } from '@angular/core';
+import { Component, signal, computed, ViewChild, ElementRef, AfterViewChecked, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -15,6 +15,7 @@ import { Conversation, ConversationMember, UserSearchResult } from './chat.model
 })
 export class Chat implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild('messageContainer') messageContainer!: ElementRef;
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   activeId = signal<number | null>(null);
   newMessage = signal('');
@@ -23,6 +24,11 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
   searchLoading = signal(false);
   private searchTimer: any;
   shouldScroll = false;
+
+  pendingFile = signal<File | null>(null);
+  pendingFilePreviewUrl = signal<string | null>(null);
+  uploading = signal(false);
+  uploadError = signal<string | null>(null);
 
   // ── New DM modal ────────────────────────────────────────────────────────────
   showDmModal = signal(false);
@@ -43,7 +49,7 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
 
   private queryParamSub?: Subscription;
 
-  constructor(public chatService: ChatService, private route: ActivatedRoute, private router: Router) {}
+  constructor(public chatService: ChatService, private route: ActivatedRoute, private router: Router, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     // Use queryParamMap Observable (not snapshot) so navigating to /chat?dm=X
@@ -139,10 +145,53 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
   sendMessage() {
     const content = this.newMessage().trim();
     const conv = this.activeConv();
-    if (!content || !conv) return;
-    this.chatService.sendMessage(conv.id, content, conv.type);
-    this.newMessage.set('');
-    this.shouldScroll = true;
+    const file = this.pendingFile();
+    if ((!content && !file) || !conv || this.uploading()) return;
+
+    if (file) {
+      this.uploading.set(true);
+      this.uploadError.set(null);
+      this.chatService.uploadFile(file).subscribe({
+        next: ({ url, fileName }) => {
+          this.chatService.sendMessage(conv.id, content, conv.type, url, fileName);
+          this.newMessage.set('');
+          this.clearPendingFile();
+          this.uploading.set(false);
+          this.shouldScroll = true;
+        },
+        error: (err) => {
+          this.uploading.set(false);
+          this.uploadError.set(err?.error?.message ?? err?.message ?? 'Upload failed');
+        },
+      });
+    } else {
+      this.chatService.sendMessage(conv.id, content, conv.type);
+      this.newMessage.set('');
+      this.shouldScroll = true;
+    }
+  }
+
+  onAttachClick() {
+    this.fileInput.nativeElement.click();
+  }
+
+  onFileSelected(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    if (this.pendingFilePreviewUrl()) URL.revokeObjectURL(this.pendingFilePreviewUrl()!);
+    this.pendingFile.set(file);
+    this.pendingFilePreviewUrl.set(file.type.startsWith('image/') ? URL.createObjectURL(file) : null);
+    (e.target as HTMLInputElement).value = '';
+  }
+
+  clearPendingFile() {
+    if (this.pendingFilePreviewUrl()) URL.revokeObjectURL(this.pendingFilePreviewUrl()!);
+    this.pendingFile.set(null);
+    this.pendingFilePreviewUrl.set(null);
+  }
+
+  isImage(url: string): boolean {
+    return /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(url);
   }
 
   onSearch(e: Event) {
@@ -174,6 +223,7 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
     clearTimeout(this.dmTimer);
     clearTimeout(this.gcTimer);
     clearTimeout(this.searchTimer);
+    if (this.pendingFilePreviewUrl()) URL.revokeObjectURL(this.pendingFilePreviewUrl()!);
   }
 
   // ── New DM ──────────────────────────────────────────────────────────────────
