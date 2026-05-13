@@ -41,12 +41,21 @@ data class MessageDto(
 )
 
 data class SendMessageRequest(
+    @field:jakarta.validation.constraints.Size(max = 5000, message = "Message must be at most 5000 characters")
     val content: String = "",
+    @field:jakarta.validation.constraints.Size(max = 500)
     val fileUrl: String? = null,
+    @field:jakarta.validation.constraints.Size(max = 255)
     val fileName: String? = null,
 )
 data class CreateDmRequest(val userId: Long)
-data class CreateGroupRequest(val name: String, val memberIds: List<Long>)
+data class CreateGroupRequest(
+    @field:jakarta.validation.constraints.NotBlank(message = "Group name must not be blank")
+    @field:jakarta.validation.constraints.Size(max = 100, message = "Group name must be at most 100 characters")
+    val name: String,
+    @field:jakarta.validation.constraints.Size(min = 1, max = 50, message = "Group must have 1–50 members")
+    val memberIds: List<Long>,
+)
 data class MessageDeliveryDto(val conversationId: Long, val type: String, val message: MessageDto)
 
 // ── Controller ────────────────────────────────────────────────────────────────
@@ -175,7 +184,7 @@ class MessageController(
     @PostMapping("/dm/{id}/messages")
     fun sendDmMessage(
         @PathVariable id: Long,
-        @RequestBody body: SendMessageRequest,
+        @jakarta.validation.Valid @RequestBody body: SendMessageRequest,
         request: HttpServletRequest,
     ): MessageDto {
         val userId = request.getAttribute("userId") as Long
@@ -218,7 +227,7 @@ class MessageController(
 
     @PostMapping("/group")
     fun createGroup(
-        @RequestBody body: CreateGroupRequest,
+        @jakarta.validation.Valid @RequestBody body: CreateGroupRequest,
         request: HttpServletRequest,
     ): ConversationDto {
         val userId = request.getAttribute("userId") as Long
@@ -268,7 +277,7 @@ class MessageController(
     @PostMapping("/group/{id}/messages")
     fun sendGroupMessage(
         @PathVariable id: Long,
-        @RequestBody body: SendMessageRequest,
+        @jakarta.validation.Valid @RequestBody body: SendMessageRequest,
         request: HttpServletRequest,
     ): MessageDto {
         val userId = request.getAttribute("userId") as Long

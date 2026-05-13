@@ -39,13 +39,21 @@ data class HackathonDto(
 )
 
 data class CreateHackathonRequest(
+    @field:jakarta.validation.constraints.NotBlank(message = "Title must not be blank")
+    @field:jakarta.validation.constraints.Size(max = 200, message = "Title must be at most 200 characters")
     val title: String,
+    @field:jakarta.validation.constraints.Size(max = 5000)
     val description: String?    = null,
+    @field:jakarta.validation.constraints.Size(max = 200)
     val location: String?       = null,
     val startDate: String?      = null,
     val endDate: String?        = null,
+    @field:jakarta.validation.constraints.Size(max = 200)
     val prize: String?          = null,
+    @field:jakarta.validation.constraints.Min(2)
+    @field:jakarta.validation.constraints.Max(20)
     val maxTeamSize: Int?       = null,
+    @field:jakarta.validation.constraints.Size(max = 10, message = "At most 10 tags allowed")
     val tags: List<String>      = emptyList(),
     val bannerUrl: String?      = null,
 )
@@ -124,7 +132,7 @@ class HackathonController(
     /** POST /api/hackathons — create a hackathon (auth required) */
     @PostMapping
     fun createHackathon(
-        @RequestBody body: CreateHackathonRequest,
+        @jakarta.validation.Valid @RequestBody body: CreateHackathonRequest,
         request: HttpServletRequest,
     ): ResponseEntity<HackathonDto> {
         val userId    = (request.getAttribute("userId") as? Long)

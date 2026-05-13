@@ -1,6 +1,8 @@
 package com.example.konkat.post
 
+import com.example.konkat.config.PagedResponse
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -13,13 +15,23 @@ class PostController(private val postService: PostService) {
 
     /**
      * GET /api/posts
-     * Returns full feed newest-first.
-     * Auth optional — liked/saved flags are false when unauthenticated.
+     * Returns full feed newest-first (no pagination — kept for backward compatibility).
+     *
+     * GET /api/posts?page=0&size=20
+     * When page/size are provided, returns a PagedResponse envelope.
      */
     @GetMapping
-    fun getFeed(request: HttpServletRequest): ResponseEntity<List<PostDto>> {
+    fun getFeed(
+        @RequestParam(required = false) page: Int?,
+        @RequestParam(required = false) size: Int?,
+        request: HttpServletRequest,
+    ): ResponseEntity<*> {
         val userId = request.getAttribute("userId") as? Long
-        return ResponseEntity.ok(postService.getFeed(userId))
+        return if (page != null || size != null) {
+            ResponseEntity.ok(postService.getFeedPaged(userId, page ?: 0, size ?: 20))
+        } else {
+            ResponseEntity.ok(postService.getFeed(userId))
+        }
     }
 
     /**
@@ -76,7 +88,7 @@ class PostController(private val postService: PostService) {
      */
     @PostMapping
     fun createPost(
-        @RequestBody body: CreatePostRequest,
+        @Valid @RequestBody body: CreatePostRequest,
         request: HttpServletRequest,
     ): ResponseEntity<PostDto> {
         val userId = request.getAttribute("userId") as Long
@@ -128,7 +140,7 @@ class PostController(private val postService: PostService) {
     @PostMapping("/{id}/comments")
     fun addComment(
         @PathVariable id: Long,
-        @RequestBody body: CreateCommentRequest,
+        @Valid @RequestBody body: CreateCommentRequest,
         request: HttpServletRequest,
     ): ResponseEntity<PostCommentDto> {
         val userId = request.getAttribute("userId") as Long

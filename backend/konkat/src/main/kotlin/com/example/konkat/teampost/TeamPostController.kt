@@ -54,11 +54,19 @@ data class TeamRequestDto(
 
 data class CreateTeamPostRequest(
     val hackathonId: Long,
+    @field:jakarta.validation.constraints.NotBlank(message = "Title must not be blank")
+    @field:jakarta.validation.constraints.Size(max = 200, message = "Title must be at most 200 characters")
     val title: String,
+    @field:jakarta.validation.constraints.Size(max = 2000)
     val description: String? = null,
+    @field:jakarta.validation.constraints.Size(max = 20, message = "At most 20 tech stack entries allowed")
     val techStack: List<String> = emptyList(),
+    @field:jakarta.validation.constraints.Size(max = 200)
     val location: String? = null,
+    @field:jakarta.validation.constraints.Min(2)
+    @field:jakarta.validation.constraints.Max(20)
     val maxMembers: Int = 4,
+    @field:jakarta.validation.constraints.Size(max = 10)
     val lookingFor: List<String> = emptyList(),
 )
 
@@ -98,7 +106,7 @@ class TeamPostController(
     /** POST /api/team-posts — create a team post */
     @PostMapping
     fun create(
-        @RequestBody body: CreateTeamPostRequest,
+        @jakarta.validation.Valid @RequestBody body: CreateTeamPostRequest,
         request: HttpServletRequest,
     ): ResponseEntity<TeamPostDto> {
         val userId = (request.getAttribute("userId") as? Long)

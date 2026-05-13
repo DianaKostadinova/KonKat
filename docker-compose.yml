@@ -1,0 +1,65 @@
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       konkat
+      POSTGRES_USER:     ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d konkat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - konkat-net
+
+  # ── Spring Boot backend ─────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend/konkat
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE:    docker
+      SPRING_DATASOURCE_URL:     jdbc:postgresql://db:5432/konkat
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      CLERK_JWKS_URI:            ${CLERK_JWKS_URI}
+    ports:
+      - "8082:8082"
+    networks:
+      - konkat-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Angular frontend (Nginx) ────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - konkat-net
+
+volumes:
+  postgres_data:
+
+networks:
+  konkat-net:
+    driver: bridge

@@ -1,7 +1,11 @@
 package com.example.konkat.project
 
+import com.example.konkat.config.PagedResponse
 import com.example.konkat.user.UserRepository
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.validation.Valid
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -14,12 +18,18 @@ private val ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 // ── Request / Response DTOs ───────────────────────────────────────────────────
 
 data class CreateProjectRequest(
+    @field:jakarta.validation.constraints.NotBlank(message = "Title must not be blank")
+    @field:jakarta.validation.constraints.Size(max = 200, message = "Title must be at most 200 characters")
     val title: String,
+    @field:jakarta.validation.constraints.Size(max = 2000)
     val description: String?      = null,
+    @field:jakarta.validation.constraints.Size(max = 500)
     val githubUrl: String?        = null,
+    @field:jakarta.validation.constraints.Size(max = 500)
     val liveUrl: String?          = null,
     val imageUrl: String?         = null,
     val status: String            = "IN_PROGRESS",
+    @field:jakarta.validation.constraints.Size(max = 20, message = "At most 20 tech stack entries allowed")
     val techStack: List<String>   = emptyList(),
 )
 
@@ -50,12 +60,27 @@ class ProjectController(
 ) {
 
     /**
+     * GET /api/projects?page=0&size=20
+     * Browse all projects, newest-first, with optional pagination.
+     */
+    @GetMapping
+    fun getAllProjects(
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int,
+    ): ResponseEntity<PagedResponse<ProjectDto>> {
+        val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
+        return ResponseEntity.ok(
+            PagedResponse.of(projectRepository.findAllByOrderByCreatedAtDesc(pageable).map { it.toDto() })
+        )
+    }
+
+    /**
      * POST /api/projects
      * Creates a new project owned by the authenticated user.
      */
     @PostMapping
     fun createProject(
-        @RequestBody body: CreateProjectRequest,
+        @Valid @RequestBody body: CreateProjectRequest,
         request: HttpServletRequest,
     ): ResponseEntity<ProjectDto> {
         val userId = request.getAttribute("userId") as Long

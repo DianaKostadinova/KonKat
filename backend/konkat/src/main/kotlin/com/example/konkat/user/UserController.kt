@@ -95,7 +95,7 @@ class UserController(
      */
     @PutMapping("/me")
     fun updateMe(
-        @RequestBody body: UpdateProfileRequest,
+        @jakarta.validation.Valid @RequestBody body: UpdateProfileRequest,
         request: HttpServletRequest,
     ): ResponseEntity<UserProfileDto> {
         val userId = request.getAttribute("userId") as Long
@@ -216,18 +216,29 @@ data class ClerkSyncRequest(
 )
 
 data class UpdateProfileRequest(
+    @field:jakarta.validation.constraints.Size(max = 100, message = "Display name must be at most 100 characters")
     val displayName: String?      = null,
+    @field:jakarta.validation.constraints.Size(max = 50, message = "Username must be at most 50 characters")
+    @field:jakarta.validation.constraints.Pattern(regexp = "^[a-zA-Z0-9_.-]*$", message = "Username may only contain letters, numbers, underscores, dots, and hyphens")
     val username: String?         = null,
+    @field:jakarta.validation.constraints.Size(max = 100)
     val title: String?            = null,
+    @field:jakarta.validation.constraints.Size(max = 1000)
     val bio: String?              = null,
+    @field:jakarta.validation.constraints.Size(max = 200)
     val location: String?         = null,
+    @field:jakarta.validation.constraints.Size(max = 200)
     val company: String?          = null,
+    @field:jakarta.validation.constraints.Size(max = 200)
     val github: String?           = null,
+    @field:jakarta.validation.constraints.Size(max = 500)
     val website: String?          = null,
     val avatarUrl: String?        = null,
     val coverColor: String?       = null,
     val coverImageUrl: String?    = null,
+    @field:jakarta.validation.constraints.Size(max = 30, message = "At most 30 tech stack entries allowed")
     val techStack: List<String>?  = null,
+    @field:jakarta.validation.constraints.Size(max = 30, message = "At most 30 interest entries allowed")
     val interests: List<String>?  = null,
 )
 

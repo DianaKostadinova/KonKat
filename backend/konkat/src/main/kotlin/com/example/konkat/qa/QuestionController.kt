@@ -1,6 +1,8 @@
 package com.example.konkat.qa
 
+import com.example.konkat.config.PagedResponse
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -12,15 +14,21 @@ class QuestionController(private val questionService: QuestionService) {
     @GetMapping
     fun getAll(
         @RequestParam(required = false) filter: String?,
+        @RequestParam(required = false) page: Int?,
+        @RequestParam(required = false) size: Int?,
         request: HttpServletRequest,
-    ): ResponseEntity<List<QuestionDto>> {
+    ): ResponseEntity<*> {
         val userId = request.getAttribute("userId") as? Long
-        return ResponseEntity.ok(questionService.getAll(userId, filter))
+        return if (page != null || size != null) {
+            ResponseEntity.ok(questionService.getAllPaged(userId, filter, page ?: 0, size ?: 20))
+        } else {
+            ResponseEntity.ok(questionService.getAll(userId, filter))
+        }
     }
 
     @PostMapping
     fun create(
-        @RequestBody body: CreateQuestionRequest,
+        @Valid @RequestBody body: CreateQuestionRequest,
         request: HttpServletRequest,
     ): ResponseEntity<QuestionDto> {
         val userId = request.getAttribute("userId") as Long
@@ -30,7 +38,7 @@ class QuestionController(private val questionService: QuestionService) {
     @PostMapping("/{id}/answers")
     fun addAnswer(
         @PathVariable id: Long,
-        @RequestBody body: CreateAnswerRequest,
+        @Valid @RequestBody body: CreateAnswerRequest,
         request: HttpServletRequest,
     ): ResponseEntity<AnswerDto> {
         val userId = request.getAttribute("userId") as Long

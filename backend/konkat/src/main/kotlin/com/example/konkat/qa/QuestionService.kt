@@ -1,9 +1,12 @@
 package com.example.konkat.qa
 
+import com.example.konkat.config.PagedResponse
 import com.example.konkat.notification.NotificationSender
 import com.example.konkat.notification.NotificationType
 import com.example.konkat.user.User
 import com.example.konkat.user.UserRepository
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -31,6 +34,16 @@ class QuestionService(
             else       -> questionRepository.findAllByOrderByCreatedAtDesc()
         }
         return questions.map { it.toDto(currentUserId, includeAnswers = true) }
+    }
+
+    fun getAllPaged(currentUserId: Long?, filter: String?, page: Int, size: Int): PagedResponse<QuestionDto> {
+        val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
+        val result = when (filter) {
+            "solved"   -> questionRepository.findBySolvedOrderByCreatedAtDesc(true, pageable)
+            "unsolved" -> questionRepository.findBySolvedOrderByCreatedAtDesc(false, pageable)
+            else       -> questionRepository.findAllByOrderByCreatedAtDesc(pageable)
+        }
+        return PagedResponse.of(result.map { it.toDto(currentUserId, includeAnswers = true) })
     }
 
     fun create(authorId: Long, req: CreateQuestionRequest): QuestionDto {
@@ -246,16 +259,27 @@ data class VoteResultDto(val votes: Int, val userVote: String?)
 // ── Request bodies ────────────────────────────────────────────────────────────
 
 data class CreateQuestionRequest(
+    @field:jakarta.validation.constraints.NotBlank(message = "Title must not be blank")
+    @field:jakarta.validation.constraints.Size(max = 300, message = "Title must be at most 300 characters")
     val title: String,
+    @field:jakarta.validation.constraints.NotBlank(message = "Content must not be blank")
+    @field:jakarta.validation.constraints.Size(max = 10000, message = "Content must be at most 10000 characters")
     val content: String,
+    @field:jakarta.validation.constraints.Size(max = 50)
     val codeLanguage: String? = null,
+    @field:jakarta.validation.constraints.Size(max = 20000)
     val codeSnippet: String? = null,
+    @field:jakarta.validation.constraints.Size(max = 10, message = "At most 10 tags allowed")
     val tags: List<String> = emptyList(),
 )
 
 data class CreateAnswerRequest(
+    @field:jakarta.validation.constraints.NotBlank(message = "Answer content must not be blank")
+    @field:jakarta.validation.constraints.Size(max = 10000, message = "Answer must be at most 10000 characters")
     val content: String,
+    @field:jakarta.validation.constraints.Size(max = 50)
     val codeLanguage: String? = null,
+    @field:jakarta.validation.constraints.Size(max = 20000)
     val codeSnippet: String? = null,
 )
 

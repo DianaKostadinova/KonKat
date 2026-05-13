@@ -1,8 +1,11 @@
 package com.example.konkat.post
 
+import com.example.konkat.config.PagedResponse
 import com.example.konkat.notification.NotificationSender
 import com.example.konkat.notification.NotificationType
 import com.example.konkat.user.UserRepository
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
@@ -27,6 +30,12 @@ class PostService(
 
     fun getFeed(currentUserId: Long?): List<PostDto> =
         postRepository.findAllByOrderByCreatedAtDesc().map { it.toDto(currentUserId) }
+
+    fun getFeedPaged(currentUserId: Long?, page: Int, size: Int): PagedResponse<PostDto> {
+        val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
+        val result   = postRepository.findAllByOrderByCreatedAtDesc(pageable)
+        return PagedResponse.of(result.map { it.toDto(currentUserId) })
+    }
 
     fun getPost(postId: Long, currentUserId: Long?): PostDto {
         val post = postRepository.findByIdOrNull(postId)
@@ -246,15 +255,22 @@ data class ReactionResultDto(
 // ── Request bodies ────────────────────────────────────────────────────────────
 
 data class CreatePostRequest(
+    @field:jakarta.validation.constraints.NotBlank(message = "Content must not be blank")
+    @field:jakarta.validation.constraints.Size(max = 5000, message = "Content must be at most 5000 characters")
     val content: String,
     val type: PostType = PostType.TEXT,
+    @field:jakarta.validation.constraints.Size(max = 50, message = "Code language must be at most 50 characters")
     val codeLanguage: String? = null,
+    @field:jakarta.validation.constraints.Size(max = 20000, message = "Code snippet must be at most 20000 characters")
     val codeSnippet: String? = null,
     val imageUrl: String? = null,
+    @field:jakarta.validation.constraints.Size(max = 10, message = "At most 10 tags allowed")
     val tags: List<String> = emptyList(),
 )
 
 data class CreateCommentRequest(
+    @field:jakarta.validation.constraints.NotBlank(message = "Comment text must not be blank")
+    @field:jakarta.validation.constraints.Size(max = 2000, message = "Comment must be at most 2000 characters")
     val text: String,
 )
 
