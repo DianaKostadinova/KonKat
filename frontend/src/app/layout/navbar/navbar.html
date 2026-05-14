@@ -39,6 +39,7 @@
           (input)="onSearchInput($event)"
           (focus)="onSearchFocus()"
           (blur)="onSearchBlur()"
+          (keydown.enter)="onSearchEnter()"
         />
 
         @if (hasSearchQuery()) {
@@ -138,6 +139,15 @@
             }
 
           }
+
+          <!-- ── See all results ────────────────────────────────────────── -->
+          @if (hasResults()) {
+            <button class="search-dropdown__see-all" (click)="goToSearchPage()">
+              <span class="material-icons-outlined" style="font-size:15px;">open_in_full</span>
+              See all results for "{{ searchQuery() }}"
+            </button>
+          }
+
         </div>
       }
     </div>

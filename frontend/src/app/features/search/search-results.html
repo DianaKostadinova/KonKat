@@ -1,0 +1,244 @@
+<div class="search-page">
+
+  <!-- ── Header ────────────────────────────────────────────────────────────── -->
+  <div class="search-page__header">
+    <div class="search-page__input-wrap">
+      <span class="material-icons-outlined search-page__icon">search</span>
+      <input
+        class="search-page__input"
+        type="text"
+        placeholder="Search users, projects, posts…"
+        [value]="query()"
+        (input)="onQueryChange($event)"
+        autofocus
+      />
+      @if (loading()) {
+        <span class="material-icons-outlined search-page__spinner">hourglass_empty</span>
+      }
+    </div>
+
+    @if (query().length >= 2 && !loading() && results()) {
+      <p class="search-page__meta">
+        {{ totalCount() }} result{{ totalCount() !== 1 ? 's' : '' }} for
+        <strong>"{{ query() }}"</strong>
+      </p>
+    }
+  </div>
+
+  <!-- ── Tabs ──────────────────────────────────────────────────────────────── -->
+  <div class="search-tabs">
+    @for (tab of tabs; track tab.key) {
+      <button
+        class="search-tab"
+        [class.search-tab--active]="activeTab() === tab.key"
+        (click)="setTab(tab.key)"
+      >
+        <span class="material-icons-outlined" style="font-size:16px;">{{ tab.icon }}</span>
+        {{ tab.label }}
+        @if (results() && tabCount()[tab.key] > 0) {
+          <span class="search-tab__count">{{ tabCount()[tab.key] }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  <!-- ── Results body ───────────────────────────────────────────────────────── -->
+  <div class="search-page__body">
+
+    <!-- Loading -->
+    @if (loading()) {
+      <div class="search-empty">
+        <span class="material-icons-outlined" style="font-size:40px;color:#555">hourglass_empty</span>
+        <p>Searching…</p>
+      </div>
+    }
+
+    <!-- No query -->
+    @else if (query().length < 2) {
+      <div class="search-empty">
+        <span class="material-icons-outlined" style="font-size:48px;color:#444">manage_search</span>
+        <p>Type at least 2 characters to search.</p>
+      </div>
+    }
+
+    <!-- No results -->
+    @else if (results() && totalCount() === 0) {
+      <div class="search-empty">
+        <span class="material-icons-outlined" style="font-size:48px;color:#444">search_off</span>
+        <p>No results for <strong>"{{ query() }}"</strong></p>
+        <span>Try different keywords or check your spelling.</span>
+      </div>
+    }
+
+    @else if (results()) {
+
+      <!-- ── People ─────────────────────────────────────────────────────────── -->
+      @if (activeTab() === 'all' || activeTab() === 'people') {
+        @if (results()!.users.length > 0) {
+          <section class="search-section">
+            <h3 class="search-section__title">
+              <span class="material-icons-outlined">person</span> People
+            </h3>
+            <div class="search-section__grid">
+              @for (user of results()!.users; track user.id) {
+                <button class="result-card result-card--user" (click)="goToUser(user.id)">
+                  <div class="result-card__avatar">
+                    @if (user.avatarUrl) {
+                      <img [src]="user.avatarUrl" alt="" />
+                    } @else {
+                      <span class="material-icons" style="font-size:32px;color:#888">account_circle</span>
+                    }
+                  </div>
+                  <div class="result-card__info">
+                    <span class="result-card__name">{{ user.name }}</span>
+                    <span class="result-card__sub">
+                      @if (user.username) { &#64;{{ user.username }} }
+                      @if (user.role) { · {{ user.role }} }
+                      @if (user.location) { · {{ user.location }} }
+                    </span>
+                  </div>
+                  <span class="material-icons-outlined result-card__arrow">arrow_forward</span>
+                </button>
+              }
+            </div>
+          </section>
+        }
+      }
+
+      <!-- ── Projects ───────────────────────────────────────────────────────── -->
+      @if (activeTab() === 'all' || activeTab() === 'projects') {
+        @if (results()!.projects.length > 0) {
+          <section class="search-section">
+            <h3 class="search-section__title">
+              <span class="material-icons-outlined">folder_copy</span> Projects
+            </h3>
+            <div class="search-section__list">
+              @for (project of results()!.projects; track project.id) {
+                <button class="result-card result-card--wide" (click)="goToProject(project.id)">
+                  <div class="result-card__icon" style="color:#6366f1">
+                    <span class="material-icons-outlined">folder_copy</span>
+                  </div>
+                  <div class="result-card__info">
+                    <span class="result-card__name">{{ project.title }}</span>
+                    <span class="result-card__sub">
+                      by {{ project.ownerName }}
+                      @if (project.techStack.length > 0) {
+                        · {{ project.techStack.slice(0, 4).join(', ') }}
+                      }
+                    </span>
+                    @if (project.description) {
+                      <span class="result-card__desc">{{ project.description }}</span>
+                    }
+                  </div>
+                  <span class="result-card__badge" [style.color]="statusColor(project.status)">
+                    {{ project.status }}
+                  </span>
+                  <span class="material-icons-outlined result-card__arrow">arrow_forward</span>
+                </button>
+              }
+            </div>
+          </section>
+        }
+      }
+
+      <!-- ── Hackathons ─────────────────────────────────────────────────────── -->
+      @if (activeTab() === 'all' || activeTab() === 'hackathons') {
+        @if (results()!.hackathons.length > 0) {
+          <section class="search-section">
+            <h3 class="search-section__title">
+              <span class="material-icons-outlined">calendar_month</span> Hackathons
+            </h3>
+            <div class="search-section__list">
+              @for (h of results()!.hackathons; track h.id) {
+                <button class="result-card result-card--wide" (click)="goToHackathon(h.id)">
+                  <div class="result-card__icon" style="color:#f59e0b">
+                    <span class="material-icons-outlined">calendar_month</span>
+                  </div>
+                  <div class="result-card__info">
+                    <span class="result-card__name">{{ h.title }}</span>
+                    <span class="result-card__sub">
+                      {{ h.status }}
+                      @if (h.location) { · {{ h.location }} }
+                    </span>
+                  </div>
+                  <span class="result-card__badge" [style.color]="statusColor(h.status)">
+                    {{ h.status }}
+                  </span>
+                  <span class="material-icons-outlined result-card__arrow">arrow_forward</span>
+                </button>
+              }
+            </div>
+          </section>
+        }
+      }
+
+      <!-- ── Posts ──────────────────────────────────────────────────────────── -->
+      @if (activeTab() === 'all' || activeTab() === 'posts') {
+        @if (results()!.posts.length > 0) {
+          <section class="search-section">
+            <h3 class="search-section__title">
+              <span class="material-icons-outlined">article</span> Posts
+            </h3>
+            <div class="search-section__list">
+              @for (post of results()!.posts; track post.id) {
+                <button class="result-card result-card--wide result-card--post" (click)="goToPost(post.id)">
+                  <div class="result-card__avatar result-card__avatar--sm">
+                    @if (post.authorAvatarUrl) {
+                      <img [src]="post.authorAvatarUrl" alt="" />
+                    } @else {
+                      <span class="material-icons" style="font-size:22px;color:#888">account_circle</span>
+                    }
+                  </div>
+                  <div class="result-card__info">
+                    <span class="result-card__name">{{ post.authorName }}</span>
+                    <span class="result-card__desc">{{ post.content }}</span>
+                    @if (post.tags.length > 0) {
+                      <div class="result-card__tags">
+                        @for (tag of post.tags.slice(0, 4); track tag) {
+                          <span class="result-tag">#{{ tag }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                  <span class="result-card__time">{{ timeAgo(post.createdAt) }}</span>
+                </button>
+              }
+            </div>
+          </section>
+        }
+      }
+
+      <!-- ── Q&A ────────────────────────────────────────────────────────────── -->
+      @if (activeTab() === 'all' || activeTab() === 'questions') {
+        @if (results()!.questions.length > 0) {
+          <section class="search-section">
+            <h3 class="search-section__title">
+              <span class="material-icons-outlined">help_outline</span> Q&amp;A
+            </h3>
+            <div class="search-section__list">
+              @for (q of results()!.questions; track q.id) {
+                <button class="result-card result-card--wide" (click)="goToQuestion(q.id)">
+                  <div class="result-card__icon" [style.color]="q.solved ? '#22c55e' : '#6366f1'">
+                    <span class="material-icons-outlined">{{ q.solved ? 'check_circle' : 'help_outline' }}</span>
+                  </div>
+                  <div class="result-card__info">
+                    <span class="result-card__name">{{ q.title }}</span>
+                    <span class="result-card__sub">
+                      by {{ q.authorName }} · {{ q.views }} views
+                      @if (q.tags.length > 0) { · {{ q.tags.slice(0, 3).join(', ') }} }
+                    </span>
+                  </div>
+                  @if (q.solved) {
+                    <span class="result-card__badge" style="color:#22c55e">Solved</span>
+                  }
+                  <span class="result-card__time">{{ timeAgo(q.createdAt) }}</span>
+                </button>
+              }
+            </div>
+          </section>
+        }
+      }
+
+    }
+  </div>
+</div>

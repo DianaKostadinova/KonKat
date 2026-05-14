@@ -11,4 +11,6 @@ interface QuestionRepository : JpaRepository<Question, Long> {
     fun findAllByOrderByCreatedAtDesc(pageable: Pageable): Page<Question>
     fun findBySolvedOrderByCreatedAtDesc(solved: Boolean): List<Question>
     fun findBySolvedOrderByCreatedAtDesc(solved: Boolean, pageable: Pageable): Page<Question>
+    fun findByTitleContainingIgnoreCaseOrderByCreatedAtDesc(title: String): List<Question>
+    fun findByContentContainingIgnoreCaseOrderByCreatedAtDesc(content: String): List<Question>
 }

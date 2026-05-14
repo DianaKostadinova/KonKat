@@ -465,3 +465,24 @@
 .search-dropdown__item:hover .search-item__arrow {
   color: #E8593C;
 }
+
+.search-dropdown__see-all {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-top: 1px solid #222;
+  background: transparent;
+  color: #6366f1;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.search-dropdown__see-all:hover {
+  background: #1a1a2e;
+}

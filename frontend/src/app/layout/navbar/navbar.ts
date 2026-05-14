@@ -139,6 +139,18 @@ export class Navbar implements OnInit, OnDestroy {
     this.router.navigate(['/hackathons', hackathonId]);
   }
 
+  goToSearchPage(): void {
+    const q = this.searchQuery();
+    this.clearSearch();
+    this.router.navigate(['/search'], { queryParams: { q } });
+  }
+
+  onSearchEnter(): void {
+    if (this.searchQuery().trim().length >= 2) {
+      this.goToSearchPage();
+    }
+  }
+
   // ── Other ───────────────────────────────────────────────────────────────────
 
   toggleMobileMenu(): void { this.isMobileMenuOpen.update(v => !v); }
