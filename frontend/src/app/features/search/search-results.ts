@@ -20,7 +20,7 @@ export type SearchTab = 'all' | 'people' | 'projects' | 'hackathons' | 'posts' |
   templateUrl: './search-results.html',
   styleUrl: './search-results.css',
 })
-export class SearchResults implements OnInit, OnDestroy {
+export class SearchResultsPage implements OnInit, OnDestroy {
 
   query   = signal('');
   loading = signal(false);

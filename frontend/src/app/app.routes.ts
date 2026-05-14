@@ -14,7 +14,7 @@ import { SignIn } from './features/auth/sign-in';
 import { SignUp } from './features/auth/sign-up';
 import { authGuard } from './shared/auth/auth.guard';
 import { Trending } from './features/trending/trending';
-import { SearchResults } from './features/search/search-results';
+import { SearchResultsPage } from './features/search/search-results';
 
 export const routes: Routes = [
   { path: '',        redirectTo: 'feed', pathMatch: 'full' },
@@ -34,5 +34,5 @@ export const routes: Routes = [
   { path: 'myworkspaces',  component: MyWorkspaces,         canActivate: [authGuard] },
   { path: 'notifications', component: NotificationDropdown, canActivate: [authGuard] },
   { path: 'trending',      component: Trending,             canActivate: [authGuard] },
-  { path: 'search',        component: SearchResults,        canActivate: [authGuard] },
+  { path: 'search',        component: SearchResultsPage,    canActivate: [authGuard] },
 ];

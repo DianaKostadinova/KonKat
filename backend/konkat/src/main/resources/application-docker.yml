@@ -21,4 +21,4 @@ server:
 
 app:
   clerk:
-    jwks-uri: ${CLERK_JWKS_URI}
+    jwks-uri: ${CLERK_JWKS_URI:https://frank-penguin-10.clerk.accounts.dev/.well-known/jwks.json}

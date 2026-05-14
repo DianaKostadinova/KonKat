@@ -27,7 +27,8 @@ class UserController(
      */
     @GetMapping("/me")
     fun getMe(request: HttpServletRequest): ResponseEntity<UserProfileDto> {
-        val userId = request.getAttribute("userId") as Long
+        val userId = request.getAttribute("userId") as? Long
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         val user   = userRepository.findById(userId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
         }
@@ -50,7 +51,8 @@ class UserController(
         @RequestBody body: ClerkSyncRequest,
         request: HttpServletRequest,
     ): ResponseEntity<UserProfileDto> {
-        val clerkUserId = request.getAttribute("userId") as Long
+        val clerkUserId = request.getAttribute("userId") as? Long
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         val clerkUser   = userRepository.findById(clerkUserId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
         }
@@ -98,7 +100,8 @@ class UserController(
         @jakarta.validation.Valid @RequestBody body: UpdateProfileRequest,
         request: HttpServletRequest,
     ): ResponseEntity<UserProfileDto> {
-        val userId = request.getAttribute("userId") as Long
+        val userId = request.getAttribute("userId") as? Long
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         val user   = userRepository.findById(userId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
         }
