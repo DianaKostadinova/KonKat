@@ -28,8 +28,9 @@ export class PostService {
     return this._posts();
   }
 
-  loadFeed(): void {
-    this.http.get<any[]>(`${API}/posts`)
+  loadFeed(followingOnly = false): void {
+    const url = followingOnly ? `${API}/posts?filter=following` : `${API}/posts`;
+    this.http.get<any[]>(url)
       .subscribe(dtos => this._posts.set(dtos.map(d => this.mapPost(d))));
   }
 

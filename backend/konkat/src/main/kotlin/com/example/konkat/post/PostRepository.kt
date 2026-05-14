@@ -14,6 +14,9 @@ interface PostRepository : JpaRepository<Post, Long> {
     fun findByAuthorIdOrderByCreatedAtDesc(authorId: Long): List<Post>
     fun countByAuthorId(authorId: Long): Long
 
+    fun findByAuthorIdInOrderByCreatedAtDesc(authorIds: List<Long>): List<Post>
+    fun findByAuthorIdInOrderByCreatedAtDesc(authorIds: List<Long>, pageable: Pageable): Page<Post>
+
     fun findByContentContainingIgnoreCaseOrderByCreatedAtDesc(content: String): List<Post>
 
     @Query("SELECT p FROM Post p JOIN p.tags t WHERE LOWER(t) = LOWER(:tag) ORDER BY p.createdAt DESC")

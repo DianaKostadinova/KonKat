@@ -1,5 +1,21 @@
 <div class="flex flex-col gap-4 p-4 max-w-2xl mx-auto w-full">
 
+  <!-- Feed Filter Tabs -->
+  <div class="flex border-b border-[#2a2a2a]">
+    <button
+      (click)="setFilter('forYou')"
+      [class]="feedFilter() === 'forYou'
+        ? 'px-5 py-2.5 text-sm font-semibold text-[#E8593C] border-b-2 border-[#E8593C] bg-transparent cursor-pointer'
+        : 'px-5 py-2.5 text-sm font-medium text-[#888888] border-b-2 border-transparent bg-transparent cursor-pointer hover:text-[#f0f0f0] transition-colors'"
+    >For You</button>
+    <button
+      (click)="setFilter('following')"
+      [class]="feedFilter() === 'following'
+        ? 'px-5 py-2.5 text-sm font-semibold text-[#E8593C] border-b-2 border-[#E8593C] bg-transparent cursor-pointer'
+        : 'px-5 py-2.5 text-sm font-medium text-[#888888] border-b-2 border-transparent bg-transparent cursor-pointer hover:text-[#f0f0f0] transition-colors'"
+    >Following</button>
+  </div>
+
   <!-- Create Post Box -->
   <div class="flex flex-col gap-3 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4">
     <div class="flex items-center gap-3">
@@ -50,10 +66,17 @@
   </div>
 
   <!-- Posts -->
-  @for (post of posts(); track post.id) {
-    <div [attr.id]="'post-' + post.id">
-      <app-post-card [post]="post" />
+  @if (posts().length === 0 && feedFilter() === 'following') {
+    <div class="flex flex-col items-center gap-3 py-16 text-center">
+      <span class="material-icons text-[#444]" style="font-size:48px;">group</span>
+      <p class="text-[#888] text-sm">No posts from people you follow yet.<br>Follow more people to see their updates here.</p>
     </div>
+  } @else {
+    @for (post of posts(); track post.id) {
+      <div [attr.id]="'post-' + post.id">
+        <app-post-card [post]="post" />
+      </div>
+    }
   }
 
 </div>

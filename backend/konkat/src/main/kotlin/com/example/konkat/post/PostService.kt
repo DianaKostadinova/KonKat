@@ -3,6 +3,7 @@ package com.example.konkat.post
 import com.example.konkat.config.PagedResponse
 import com.example.konkat.notification.NotificationSender
 import com.example.konkat.notification.NotificationType
+import com.example.konkat.social.FollowRepository
 import com.example.konkat.user.UserRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -24,6 +25,7 @@ class PostService(
     private val postCommentRepository: PostCommentRepository,
     private val userRepository: UserRepository,
     private val notificationSender: NotificationSender,
+    private val followRepository: FollowRepository,
 ) {
 
     // ── Feed ──────────────────────────────────────────────────────────────────
@@ -34,6 +36,20 @@ class PostService(
     fun getFeedPaged(currentUserId: Long?, page: Int, size: Int): PagedResponse<PostDto> {
         val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
         val result   = postRepository.findAllByOrderByCreatedAtDesc(pageable)
+        return PagedResponse.of(result.map { it.toDto(currentUserId) })
+    }
+
+    fun getFollowingFeed(currentUserId: Long): List<PostDto> {
+        val followedIds = followRepository.findByFollowerId(currentUserId).map { it.following.id }
+        if (followedIds.isEmpty()) return emptyList()
+        return postRepository.findByAuthorIdInOrderByCreatedAtDesc(followedIds).map { it.toDto(currentUserId) }
+    }
+
+    fun getFollowingFeedPaged(currentUserId: Long, page: Int, size: Int): PagedResponse<PostDto> {
+        val followedIds = followRepository.findByFollowerId(currentUserId).map { it.following.id }
+        if (followedIds.isEmpty()) return PagedResponse(content = emptyList(), page = page, size = size, totalElements = 0, totalPages = 0, hasMore = false)
+        val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
+        val result   = postRepository.findByAuthorIdInOrderByCreatedAtDesc(followedIds, pageable)
         return PagedResponse.of(result.map { it.toDto(currentUserId) })
     }
 

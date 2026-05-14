@@ -19,6 +19,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 class NotificationSender(
     private val notificationRepository: NotificationRepository,
     private val pushService: NotificationPushService,
+    private val emailService: EmailService,
 ) {
 
     private val log = LoggerFactory.getLogger(NotificationSender::class.java)
@@ -48,6 +49,9 @@ class NotificationSender(
                 type, recipient.id, ex.message)
             return
         }
+
+        // Send email asynchronously (fire-and-forget, never blocks the request)
+        emailService.sendNotificationEmail(recipient, actor, type)
 
         // Push via WebSocket only after the REQUIRES_NEW transaction commits,
         // so the client's follow-up GET will always find the row.

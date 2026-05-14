@@ -24,13 +24,21 @@ class PostController(private val postService: PostService) {
     fun getFeed(
         @RequestParam(required = false) page: Int?,
         @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) filter: String?,
         request: HttpServletRequest,
     ): ResponseEntity<*> {
         val userId = request.getAttribute("userId") as? Long
+        val followingOnly = filter == "following" && userId != null
         return if (page != null || size != null) {
-            ResponseEntity.ok(postService.getFeedPaged(userId, page ?: 0, size ?: 20))
+            if (followingOnly)
+                ResponseEntity.ok(postService.getFollowingFeedPaged(userId!!, page ?: 0, size ?: 20))
+            else
+                ResponseEntity.ok(postService.getFeedPaged(userId, page ?: 0, size ?: 20))
         } else {
-            ResponseEntity.ok(postService.getFeed(userId))
+            if (followingOnly)
+                ResponseEntity.ok(postService.getFollowingFeed(userId!!))
+            else
+                ResponseEntity.ok(postService.getFeed(userId))
         }
     }
 

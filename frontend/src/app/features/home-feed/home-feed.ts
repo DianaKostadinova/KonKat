@@ -1,4 +1,4 @@
-import { Component, computed, signal, effect } from '@angular/core';
+import { Component, computed, signal, effect, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged, map } from 'rxjs';
@@ -18,6 +18,7 @@ import { PostType } from '../../shared/post-card/post.model';
 export class HomeFeed {
   posts = computed(() => this.postService.getPosts());
 
+  feedFilter = signal<'forYou' | 'following'>('forYou');
   newPostText      = signal('');
   showModal        = signal(false);
   modalInitialType = signal<PostType>('text');
@@ -35,6 +36,12 @@ export class HomeFeed {
       distinctUntilChanged(),
       takeUntilDestroyed(),
     ).subscribe(postId => this.pendingPostId.set(postId));
+
+    // Reload feed whenever filter changes
+    effect(() => {
+      const filter = this.feedFilter();
+      this.postService.loadFeed(filter === 'following');
+    });
 
     // Scroll to the target post once it appears in the feed
     effect(() => {
@@ -57,6 +64,10 @@ export class HomeFeed {
 
   get currentUser() {
     return this.authService.user();
+  }
+
+  setFilter(filter: 'forYou' | 'following'): void {
+    this.feedFilter.set(filter);
   }
 
   onPostInput(event: Event): void {
