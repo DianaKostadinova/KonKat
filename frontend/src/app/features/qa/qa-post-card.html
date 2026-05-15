@@ -130,9 +130,9 @@
               <span class="material-icons mt-1" style="font-size: 18px; color: #28c840;">check_circle</span>
             } @else if (isAuthor() && !question.solved) {
               <button
-                class="mt-1 flex items-center justify-center w-6 h-6 rounded border-none cursor-pointer transition-all bg-transparent"
-                style="color: #444;"
-                title="Accept this answer"
+                class="mt-1 flex items-center justify-center w-6 h-6 rounded border-none cursor-pointer transition-all bg-transparent hover:scale-110"
+                style="color: #28c840; opacity: 0.5;"
+                title="Mark as accepted answer"
                 (click)="onAcceptAnswer(answer.id)"
               >
                 <span class="material-icons" style="font-size: 18px;">check_circle_outline</span>

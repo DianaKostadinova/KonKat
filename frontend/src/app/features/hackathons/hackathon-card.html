@@ -44,28 +44,34 @@
 
     <!-- Countdown -->
     <div class="flex items-center gap-2">
-      <span class="text-[#888888] text-xs">Starts in:</span>
-      <div class="flex items-center gap-1">
-        <div class="countdown-box">
-          <span class="text-[#f0f0f0] font-bold text-sm font-mono">{{ pad(countdown().days) }}</span>
-          <span class="text-[#888888] text-[9px]">days</span>
+      @if (isTBD()) {
+        <span class="text-[#888888] text-xs italic">Date to be announced</span>
+      } @else if (hasStarted()) {
+        <span class="text-[#febc2e] text-xs font-semibold">🔴 Already started</span>
+      } @else {
+        <span class="text-[#888888] text-xs">Starts in:</span>
+        <div class="flex items-center gap-1">
+          <div class="countdown-box">
+            <span class="text-[#f0f0f0] font-bold text-sm font-mono">{{ pad(countdown().days) }}</span>
+            <span class="text-[#888888] text-[9px]">days</span>
+          </div>
+          <span class="text-[#888888] font-bold">:</span>
+          <div class="countdown-box">
+            <span class="text-[#f0f0f0] font-bold text-sm font-mono">{{ pad(countdown().hours) }}</span>
+            <span class="text-[#888888] text-[9px]">hrs</span>
+          </div>
+          <span class="text-[#888888] font-bold">:</span>
+          <div class="countdown-box">
+            <span class="text-[#f0f0f0] font-bold text-sm font-mono">{{ pad(countdown().minutes) }}</span>
+            <span class="text-[#888888] text-[9px]">min</span>
+          </div>
+          <span class="text-[#888888] font-bold">:</span>
+          <div class="countdown-box countdown-box--accent">
+            <span class="text-white font-bold text-sm font-mono">{{ pad(countdown().seconds) }}</span>
+            <span class="text-white text-[9px] opacity-80">sec</span>
+          </div>
         </div>
-        <span class="text-[#888888] font-bold">:</span>
-        <div class="countdown-box">
-          <span class="text-[#f0f0f0] font-bold text-sm font-mono">{{ pad(countdown().hours) }}</span>
-          <span class="text-[#888888] text-[9px]">hrs</span>
-        </div>
-        <span class="text-[#888888] font-bold">:</span>
-        <div class="countdown-box">
-          <span class="text-[#f0f0f0] font-bold text-sm font-mono">{{ pad(countdown().minutes) }}</span>
-          <span class="text-[#888888] text-[9px]">min</span>
-        </div>
-        <span class="text-[#888888] font-bold">:</span>
-        <div class="countdown-box countdown-box--accent">
-          <span class="text-white font-bold text-sm font-mono">{{ pad(countdown().seconds) }}</span>
-          <span class="text-white text-[9px] opacity-80">sec</span>
-        </div>
-      </div>
+      }
     </div>
 
     <!-- Tags -->
@@ -80,7 +86,7 @@
       <div class="flex flex-col gap-0.5">
         <span class="text-[#888888] text-[10px]">EVENT DATE</span>
         <span class="text-[#f0f0f0] text-xs font-medium">
-          {{ formatDate(hackathon.startDate) }} — {{ formatDate(hackathon.endDate) }}
+          @if (isTBD()) { TBD } @else { {{ formatDate(hackathon.startDate) }} — {{ formatDate(hackathon.endDate) }} }
         </span>
       </div>
       <div class="flex flex-col gap-0.5">

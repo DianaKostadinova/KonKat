@@ -93,6 +93,23 @@ class HackathonController(
     private val workspaceService:       WorkspaceService,
 ) {
 
+    /** GET /api/hackathons/all — list all hackathons regardless of status (for team post creation) */
+    @GetMapping("/all")
+    fun getAll(request: HttpServletRequest): ResponseEntity<List<HackathonDto>> {
+        val currentUserId = request.getAttribute("userId") as? Long
+        val hackathons = hackathonRepository.findAll()
+        return ResponseEntity.ok(hackathons.map { h ->
+            val saved = currentUserId?.let {
+                savedEventRepository.existsByUserIdAndEventTypeAndEventId(it, EventType.HACKATHON, h.id)
+            } ?: false
+            val registered = currentUserId?.let {
+                participantRepository.existsByUserIdAndHackathonId(it, h.id)
+            } ?: false
+            val count = participantRepository.countByHackathonId(h.id)
+            h.toDto(saved, registered, count)
+        })
+    }
+
     /** GET /api/hackathons — list upcoming + open hackathons (public) */
     @GetMapping
     fun getUpcoming(request: HttpServletRequest): ResponseEntity<List<HackathonDto>> {

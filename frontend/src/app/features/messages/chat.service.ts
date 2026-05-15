@@ -31,11 +31,13 @@ export class ChatService implements OnDestroy {
     this.msgWsSub = this.ws.incomingMessage$.subscribe(delivery => {
       const { conversationId, type, message } = delivery;
       if (conversationId === this._activeConvId) {
-        // Append to open conversation and auto-mark as read
+        // Append to open conversation, skipping if already present (prevents self-DM duplicates)
         this._conversations.update(convs => bumpToTop(
-          convs.map(c => c.id === conversationId
-            ? { ...c, messages: [...c.messages, toMessage(message)] }
-            : c),
+          convs.map(c => {
+            if (c.id !== conversationId) return c;
+            if (c.messages.some(m => m.id === message.id)) return c;
+            return { ...c, messages: [...c.messages, toMessage(message)] };
+          }),
           conversationId
         ));
         this.markAsRead(conversationId, type);

@@ -1,9 +1,13 @@
 import { Component, signal, computed, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { TeamPost } from './teammates.model';
 import { TeamService } from './team.service';
 import { TeamCard } from './team-card';
 import { CreateTeamModal } from './createteam';
+import { environment } from '../../../environments/environment';
+
+const API = environment.apiUrl;
 
 @Component({
   selector: 'app-find-team',
@@ -19,18 +23,23 @@ export class Teammates implements OnInit {
   selectedTech = signal('');
   selectedLocation = signal('');
   teams = signal<TeamPost[]>([]);
+  allHackathons = signal<string[]>([]);
   loading = signal(true);
   error = signal<string | null>(null);
 
   constructor(
     private teamService: TeamService,
     private route: ActivatedRoute,
+    private http: HttpClient,
   ) {}
 
   ngOnInit() {
     const hackathon = this.route.snapshot.queryParamMap.get('hackathon');
     if (hackathon) this.selectedHackathon.set(hackathon);
     this.loadTeams();
+    this.http.get<any[]>(`${API}/hackathons/all`).subscribe({
+      next: (hs) => this.allHackathons.set(hs.map(h => h.title)),
+    });
   }
 
   loadTeams() {
@@ -43,8 +52,9 @@ export class Teammates implements OnInit {
   }
 
   hackathonOptions = computed(() => {
-    const titles = this.teams().map(t => t.hackathon.title);
-    return ['All', ...new Set(titles)];
+    const fromPosts = this.teams().map(t => t.hackathon.title);
+    const all = [...new Set([...this.allHackathons(), ...fromPosts])];
+    return ['All', ...all];
   });
 
   techOptions = computed(() => {

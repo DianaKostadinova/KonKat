@@ -20,6 +20,7 @@ export class CreateTeamModal implements OnInit {
   @Output() created = new EventEmitter<TeamPost>();
 
   hackathons = signal<HackathonOption[]>([]);
+  loadingHackathons = signal(true);
   selectedHackathonId = signal<number | null>(null);
   title = signal('');
   description = signal('');
@@ -38,8 +39,12 @@ export class CreateTeamModal implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.http.get<any[]>(`${API}/hackathons`).subscribe({
-      next: (h) => this.hackathons.set(h.map(x => ({ id: x.id, title: x.title }))),
+    this.http.get<any[]>(`${API}/hackathons/all`).subscribe({
+      next: (h) => {
+        this.hackathons.set(h.map(x => ({ id: x.id, title: x.title })));
+        this.loadingHackathons.set(false);
+      },
+      error: () => this.loadingHackathons.set(false),
     });
   }
 

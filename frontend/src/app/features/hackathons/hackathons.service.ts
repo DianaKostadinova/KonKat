@@ -96,8 +96,10 @@ export class HackathonService {
   // ── Mappers ───────────────────────────────────────────────────────────────
 
   private mapHackathon(h: any): Hackathon {
-    const start = h.startDate ? new Date(h.startDate) : new Date();
-    const end   = h.endDate   ? new Date(h.endDate)   : new Date();
+    // Use a far-future sentinel when no date is set so the countdown doesn't show "starts now"
+    const FAR_FUTURE = new Date('2099-01-01T00:00:00');
+    const start = h.startDate ? new Date(h.startDate) : FAR_FUTURE;
+    const end   = h.endDate   ? new Date(h.endDate)   : FAR_FUTURE;
     return {
       id:                   h.id,
       title:                h.title          ?? '',

@@ -24,9 +24,13 @@
       <!-- Hackathon selector -->
       <div class="flex flex-col gap-1.5">
         <label class="text-[#888888] text-xs font-medium">Hackathon <span class="text-[#E8593C]">*</span></label>
-        @if (hackathons().length === 0) {
+        @if (loadingHackathons()) {
           <div class="bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#888888]">
             Loading hackathons...
+          </div>
+        } @else if (hackathons().length === 0) {
+          <div class="bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#888888]">
+            No hackathons found. Create one first.
           </div>
         } @else {
           <select

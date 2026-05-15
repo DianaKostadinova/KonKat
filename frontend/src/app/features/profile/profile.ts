@@ -1,5 +1,6 @@
-import { Component, signal, computed, OnInit } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { ProfileService } from './profile.service';
 import { ProjectService } from '../projects/project.service';
 import { PostCard } from '../../shared/post-card/post-card';
@@ -19,7 +20,7 @@ type Tab = 'posts' | 'liked' | 'saved' | 'projects';
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
-export class Profile implements OnInit {
+export class Profile implements OnInit, OnDestroy {
   activeTab      = signal<Tab>('posts');
   shareCopied    = signal(false);
   showCreatePost = signal(false);
@@ -37,10 +38,10 @@ export class Profile implements OnInit {
 
   showLogoutConfirm = signal(false);
 
-  // True when the profile shown belongs to the logged-in user
   isOwnProfile = true;
-  // The user ID being viewed (may differ from the logged-in user)
   viewedUserId: number | null = null;
+
+  private routeSub?: Subscription;
 
   tabs: { value: Tab; label: string; icon: string }[] = [
     { value: 'posts',    label: 'Posts',    icon: 'grid_view' },
@@ -59,33 +60,42 @@ export class Profile implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const paramId = this.route.snapshot.paramMap.get('id');
-    const currentDbId = this.authService.user()?.dbId;
+    this.routeSub = this.route.paramMap.subscribe(params => {
+      const paramId = params.get('id');
+      const currentDbId = this.authService.user()?.dbId;
 
-    if (paramId && Number(paramId) !== currentDbId) {
-      // ── Viewing someone else's profile ────────────────────────────────────
-      this.isOwnProfile = false;
-      this.viewedUserId = Number(paramId);
+      // Reset tab to posts on every navigation
+      this.activeTab.set('posts');
 
-      this.profileService.loadPublicProfile(this.viewedUserId).subscribe({
-        next: (p) => this.isFollowing.set(p.isFollowing ?? false),
-      });
+      if (paramId && Number(paramId) !== currentDbId) {
+        // ── Viewing someone else's profile ──────────────────────────────────
+        this.isOwnProfile = false;
+        this.viewedUserId = Number(paramId);
 
-      this.profileService.loadMyPosts(this.viewedUserId);
-      this.projectService.loadUserProjects(this.viewedUserId);
+        this.profileService.loadPublicProfile(this.viewedUserId).subscribe({
+          next: (p) => this.isFollowing.set(p.isFollowing ?? false),
+        });
 
-    } else {
-      // ── Viewing own profile ───────────────────────────────────────────────
-      this.isOwnProfile = true;
+        this.profileService.loadMyPosts(this.viewedUserId);
+        this.projectService.loadUserProjects(this.viewedUserId);
 
-      this.profileService.loadProfile().subscribe({
-        next: profile => {
-          this.viewedUserId = profile.id;
-          this.profileService.loadMyPosts(profile.id);
-          this.projectService.loadMyProjects();
-        },
-      });
-    }
+      } else {
+        // ── Viewing own profile ─────────────────────────────────────────────
+        this.isOwnProfile = true;
+
+        this.profileService.loadProfile().subscribe({
+          next: profile => {
+            this.viewedUserId = profile.id;
+            this.profileService.loadMyPosts(profile.id);
+            this.projectService.loadMyProjects();
+          },
+        });
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.routeSub?.unsubscribe();
   }
 
   // ── Follow toggle ─────────────────────────────────────────────────────────
@@ -173,4 +183,9 @@ export class Profile implements OnInit {
   likedPosts = computed(() => this.profileService.getLikedPosts());
   savedPosts = computed(() => this.profileService.getSavedPosts());
   myProjects = computed(() => this.projectService.getProjects());
+
+  ensureHttps(url: string): string {
+    if (!url) return '';
+    return url.startsWith('http') ? url : 'https://' + url;
+  }
 }

@@ -126,14 +126,16 @@
           <span class="material-icons-outlined" style="font-size: 14px;">location_on</span>
           {{ profile().location }}
         </div>
-        <div class="flex items-center gap-1">
-          <span class="material-icons-outlined" style="font-size: 14px;">code</span>
-          {{ profile().github }}
-        </div>
+        @if (profile().github) {
+          <div class="flex items-center gap-1">
+            <span class="material-icons-outlined" style="font-size: 14px;">code</span>
+            <a [href]="'https://github.com/' + profile().github" target="_blank" rel="noopener" class="text-[#E8593C] hover:underline">{{ profile().github }}</a>
+          </div>
+        }
         @if (profile().website) {
           <div class="flex items-center gap-1">
             <span class="material-icons-outlined" style="font-size: 14px;">link</span>
-            <a [href]="profile().website" class="text-[#E8593C] hover:underline">{{ profile().website }}</a>
+            <a [href]="ensureHttps(profile().website)" target="_blank" rel="noopener" class="text-[#E8593C] hover:underline">{{ profile().website }}</a>
           </div>
         }
         <div class="flex items-center gap-1">

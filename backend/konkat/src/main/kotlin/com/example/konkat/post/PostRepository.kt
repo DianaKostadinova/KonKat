@@ -28,6 +28,7 @@ interface PostRepository : JpaRepository<Post, Long> {
                    COUNT(DISTINCT pt.post_id) AS postCount,
                    COUNT(pr.id) AS likeCount
             FROM post_tags pt
+            INNER JOIN posts p ON p.id = pt.post_id
             LEFT JOIN post_reactions pr ON pr.post_id = pt.post_id AND pr.type = 'LIKE'
             GROUP BY pt.tag
             ORDER BY COUNT(pr.id) DESC, COUNT(DISTINCT pt.post_id) DESC

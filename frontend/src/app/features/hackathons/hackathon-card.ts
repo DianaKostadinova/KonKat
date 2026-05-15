@@ -28,9 +28,20 @@ export class HackathonCard implements OnInit, OnDestroy {
 
   ngOnDestroy() { clearInterval(this.timer); }
 
+  isTBD(): boolean {
+    return this.hackathon.startDate.getFullYear() === 2099;
+  }
+
+  hasStarted(): boolean {
+    return !this.isTBD() && this.hackathon.startDate.getTime() <= Date.now();
+  }
+
   updateCountdown() {
+    if (this.isTBD() || this.hasStarted()) {
+      this.countdown.set({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      return;
+    }
     const diff = this.hackathon.startDate.getTime() - Date.now();
-    if (diff <= 0) { this.countdown.set({ days: 0, hours: 0, minutes: 0, seconds: 0 }); return; }
     this.countdown.set({
       days:    Math.floor(diff / 86_400_000),
       hours:   Math.floor((diff % 86_400_000) / 3_600_000),
