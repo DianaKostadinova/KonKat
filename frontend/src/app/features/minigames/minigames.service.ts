@@ -1,83 +1,65 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 export interface LeaderboardEntry {
+  id: number;
   name: string;
+  avatar?: string | null;
   rep: number;
-  solved: number;
 }
 
-const STORAGE_KEY = 'konkat_minigames_v1';
-const REP_PER_SOLVE = 3;
-
-interface StoredState {
-  entries: Record<string, LeaderboardEntry>;
-  me: string;
-  solvedToday: Record<string, string[]>;
+interface SolveResponse {
+  rep: number;
+  awarded: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
 export class MinigamesService {
-  private state = signal<StoredState>(this.load());
+  private http = inject(HttpClient);
 
-  leaderboard = computed<LeaderboardEntry[]>(() =>
-    Object.values(this.state().entries)
-      .sort((a, b) => b.rep - a.rep || b.solved - a.solved)
-      .slice(0, 3),
-  );
+  leaderboard = signal<LeaderboardEntry[]>([]);
+  myRep = signal<number>(0);
+  private solvedLocal = signal<Record<string, string[]>>({}); // game -> ISO dates
 
-  myRep = computed(() => this.state().entries[this.state().me]?.rep ?? 0);
-  mySolved = computed(() => this.state().entries[this.state().me]?.solved ?? 0);
-
-  setMe(name: string) {
-    const s = { ...this.state() };
-    s.me = name;
-    if (!s.entries[name]) s.entries[name] = { name, rep: 0, solved: 0 };
-    this.state.set(s);
-    this.save();
+  loadLeaderboard(limit = 3) {
+    this.http
+      .get<LeaderboardEntry[]>(`${environment.apiUrl}/users/leaderboard?limit=${limit}`)
+      .subscribe({
+        next: (data) => this.leaderboard.set(data ?? []),
+        error: () => this.leaderboard.set([]),
+      });
   }
 
-  hasSolvedToday(gameKey: string): boolean {
+  loadMyRep() {
+    this.http.get<{ stats: { rep: number } }>(`${environment.apiUrl}/users/me`).subscribe({
+      next: (me) => this.myRep.set(me?.stats?.rep ?? 0),
+      error: () => {},
+    });
+  }
+
+  hasSolvedToday(game: string): boolean {
     const today = new Date().toISOString().slice(0, 10);
-    return this.state().solvedToday[today]?.includes(gameKey) ?? false;
+    return this.solvedLocal()[game]?.includes(today) ?? false;
   }
 
-  awardSolve(gameKey: string) {
-    const today = new Date().toISOString().slice(0, 10);
-    const s = { ...this.state() };
-    if (!s.solvedToday[today]) s.solvedToday[today] = [];
-    if (s.solvedToday[today].includes(gameKey)) return;
-    s.solvedToday[today] = [...s.solvedToday[today], gameKey];
-
-    const meName = s.me || 'You';
-    const cur = s.entries[meName] ?? { name: meName, rep: 0, solved: 0 };
-    s.entries = {
-      ...s.entries,
-      [meName]: { ...cur, rep: cur.rep + REP_PER_SOLVE, solved: cur.solved + 1 },
-    };
-    this.state.set(s);
-    this.save();
-  }
-
-  private load(): StoredState {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch {}
-    return {
-      entries: {
-        Alex: { name: 'Alex', rep: 18, solved: 6 },
-        Priya: { name: 'Priya', rep: 12, solved: 4 },
-        Diego: { name: 'Diego', rep: 9, solved: 3 },
-        You: { name: 'You', rep: 0, solved: 0 },
-      },
-      me: 'You',
-      solvedToday: {},
-    };
-  }
-
-  private save() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state()));
-    } catch {}
+  async awardSolve(game: string): Promise<void> {
+    return new Promise((resolve) => {
+      this.http
+        .post<SolveResponse>(`${environment.apiUrl}/users/me/minigame-solve`, { game })
+        .subscribe({
+          next: (res) => {
+            this.myRep.set(res.rep);
+            const today = new Date().toISOString().slice(0, 10);
+            this.solvedLocal.update((s) => ({
+              ...s,
+              [game]: Array.from(new Set([...(s[game] ?? []), today])),
+            }));
+            this.loadLeaderboard();
+            resolve();
+          },
+          error: () => resolve(),
+        });
+    });
   }
 }

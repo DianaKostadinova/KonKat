@@ -3,11 +3,13 @@ package com.example.konkat.user
 import com.example.konkat.post.PostRepository
 import com.example.konkat.social.FollowRepository
 import jakarta.servlet.http.HttpServletRequest
+import org.springframework.data.domain.PageRequest
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @RestController
@@ -17,6 +19,8 @@ class UserController(
     private val userRepository: UserRepository,
     private val followRepository: FollowRepository,
     private val postRepository: PostRepository,
+    private val reputationService: ReputationService,
+    private val minigameSolveRepository: MinigameSolveRepository,
 ) {
 
     // ── Own profile ───────────────────────────────────────────────────────────
@@ -148,6 +152,53 @@ class UserController(
         return ResponseEntity.ok(mapOf("available" to available))
     }
 
+    // ── Minigames ────────────────────────────────────────────────────────────
+
+    /**
+     * GET /api/users/leaderboard?limit=3
+     * Returns the top-N users by reputation. Public.
+     */
+    @GetMapping("/leaderboard")
+    fun leaderboard(@RequestParam(defaultValue = "3") limit: Int): ResponseEntity<List<LeaderboardEntryDto>> {
+        val capped = limit.coerceIn(1, 50)
+        val users  = userRepository.findAllByOrderByReputationDesc(PageRequest.of(0, capped))
+        return ResponseEntity.ok(users.map {
+            LeaderboardEntryDto(id = it.id, name = it.displayName, avatar = it.avatarUrl, rep = it.reputation)
+        })
+    }
+
+    /**
+     * POST /api/users/me/minigame-solve
+     * Body: { "game": "wordle" | "pinpoint" | ... }
+     * Grants +3 rep, idempotent per (user, game, day).
+     */
+    @PostMapping("/me/minigame-solve")
+    fun minigameSolve(
+        @RequestBody body: MinigameSolveRequest,
+        request: HttpServletRequest,
+    ): ResponseEntity<MinigameSolveResponse> {
+        val userId = request.getAttribute("userId") as? Long
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        val game = body.game.trim().lowercase()
+        if (game.isEmpty() || game.length > 32 || !game.matches(Regex("^[a-z0-9_-]+$"))) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid game key")
+        }
+
+        val user = userRepository.findById(userId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+        }
+        val today = LocalDate.now()
+        val already = minigameSolveRepository.existsByUserIdAndGameAndSolveDate(userId, game, today)
+        if (!already) {
+            minigameSolveRepository.save(MinigameSolve(userId = userId, game = game, solveDate = today))
+            reputationService.grant(user, ReputationAction.MINIGAME_SOLVE)
+        }
+
+        return ResponseEntity.ok(
+            MinigameSolveResponse(rep = user.reputation, awarded = !already)
+        )
+    }
+
     // ── Public profile ────────────────────────────────────────────────────────
 
     /**
@@ -202,6 +253,16 @@ data class UserProfileDto(
 )
 
 data class BadgeDto(val label: String, val color: String)
+
+data class LeaderboardEntryDto(
+    val id: Long,
+    val name: String,
+    val avatar: String?,
+    val rep: Int,
+)
+
+data class MinigameSolveRequest(val game: String = "")
+data class MinigameSolveResponse(val rep: Int, val awarded: Boolean)
 
 data class StatsDto(
     val posts: Int      = 0,

@@ -9,21 +9,14 @@ interface PinpointPuzzle {
   clues: string[];
 }
 
-const PINPOINT_PUZZLES: PinpointPuzzle[] = [
-  { answer: 'Angular', clues: ['Framework', 'Google', 'TypeScript', 'Signals', 'Directives'] },
-  { answer: 'Coffee', clues: ['Bean', 'Brew', 'Morning', 'Caffeine', 'Espresso'] },
-  { answer: 'Ocean', clues: ['Salt', 'Waves', 'Deep', 'Blue', 'Pacific'] },
-  { answer: 'Piano', clues: ['Keys', 'Black', 'White', 'Pedal', 'Concert'] },
-  { answer: 'Mountain', clues: ['Peak', 'Snow', 'Climb', 'Everest', 'Range'] },
-];
-
-const FALLBACK_WORDS = [
-  'crane', 'plant', 'brave', 'flame', 'globe', 'mango', 'pixel', 'route',
-  'sword', 'tiger', 'video', 'whale', 'yacht', 'zebra', 'cloud', 'drift',
-];
+interface DatamuseWord {
+  word: string;
+  score?: number;
+}
 
 const WORDLE_MAX_GUESSES = 6;
 const WORDLE_LEN = 5;
+const PINPOINT_CLUES = 5;
 
 type LetterState = 'hit' | 'present' | 'miss' | 'empty';
 
@@ -44,21 +37,29 @@ export class Minigames {
   private http = inject(HttpClient);
 
   rep = this.games.myRep;
-  solved = this.games.mySolved;
   leaderboard = this.games.leaderboard;
 
+  view = signal<'menu' | 'pinpoint' | 'wordle'>('menu');
+
+  constructor() {
+    this.games.loadLeaderboard();
+    this.games.loadMyRep();
+  }
+
   // Pinpoint state
-  private puzzleIdx = signal(Math.floor(Math.random() * PINPOINT_PUZZLES.length));
+  pinpointPuzzle = signal<PinpointPuzzle | null>(null);
+  pinpointLoading = signal(false);
+  pinpointLoadError = signal('');
   cluesShown = signal(1);
   guess = signal('');
   pinpointStatus = signal<'playing' | 'won' | 'lost'>('playing');
   pinpointSolvedToday = computed(() => this.games.hasSolvedToday('pinpoint'));
-  puzzle = computed(() => PINPOINT_PUZZLES[this.puzzleIdx()]);
-  visibleClues = computed(() => this.puzzle().clues.slice(0, this.cluesShown()));
+  visibleClues = computed(() => this.pinpointPuzzle()?.clues.slice(0, this.cluesShown()) ?? []);
 
   // Wordle state
   private target = signal<string>('');
-  wordleStatus = signal<'loading' | 'playing' | 'won' | 'lost'>('loading');
+  wordleStatus = signal<'loading' | 'playing' | 'won' | 'lost' | 'error'>('loading');
+  wordleLoadError = signal('');
   wordleSolvedToday = computed(() => this.games.hasSolvedToday('wordle'));
   rows = signal<WordleCell[][]>([]);
   current = signal('');
@@ -71,24 +72,86 @@ export class Minigames {
     ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK'],
   ];
 
-  constructor() {
-    this.loadWordle();
+  openGame(g: 'pinpoint' | 'wordle') {
+    this.view.set(g);
+    if (g === 'pinpoint' && !this.pinpointPuzzle()) this.loadPinpoint();
+    if (g === 'wordle' && !this.target()) this.loadWordle();
+  }
+
+  backToMenu() {
+    this.view.set('menu');
   }
 
   /* ── Pinpoint ───────────────────────────────────────────── */
+  async loadPinpoint() {
+    this.pinpointLoading.set(true);
+    this.pinpointLoadError.set('');
+    this.cluesShown.set(1);
+    this.guess.set('');
+    this.pinpointStatus.set('playing');
+
+    try {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const answer = await this.fetchRandomWord();
+        if (!answer) continue;
+        const clues = await this.fetchClues(answer);
+        if (clues.length >= PINPOINT_CLUES) {
+          this.pinpointPuzzle.set({ answer, clues: clues.slice(0, PINPOINT_CLUES) });
+          this.pinpointLoading.set(false);
+          return;
+        }
+      }
+      this.pinpointLoadError.set('Could not generate a puzzle. Try again.');
+    } catch {
+      this.pinpointLoadError.set('Could not reach the puzzle service.');
+    }
+    this.pinpointLoading.set(false);
+  }
+
+  private async fetchRandomWord(): Promise<string | null> {
+    try {
+      const res = await firstValueFrom(
+        this.http.get<string[]>('https://random-word-api.herokuapp.com/word'),
+      );
+      const w = res?.[0];
+      if (w && /^[a-zA-Z]{4,10}$/.test(w)) return w.toLowerCase();
+    } catch {}
+    return null;
+  }
+
+  private async fetchClues(word: string): Promise<string[]> {
+    try {
+      const res = await firstValueFrom(
+        this.http.get<DatamuseWord[]>(
+          `https://api.datamuse.com/words?rel_trg=${encodeURIComponent(word)}&max=20`,
+        ),
+      );
+      const clues = (res ?? [])
+        .map((d) => d.word)
+        .filter((w) => /^[a-zA-Z][a-zA-Z\- ]{1,20}$/.test(w))
+        .filter((w) => !w.toLowerCase().includes(word.toLowerCase()))
+        .filter((w) => !word.toLowerCase().includes(w.toLowerCase()))
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1));
+      return Array.from(new Set(clues));
+    } catch {
+      return [];
+    }
+  }
+
   onGuessInput(e: Event) {
     this.guess.set((e.target as HTMLInputElement).value);
   }
 
   submitPinpoint() {
-    if (this.pinpointStatus() !== 'playing') return;
-    const ok = this.guess().trim().toLowerCase() === this.puzzle().answer.toLowerCase();
+    const puzzle = this.pinpointPuzzle();
+    if (!puzzle || this.pinpointStatus() !== 'playing') return;
+    const ok = this.guess().trim().toLowerCase() === puzzle.answer.toLowerCase();
     if (ok) {
       this.pinpointStatus.set('won');
       if (!this.pinpointSolvedToday()) this.games.awardSolve('pinpoint');
       return;
     }
-    if (this.cluesShown() >= this.puzzle().clues.length) {
+    if (this.cluesShown() >= puzzle.clues.length) {
       this.pinpointStatus.set('lost');
       return;
     }
@@ -97,35 +160,38 @@ export class Minigames {
   }
 
   nextPinpoint() {
-    this.puzzleIdx.set((this.puzzleIdx() + 1) % PINPOINT_PUZZLES.length);
-    this.cluesShown.set(1);
-    this.guess.set('');
-    this.pinpointStatus.set('playing');
+    this.pinpointPuzzle.set(null);
+    this.loadPinpoint();
   }
 
   /* ── Wordle ─────────────────────────────────────────────── */
   async loadWordle() {
     this.wordleStatus.set('loading');
+    this.wordleLoadError.set('');
     this.rows.set([]);
     this.current.set('');
     this.wordleError.set('');
     this.keyboardState.set({});
 
     const word = await this.fetchTargetWord();
+    if (!word) {
+      this.wordleStatus.set('error');
+      this.wordleLoadError.set('Could not fetch a word. Try again.');
+      return;
+    }
     this.target.set(word);
     this.wordleStatus.set('playing');
   }
 
-  private async fetchTargetWord(): Promise<string> {
+  private async fetchTargetWord(): Promise<string | null> {
     try {
       const res = await firstValueFrom(
         this.http.get<string[]>('https://random-word-api.herokuapp.com/word?length=5'),
       );
-      if (Array.isArray(res) && res[0] && /^[a-zA-Z]{5}$/.test(res[0])) {
-        return res[0].toLowerCase();
-      }
+      const w = res?.[0];
+      if (w && /^[a-zA-Z]{5}$/.test(w)) return w.toLowerCase();
     } catch {}
-    return FALLBACK_WORDS[Math.floor(Math.random() * FALLBACK_WORDS.length)];
+    return null;
   }
 
   private async isValidWord(word: string): Promise<boolean> {
@@ -187,14 +253,12 @@ export class Minigames {
     const targetChars = target.split('');
     const used = new Array(WORDLE_LEN).fill(false);
 
-    // Pass 1: exact matches
     for (let i = 0; i < WORDLE_LEN; i++) {
       if (guess[i] === targetChars[i]) {
         result[i].state = 'hit';
         used[i] = true;
       }
     }
-    // Pass 2: present-but-misplaced
     for (let i = 0; i < WORDLE_LEN; i++) {
       if (result[i].state === 'hit') continue;
       const idx = targetChars.findIndex((c, j) => !used[j] && c === guess[i]);

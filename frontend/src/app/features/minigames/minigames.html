@@ -1,80 +1,130 @@
 <div class="minigames-page">
   <header class="mg-header">
-    <div>
-      <h1 class="mg-title">Daily Minigames</h1>
-      <p class="mg-subtitle">Solve a puzzle, earn <span class="text-[#E8593C] font-semibold">+3 rep</span> each.</p>
+    <div class="mg-header-left">
+      @if (view() !== 'menu') {
+        <button class="mg-back" (click)="backToMenu()" aria-label="Back to games">
+          <span class="material-icons-outlined">arrow_back</span>
+        </button>
+      }
+      <div>
+        <h1 class="mg-title">
+          @if (view() === 'menu') { Daily Minigames }
+          @else if (view() === 'pinpoint') { Pinpoint }
+          @else { Wordle }
+        </h1>
+        <p class="mg-subtitle">
+          @if (view() === 'menu') {
+            Pick a puzzle. Each solve = <span class="text-[#E8593C] font-semibold">+3 rep</span>.
+          } @else if (view() === 'pinpoint') {
+            Guess the word the clues all point to.
+          } @else {
+            Guess the 5-letter word in 6 tries.
+          }
+        </p>
+      </div>
     </div>
     <div class="mg-stats">
       <div class="mg-stat">
         <span class="mg-stat-value">{{ rep() }}</span>
-        <span class="mg-stat-label">Rep from games</span>
-      </div>
-      <div class="mg-stat">
-        <span class="mg-stat-value">{{ solved() }}</span>
-        <span class="mg-stat-label">Puzzles solved</span>
+        <span class="mg-stat-label">Your rep</span>
       </div>
     </div>
   </header>
 
-  <div class="mg-grid">
-    <!-- Pinpoint -->
-    <section class="mg-card">
-      <div class="mg-card-head">
-        <span class="material-icons-outlined text-[#E8593C]">my_location</span>
-        <h2>Pinpoint</h2>
+  @if (view() === 'menu') {
+    <div class="mg-menu">
+      <button class="mg-tile" (click)="openGame('pinpoint')">
+        <span class="mg-tile-icon material-icons-outlined">my_location</span>
+        <span class="mg-tile-title">Pinpoint</span>
+        <span class="mg-tile-desc">Decode the category from 5 progressive clues.</span>
         @if (pinpointSolvedToday()) {
           <span class="mg-chip">Solved today</span>
         }
-      </div>
-      <p class="mg-card-desc">Guess the word the clues all point to. Fewer clues = better.</p>
+      </button>
 
-      <ol class="mg-clues">
-        @for (clue of visibleClues(); track $index) {
-          <li>{{ clue }}</li>
-        }
-        @for (i of [].constructor(puzzle().clues.length - cluesShown()); track $index) {
-          <li class="mg-clue-hidden">?</li>
-        }
-      </ol>
-
-      @if (pinpointStatus() === 'playing') {
-        <div class="mg-input-row">
-          <input
-            type="text"
-            [value]="guess()"
-            (input)="onGuessInput($event)"
-            (keydown.enter)="submitPinpoint()"
-            placeholder="Your guess..."
-            class="mg-input"
-          />
-          <button class="mg-btn-primary" (click)="submitPinpoint()">Guess</button>
-        </div>
-      } @else if (pinpointStatus() === 'won') {
-        <div class="mg-result mg-result-win">
-          Solved! +3 rep · Answer: <strong>{{ puzzle().answer }}</strong>
-        </div>
-        <button class="mg-btn-ghost" (click)="nextPinpoint()">Next puzzle</button>
-      } @else {
-        <div class="mg-result mg-result-lose">
-          Out of clues. Answer was <strong>{{ puzzle().answer }}</strong>.
-        </div>
-        <button class="mg-btn-ghost" (click)="nextPinpoint()">Try another</button>
-      }
-    </section>
-
-    <!-- Wordle -->
-    <section class="mg-card">
-      <div class="mg-card-head">
-        <span class="material-icons-outlined text-[#E8593C]">grid_view</span>
-        <h2>Wordle</h2>
+      <button class="mg-tile" (click)="openGame('wordle')">
+        <span class="mg-tile-icon material-icons-outlined">grid_view</span>
+        <span class="mg-tile-title">Wordle</span>
+        <span class="mg-tile-desc">Crack a 5-letter word in 6 tries.</span>
         @if (wordleSolvedToday()) {
           <span class="mg-chip">Solved today</span>
         }
-      </div>
-      <p class="mg-card-desc">Guess the 5-letter word in 6 tries. Green = right spot, yellow = wrong spot.</p>
+      </button>
+    </div>
 
+    <section class="mg-card mg-leaderboard">
+      <div class="mg-card-head">
+        <span class="material-icons-outlined text-[#E8593C]">emoji_events</span>
+        <h2>Top Performers</h2>
+      </div>
+      @if (leaderboard().length === 0) {
+        <div class="mg-empty">No one's on the board yet — solve a puzzle to be first.</div>
+      } @else {
+        <ol class="mg-lb-list">
+          @for (entry of leaderboard(); track entry.name; let i = $index) {
+            <li class="mg-lb-item" [class.mg-lb-1]="i === 0" [class.mg-lb-2]="i === 1" [class.mg-lb-3]="i === 2">
+              <span class="mg-lb-rank">{{ i + 1 }}</span>
+              <span class="mg-lb-name">{{ entry.name }}</span>
+              <span class="mg-lb-rep">{{ entry.rep }} rep</span>
+            </li>
+          }
+        </ol>
+      }
+    </section>
+  }
+
+  @if (view() === 'pinpoint') {
+    <section class="mg-card mg-game-full">
+      @if (pinpointLoading()) {
+        <div class="mg-loading">Generating a puzzle…</div>
+      } @else if (pinpointLoadError()) {
+        <div class="mg-result mg-result-lose">{{ pinpointLoadError() }}</div>
+        <button class="mg-btn-ghost" (click)="loadPinpoint()">Retry</button>
+      } @else if (pinpointPuzzle(); as puzzle) {
+        <ol class="mg-clues">
+          @for (clue of visibleClues(); track $index) {
+            <li>{{ clue }}</li>
+          }
+          @for (i of [].constructor(puzzle.clues.length - cluesShown()); track $index) {
+            <li class="mg-clue-hidden">?</li>
+          }
+        </ol>
+
+        @if (pinpointStatus() === 'playing') {
+          <div class="mg-input-row">
+            <input
+              type="text"
+              [value]="guess()"
+              (input)="onGuessInput($event)"
+              (keydown.enter)="submitPinpoint()"
+              placeholder="Your guess..."
+              class="mg-input"
+              autofocus
+            />
+            <button class="mg-btn-primary" (click)="submitPinpoint()">Guess</button>
+          </div>
+        } @else if (pinpointStatus() === 'won') {
+          <div class="mg-result mg-result-win">
+            Solved! +3 rep · Answer: <strong>{{ puzzle.answer }}</strong>
+          </div>
+          <button class="mg-btn-ghost" (click)="nextPinpoint()">Next puzzle</button>
+        } @else {
+          <div class="mg-result mg-result-lose">
+            Out of clues. Answer was <strong>{{ puzzle.answer }}</strong>.
+          </div>
+          <button class="mg-btn-ghost" (click)="nextPinpoint()">Try another</button>
+        }
+      }
+    </section>
+  }
+
+  @if (view() === 'wordle') {
+    <section class="mg-card mg-game-full">
       @if (wordleStatus() === 'loading') {
         <div class="mg-loading">Fetching a fresh word…</div>
+      } @else if (wordleStatus() === 'error') {
+        <div class="mg-result mg-result-lose">{{ wordleLoadError() }}</div>
+        <button class="mg-btn-ghost" (click)="loadWordle()">Retry</button>
       } @else {
         <div class="wordle-board">
           @for (rowIdx of allRows; track rowIdx) {
@@ -122,23 +172,5 @@
         }
       }
     </section>
-
-    <!-- Leaderboard -->
-    <section class="mg-card mg-leaderboard">
-      <div class="mg-card-head">
-        <span class="material-icons-outlined text-[#E8593C]">emoji_events</span>
-        <h2>Top Performers</h2>
-      </div>
-      <ol class="mg-lb-list">
-        @for (entry of leaderboard(); track entry.name; let i = $index) {
-          <li class="mg-lb-item" [class.mg-lb-1]="i === 0" [class.mg-lb-2]="i === 1" [class.mg-lb-3]="i === 2">
-            <span class="mg-lb-rank">{{ i + 1 }}</span>
-            <span class="mg-lb-name">{{ entry.name }}</span>
-            <span class="mg-lb-rep">{{ entry.rep }} rep</span>
-            <span class="mg-lb-solved">{{ entry.solved }} solved</span>
-          </li>
-        }
-      </ol>
-    </section>
-  </div>
+  }
 </div>

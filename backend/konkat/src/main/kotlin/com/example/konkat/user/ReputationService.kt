@@ -15,6 +15,7 @@ enum class ReputationAction(val points: Int) {
     COMMENT(2),
     QUESTION(10),
     ANSWER(5),
+    MINIGAME_SOLVE(3),
 }
 
 @Service

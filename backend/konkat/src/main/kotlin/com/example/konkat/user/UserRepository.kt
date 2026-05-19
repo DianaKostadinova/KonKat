@@ -1,5 +1,6 @@
 package com.example.konkat.user
 
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import java.util.Optional
 
@@ -14,4 +15,6 @@ interface UserRepository : JpaRepository<User, Long> {
         displayName: String,
         username: String,
     ): List<User>
+
+    fun findAllByOrderByReputationDesc(pageable: Pageable): List<User>
 }
