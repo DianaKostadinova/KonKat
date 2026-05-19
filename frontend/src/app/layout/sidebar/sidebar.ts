@@ -17,5 +17,7 @@ export class Sidebar {
     { label: 'Chat',           icon: 'chat_bubble_outline',   route: '/chat' },
     { type: 'divider' },
     { label: 'Workspace',      icon: 'group',                 route: '/myworkspaces' },
+    { type: 'divider' },
+    { label: 'Minigames',      icon: 'extension',             route: '/minigames' },
   ];
 }

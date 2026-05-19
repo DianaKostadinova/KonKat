@@ -1,0 +1,144 @@
+<div class="minigames-page">
+  <header class="mg-header">
+    <div>
+      <h1 class="mg-title">Daily Minigames</h1>
+      <p class="mg-subtitle">Solve a puzzle, earn <span class="text-[#E8593C] font-semibold">+3 rep</span> each.</p>
+    </div>
+    <div class="mg-stats">
+      <div class="mg-stat">
+        <span class="mg-stat-value">{{ rep() }}</span>
+        <span class="mg-stat-label">Rep from games</span>
+      </div>
+      <div class="mg-stat">
+        <span class="mg-stat-value">{{ solved() }}</span>
+        <span class="mg-stat-label">Puzzles solved</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="mg-grid">
+    <!-- Pinpoint -->
+    <section class="mg-card">
+      <div class="mg-card-head">
+        <span class="material-icons-outlined text-[#E8593C]">my_location</span>
+        <h2>Pinpoint</h2>
+        @if (pinpointSolvedToday()) {
+          <span class="mg-chip">Solved today</span>
+        }
+      </div>
+      <p class="mg-card-desc">Guess the word the clues all point to. Fewer clues = better.</p>
+
+      <ol class="mg-clues">
+        @for (clue of visibleClues(); track $index) {
+          <li>{{ clue }}</li>
+        }
+        @for (i of [].constructor(puzzle().clues.length - cluesShown()); track $index) {
+          <li class="mg-clue-hidden">?</li>
+        }
+      </ol>
+
+      @if (pinpointStatus() === 'playing') {
+        <div class="mg-input-row">
+          <input
+            type="text"
+            [value]="guess()"
+            (input)="onGuessInput($event)"
+            (keydown.enter)="submitPinpoint()"
+            placeholder="Your guess..."
+            class="mg-input"
+          />
+          <button class="mg-btn-primary" (click)="submitPinpoint()">Guess</button>
+        </div>
+      } @else if (pinpointStatus() === 'won') {
+        <div class="mg-result mg-result-win">
+          Solved! +3 rep · Answer: <strong>{{ puzzle().answer }}</strong>
+        </div>
+        <button class="mg-btn-ghost" (click)="nextPinpoint()">Next puzzle</button>
+      } @else {
+        <div class="mg-result mg-result-lose">
+          Out of clues. Answer was <strong>{{ puzzle().answer }}</strong>.
+        </div>
+        <button class="mg-btn-ghost" (click)="nextPinpoint()">Try another</button>
+      }
+    </section>
+
+    <!-- Wordle -->
+    <section class="mg-card">
+      <div class="mg-card-head">
+        <span class="material-icons-outlined text-[#E8593C]">grid_view</span>
+        <h2>Wordle</h2>
+        @if (wordleSolvedToday()) {
+          <span class="mg-chip">Solved today</span>
+        }
+      </div>
+      <p class="mg-card-desc">Guess the 5-letter word in 6 tries. Green = right spot, yellow = wrong spot.</p>
+
+      @if (wordleStatus() === 'loading') {
+        <div class="mg-loading">Fetching a fresh word…</div>
+      } @else {
+        <div class="wordle-board">
+          @for (rowIdx of allRows; track rowIdx) {
+            <div class="wordle-row">
+              @for (cell of emptyRow(rowIdx); track $index) {
+                <div class="wordle-cell" [attr.data-state]="cell.state">
+                  {{ cell.letter?.toUpperCase() }}
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        @if (wordleError()) {
+          <div class="mg-error">{{ wordleError() }}</div>
+        }
+
+        @if (wordleStatus() === 'won') {
+          <div class="mg-result mg-result-win">Got it! +3 rep · {{ revealTarget() }}</div>
+          <button class="mg-btn-ghost" (click)="loadWordle()">New word</button>
+        } @else if (wordleStatus() === 'lost') {
+          <div class="mg-result mg-result-lose">Out of guesses. Word was <strong>{{ revealTarget() }}</strong>.</div>
+          <button class="mg-btn-ghost" (click)="loadWordle()">New word</button>
+        } @else {
+          <div class="wordle-keyboard">
+            @for (row of keyboardRows; track $index) {
+              <div class="kb-row">
+                @for (k of row; track k) {
+                  <button
+                    class="kb-key"
+                    [class.kb-wide]="k === 'ENTER' || k === 'BACK'"
+                    [attr.data-state]="keyState(k)"
+                    (click)="pressKey(k)"
+                  >
+                    @if (k === 'BACK') {
+                      <span class="material-icons-outlined" style="font-size: 18px;">backspace</span>
+                    } @else {
+                      {{ k }}
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </section>
+
+    <!-- Leaderboard -->
+    <section class="mg-card mg-leaderboard">
+      <div class="mg-card-head">
+        <span class="material-icons-outlined text-[#E8593C]">emoji_events</span>
+        <h2>Top Performers</h2>
+      </div>
+      <ol class="mg-lb-list">
+        @for (entry of leaderboard(); track entry.name; let i = $index) {
+          <li class="mg-lb-item" [class.mg-lb-1]="i === 0" [class.mg-lb-2]="i === 1" [class.mg-lb-3]="i === 2">
+            <span class="mg-lb-rank">{{ i + 1 }}</span>
+            <span class="mg-lb-name">{{ entry.name }}</span>
+            <span class="mg-lb-rep">{{ entry.rep }} rep</span>
+            <span class="mg-lb-solved">{{ entry.solved }} solved</span>
+          </li>
+        }
+      </ol>
+    </section>
+  </div>
+</div>

@@ -10,7 +10,7 @@ import { AuthService } from '../../shared/auth/auth.service';
   styleUrl:    './sign-in.css',
 })
 export class SignIn implements OnInit, OnDestroy {
-  @ViewChild('clerkMount', { static: true }) clerkMount!: ElementRef<HTMLDivElement>;
+  @ViewChild('clerkMount') clerkMount?: ElementRef<HTMLDivElement>;
 
   /**
    * True if the user already had a Clerk session when they navigated to /sign-in
@@ -23,6 +23,8 @@ export class SignIn implements OnInit, OnDestroy {
 
   /** Snapshot of the auth state on arrival, captured before the effect runs. */
   private wasLoggedInOnArrival = false;
+  /** One-shot guard so the effect navigates at most once. */
+  private didRedirect = false;
 
   constructor(
     private auth: AuthService,
@@ -35,30 +37,39 @@ export class SignIn implements OnInit, OnDestroy {
       if (u) this.existingUser.set({ name: u.name, email: u.email, avatar: u.avatar });
     }
 
-    // Only redirect after a fresh sign-in completes — never on arrival.
+    // Redirect as soon as Clerk reports a session — don't wait for the
+    // backend clerk-sync round-trip. Email/code sign-in completes in-place
+    // and won't navigate on its own; OAuth providers do a full bounce, so
+    // they trigger this path on the post-redirect re-init.
     effect(() => {
+      if (this.didRedirect || this.wasLoggedInOnArrival) return;
+      if (!this.auth.isLoggedIn()) return;
+
+      this.didRedirect = true;
       const u = this.auth.user();
-      if (this.wasLoggedInOnArrival) return;
-      if (u?.dbId != null) {
-        if (u.username) {
-          this.router.navigate(['/feed']);
-        } else {
-          this.router.navigate(['/profile/edit'], { queryParams: { setup: 'true' } });
-        }
+      // Brand-new accounts won't have a username yet → go to profile setup.
+      // Existing accounts (or anyone with sync still in flight) → feed.
+      if (u?.dbId != null && !u.username) {
+        this.router.navigate(['/profile/edit'], { queryParams: { setup: 'true' } });
+      } else {
+        this.router.navigate(['/feed']);
       }
     });
   }
 
   ngOnInit(): void {
     if (!this.alreadySignedIn()) {
-      this.auth.mountSignIn(this.clerkMount.nativeElement);
+      // Defer to next tick so @ViewChild has resolved after view init.
+      setTimeout(() => {
+        const el = this.clerkMount?.nativeElement;
+        if (el) this.auth.mountSignIn(el);
+      });
     }
   }
 
   ngOnDestroy(): void {
-    if (!this.alreadySignedIn()) {
-      this.auth.unmountSignIn(this.clerkMount.nativeElement);
-    }
+    const el = this.clerkMount?.nativeElement;
+    if (el) this.auth.unmountSignIn(el);
   }
 
   /** Sign out the existing session and show the Clerk widget for fresh sign-in. */
@@ -68,7 +79,10 @@ export class SignIn implements OnInit, OnDestroy {
     this.alreadySignedIn.set(false);
     this.existingUser.set(null);
     // After logout the Clerk widget needs to be mounted in the now-rendered div.
-    setTimeout(() => this.auth.mountSignIn(this.clerkMount.nativeElement));
+    setTimeout(() => {
+      const el = this.clerkMount?.nativeElement;
+      if (el) this.auth.mountSignIn(el);
+    });
   }
 
   continueAsExisting(): void {

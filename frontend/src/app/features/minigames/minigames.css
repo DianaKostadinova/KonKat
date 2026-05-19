@@ -1,0 +1,374 @@
+.minigames-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px;
+  color: #f0f0f0;
+}
+
+.mg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.mg-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #f0f0f0;
+  margin: 0;
+}
+
+.mg-subtitle {
+  font-size: 14px;
+  color: #888;
+  margin: 4px 0 0;
+}
+
+.mg-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.mg-stat {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 10px 16px;
+  text-align: center;
+  min-width: 110px;
+}
+
+.mg-stat-value {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: #E8593C;
+}
+
+.mg-stat-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+}
+
+.mg-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.mg-leaderboard {
+  grid-column: 1 / -1;
+}
+
+.mg-card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mg-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mg-card-head h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.mg-chip {
+  margin-left: auto;
+  background: rgba(232, 89, 60, 0.15);
+  color: #E8593C;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.mg-card-desc {
+  font-size: 13px;
+  color: #888;
+  margin: 0;
+}
+
+/* Pinpoint */
+.mg-clues {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mg-clues li {
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.mg-clue-hidden {
+  color: #444 !important;
+  font-style: italic;
+}
+
+.mg-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.mg-input {
+  flex: 1;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #f0f0f0;
+  font-size: 14px;
+  outline: none;
+}
+
+.mg-input:focus {
+  border-color: #E8593C;
+}
+
+.mg-btn-primary {
+  background: #E8593C;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.mg-btn-primary:hover {
+  background: #d54a30;
+}
+
+.mg-btn-ghost {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #f0f0f0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.mg-btn-ghost:hover {
+  border-color: #E8593C;
+  color: #E8593C;
+}
+
+.mg-result {
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.mg-result-win {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.mg-result-lose {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Wordle */
+.mg-loading {
+  color: #888;
+  font-size: 14px;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.mg-error {
+  color: #f87171;
+  font-size: 13px;
+  text-align: center;
+}
+
+.wordle-board {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.wordle-row {
+  display: flex;
+  gap: 6px;
+}
+
+.wordle-cell {
+  width: 48px;
+  height: 48px;
+  border: 2px solid #2a2a2a;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #f0f0f0;
+  background: #111;
+  transition: transform 0.15s;
+}
+
+.wordle-cell[data-state='hit'] {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: white;
+}
+
+.wordle-cell[data-state='present'] {
+  background: #eab308;
+  border-color: #eab308;
+  color: white;
+}
+
+.wordle-cell[data-state='miss'] {
+  background: #1f1f1f;
+  border-color: #1f1f1f;
+  color: #888;
+}
+
+.wordle-keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.kb-row {
+  display: flex;
+  gap: 4px;
+}
+
+.kb-key {
+  min-width: 30px;
+  height: 42px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: none;
+  background: #2a2a2a;
+  color: #f0f0f0;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.kb-key:hover {
+  background: #3a3a3a;
+}
+
+.kb-wide {
+  min-width: 56px;
+  font-size: 11px;
+}
+
+.kb-key[data-state='hit'] {
+  background: #22c55e;
+  color: white;
+}
+
+.kb-key[data-state='present'] {
+  background: #eab308;
+  color: white;
+}
+
+.kb-key[data-state='miss'] {
+  background: #1a1a1a;
+  color: #555;
+}
+
+/* Leaderboard */
+.mg-lb-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mg-lb-item {
+  display: grid;
+  grid-template-columns: 32px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.mg-lb-rank {
+  font-size: 18px;
+  font-weight: 700;
+  color: #555;
+  text-align: center;
+}
+
+.mg-lb-1 .mg-lb-rank { color: #fbbf24; }
+.mg-lb-2 .mg-lb-rank { color: #d1d5db; }
+.mg-lb-3 .mg-lb-rank { color: #b45309; }
+
+.mg-lb-1 { border-color: rgba(251, 191, 36, 0.4); }
+
+.mg-lb-name {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.mg-lb-rep {
+  color: #E8593C;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.mg-lb-solved {
+  color: #888;
+  font-size: 12px;
+}
+
+@media (max-width: 720px) {
+  .mg-grid {
+    grid-template-columns: 1fr;
+  }
+  .mg-lb-item {
+    grid-template-columns: 28px 1fr auto;
+  }
+  .mg-lb-solved {
+    display: none;
+  }
+}

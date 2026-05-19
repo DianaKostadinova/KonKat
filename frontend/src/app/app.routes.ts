@@ -15,6 +15,7 @@ import { SignUp } from './features/auth/sign-up';
 import { authGuard } from './shared/auth/auth.guard';
 import { Trending } from './features/trending/trending';
 import { SearchResultsPage } from './features/search/search-results';
+import { Minigames } from './features/minigames/minigames';
 
 export const routes: Routes = [
   { path: '',        redirectTo: 'feed', pathMatch: 'full' },
@@ -35,4 +36,5 @@ export const routes: Routes = [
   { path: 'notifications', component: NotificationDropdown, canActivate: [authGuard] },
   { path: 'trending',      component: Trending,             canActivate: [authGuard] },
   { path: 'search',        component: SearchResultsPage,    canActivate: [authGuard] },
+  { path: 'minigames',     component: Minigames,            canActivate: [authGuard] },
 ];
