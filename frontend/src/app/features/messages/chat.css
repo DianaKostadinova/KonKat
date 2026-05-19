@@ -86,6 +86,12 @@
 .mobile-back { display: none; }
 
 @media (max-width: 768px) {
+  /* Subtract navbar (60) + bottom nav (60) so the input bar isn't hidden */
+  :host {
+    height: calc(100vh - 120px);
+    height: calc(100dvh - 120px);
+  }
+
   .chat-layout {
     grid-template-columns: 1fr;
     height: 100%;
