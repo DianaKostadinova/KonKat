@@ -104,9 +104,10 @@ app-right-panel {
     padding-bottom: 60px; /* room for bottom nav */
   }
 
-  /* Sidebar is replaced by the fixed bottom nav on mobile */
+  /* Sidebar host must still render so its fixed bottom nav is visible —
+     desktop-sidebar.css hides the inner .desktop-sidebar block itself. */
   app-sidebar {
-    display: none;
+    display: contents;
   }
 
   .main-content {

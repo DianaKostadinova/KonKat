@@ -10,14 +10,14 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 })
 export class Sidebar {
   navLinks: any[] = [
-    { label: 'Trending',       icon: 'local_fire_department', route: '/trending' },
+    { label: 'Trending',       mobileLabel: 'Trending', icon: 'local_fire_department', route: '/trending' },
     { type: 'divider' },
-    { label: 'Ask Help (Q&A)', icon: 'contact_support',       route: '/qa' },
+    { label: 'Ask Help (Q&A)', mobileLabel: 'Q&A',      icon: 'contact_support',       route: '/qa' },
     { type: 'divider' },
-    { label: 'Chat',           icon: 'chat_bubble_outline',   route: '/chat' },
+    { label: 'Chat',           mobileLabel: 'Chat',     icon: 'chat_bubble_outline',   route: '/chat' },
     { type: 'divider' },
-    { label: 'Workspace',      icon: 'group',                 route: '/myworkspaces' },
+    { label: 'Workspace',      mobileLabel: 'Work',     icon: 'group',                 route: '/myworkspaces' },
     { type: 'divider' },
-    { label: 'Minigames',      icon: 'extension',             route: '/minigames' },
+    { label: 'Minigames',      mobileLabel: 'Games',    icon: 'extension',             route: '/minigames' },
   ];
 }
