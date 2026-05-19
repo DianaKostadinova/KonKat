@@ -107,3 +107,56 @@
     0 0 0 1px rgba(232, 89, 60, 0.07),
     0 20px 50px rgba(0, 0, 0, 0.5);
 }
+
+/* ── Already-signed-in panel ────────────────────────────────────────────── */
+.already-signed-in {
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.already-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.already-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(232, 89, 60, 0.4);
+}
+.already-avatar-fallback {
+  font-size: 52px;
+  color: #888;
+}
+.already-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.already-label { color: #888; font-size: 12px; }
+.already-name  { color: #f0f0f0; font-weight: 600; font-size: 15px; }
+.already-email { color: #888; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+
+.already-actions { display: flex; flex-direction: column; gap: 8px; }
+.btn-primary {
+  background: #E8593C;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: filter 120ms ease;
+}
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-secondary {
+  background: transparent;
+  color: #f0f0f0;
+  border: 1px solid #2a2a2a;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 120ms ease;
+}
+.btn-secondary:hover { border-color: #E8593C; color: #E8593C; }

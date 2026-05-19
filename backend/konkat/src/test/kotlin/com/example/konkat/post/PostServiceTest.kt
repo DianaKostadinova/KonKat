@@ -2,6 +2,7 @@ package com.example.konkat.post
 
 import com.example.konkat.notification.NotificationSender
 import com.example.konkat.social.FollowRepository
+import com.example.konkat.user.ReputationService
 import com.example.konkat.user.User
 import com.example.konkat.user.UserRepository
 import org.junit.jupiter.api.Assertions.*
@@ -22,6 +23,7 @@ class PostServiceTest {
     private lateinit var userRepository: UserRepository
     private lateinit var notificationSender: NotificationSender
     private lateinit var followRepository: FollowRepository
+    private lateinit var reputationService: ReputationService
     private lateinit var service: PostService
 
     private fun makeUser(id: Long, email: String = "user$id@test.com"): User =
@@ -35,6 +37,7 @@ class PostServiceTest {
         userRepository         = mock(UserRepository::class.java)
         notificationSender     = mock(NotificationSender::class.java)
         followRepository       = mock(FollowRepository::class.java)
+        reputationService      = mock(ReputationService::class.java)
 
         service = PostService(
             postRepository,
@@ -43,6 +46,7 @@ class PostServiceTest {
             userRepository,
             notificationSender,
             followRepository,
+            reputationService,
         )
     }
 

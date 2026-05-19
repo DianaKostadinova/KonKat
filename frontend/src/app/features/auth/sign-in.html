@@ -20,7 +20,28 @@
 
     <!-- Clerk widget inside a glass card -->
     <div class="sign-in-card">
-      <div #clerkMount></div>
+      @if (alreadySignedIn()) {
+        <div class="already-signed-in">
+          <div class="already-row">
+            @if (existingUser()?.avatar) {
+              <img [src]="existingUser()?.avatar" alt="" class="already-avatar" />
+            } @else {
+              <span class="material-icons already-avatar-fallback">account_circle</span>
+            }
+            <div class="already-text">
+              <div class="already-label">You're already signed in as</div>
+              <div class="already-name">{{ existingUser()?.name }}</div>
+              <div class="already-email">{{ existingUser()?.email }}</div>
+            </div>
+          </div>
+          <div class="already-actions">
+            <button class="btn-primary" (click)="continueAsExisting()">Continue</button>
+            <button class="btn-secondary" (click)="signOutAndSwitch()">Use a different account</button>
+          </div>
+        </div>
+      } @else {
+        <div #clerkMount></div>
+      }
     </div>
 
   </div>
