@@ -4,6 +4,8 @@ import com.example.konkat.config.PagedResponse
 import com.example.konkat.notification.NotificationSender
 import com.example.konkat.notification.NotificationType
 import com.example.konkat.social.FollowRepository
+import com.example.konkat.user.ReputationAction
+import com.example.konkat.user.ReputationService
 import com.example.konkat.user.UserRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -26,6 +28,7 @@ class PostService(
     private val userRepository: UserRepository,
     private val notificationSender: NotificationSender,
     private val followRepository: FollowRepository,
+    private val reputationService: ReputationService,
 ) {
 
     // ── Feed ──────────────────────────────────────────────────────────────────
@@ -88,7 +91,9 @@ class PostService(
             imageUrl = request.imageUrl,
             tags = request.tags.toMutableList(),
         )
-        return postRepository.save(post).toDto(authorId)
+        val saved = postRepository.save(post)
+        reputationService.grant(author, ReputationAction.POST)
+        return saved.toDto(authorId)
     }
 
     @Transactional
@@ -152,6 +157,7 @@ class PostService(
         val author = userRepository.findByIdOrNull(authorId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
         val comment = postCommentRepository.save(PostComment(post = post, author = author, text = request.text))
+        reputationService.grant(author, ReputationAction.COMMENT)
 
         if (post.author.id != authorId) {
             notificationSender.send(recipient = post.author, actor = author, type = NotificationType.POST_COMMENT, postId = postId)

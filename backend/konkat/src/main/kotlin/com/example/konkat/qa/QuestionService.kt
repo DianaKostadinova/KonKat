@@ -3,6 +3,8 @@ package com.example.konkat.qa
 import com.example.konkat.config.PagedResponse
 import com.example.konkat.notification.NotificationSender
 import com.example.konkat.notification.NotificationType
+import com.example.konkat.user.ReputationAction
+import com.example.konkat.user.ReputationService
 import com.example.konkat.user.User
 import com.example.konkat.user.UserRepository
 import org.springframework.data.domain.PageRequest
@@ -25,6 +27,7 @@ class QuestionService(
     private val answerVoteRepository: AnswerVoteRepository,
     private val userRepository: UserRepository,
     private val notificationSender: NotificationSender,
+    private val reputationService: ReputationService,
 ) {
 
     fun getAll(currentUserId: Long?, filter: String?): List<QuestionDto> {
@@ -59,6 +62,7 @@ class QuestionService(
                 tags         = req.tags.toMutableList(),
             )
         )
+        reputationService.grant(author, ReputationAction.QUESTION)
         return question.toDto(authorId, includeAnswers = true)
     }
 
@@ -76,6 +80,7 @@ class QuestionService(
                 codeSnippet  = req.codeSnippet,
             )
         )
+        reputationService.grant(author, ReputationAction.ANSWER)
         if (question.author.id != authorId) {
             notificationSender.send(
                 recipient = question.author,

@@ -103,6 +103,58 @@ class WebinarController(
             .body(webinarRepository.save(webinar).toDto(false))
     }
 
+    /** PUT /api/webinars/{id} — update a webinar (organizer only) */
+    @PutMapping("/{id}")
+    fun updateWebinar(
+        @PathVariable id: Long,
+        @RequestBody body: CreateWebinarRequest,
+        request: HttpServletRequest,
+    ): ResponseEntity<WebinarDto> {
+        val userId = (request.getAttribute("userId") as? Long)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required")
+        val webinar = webinarRepository.findById(id).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Webinar not found")
+        }
+        if (webinar.organizer.id != userId)
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only the organizer can edit this webinar")
+
+        webinar.title        = body.title.trim()
+        webinar.description  = body.description
+        webinar.speakerName  = body.speakerName
+        webinar.speakerTitle = body.speakerTitle
+        webinar.startDate    = body.startDate?.let { LocalDateTime.parse(it, ISO) }
+        webinar.endDate      = body.endDate?.let   { LocalDateTime.parse(it, ISO) }
+        webinar.location     = body.location ?: webinar.location
+        webinar.joinUrl      = body.joinUrl
+        webinar.thumbnailUrl = body.thumbnailUrl
+        webinar.tags.clear()
+        webinar.tags.addAll(body.tags)
+
+        val saved = webinarRepository.save(webinar)
+        val savedFlag = savedEventRepository.existsByUserIdAndEventTypeAndEventId(userId, EventType.WEBINAR, id)
+        return ResponseEntity.ok(saved.toDto(savedFlag))
+    }
+
+    /** DELETE /api/webinars/{id} — delete a webinar (organizer only) */
+    @DeleteMapping("/{id}")
+    fun deleteWebinar(
+        @PathVariable id: Long,
+        request: HttpServletRequest,
+    ): ResponseEntity<Void> {
+        val userId = (request.getAttribute("userId") as? Long)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required")
+        val webinar = webinarRepository.findById(id).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Webinar not found")
+        }
+        if (webinar.organizer.id != userId)
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only the organizer can delete this webinar")
+
+        savedEventRepository.findAllByEventTypeAndEventId(EventType.WEBINAR, id)
+            .forEach { savedEventRepository.delete(it) }
+        webinarRepository.delete(webinar)
+        return ResponseEntity.noContent().build()
+    }
+
     /** POST /api/webinars/{id}/save — toggle save for current user (auth required) */
     @PostMapping("/{id}/save")
     fun toggleSave(

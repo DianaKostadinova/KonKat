@@ -152,6 +152,15 @@
       }
     </div>
 
+    <!-- ── Live connection indicator ────────────────────────────────────────── -->
+    @if (!wsConnected()) {
+      <span
+        class="navbar__ws-dot"
+        title="Offline — live updates paused, retrying…"
+        aria-label="Disconnected from realtime service"
+      ></span>
+    }
+
     <!-- ── Notifications ────────────────────────────────────────────────────── -->
     <div class="relative">
       <button class="navbar__icon-btn" (click)="toggleNotif()">

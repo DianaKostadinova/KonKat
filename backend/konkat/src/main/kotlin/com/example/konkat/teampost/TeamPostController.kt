@@ -132,6 +132,52 @@ class TeamPostController(
         return ResponseEntity.status(HttpStatus.CREATED).body(saved.toDto(userId))
     }
 
+    /** PUT /api/team-posts/{id} — update a team post (author only) */
+    @PutMapping("/{id}")
+    fun update(
+        @PathVariable id: Long,
+        @jakarta.validation.Valid @RequestBody body: CreateTeamPostRequest,
+        request: HttpServletRequest,
+    ): ResponseEntity<TeamPostDto> {
+        val userId = (request.getAttribute("userId") as? Long)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required")
+        val post = teamPostRepository.findById(id).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Team post not found")
+        }
+        if (post.author.id != userId)
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only the author can edit this team post")
+
+        post.title       = body.title.trim()
+        post.description = body.description?.trim()
+        post.location    = body.location?.trim()?.ifBlank { null }
+        post.maxMembers  = body.maxMembers.coerceIn(2, 10)
+        post.techStack.clear();  post.techStack.addAll(body.techStack)
+        post.lookingFor.clear(); post.lookingFor.addAll(body.lookingFor)
+
+        return ResponseEntity.ok(teamPostRepository.save(post).toDto(userId))
+    }
+
+    /** DELETE /api/team-posts/{id} — delete a team post (author only) */
+    @DeleteMapping("/{id}")
+    fun delete(
+        @PathVariable id: Long,
+        request: HttpServletRequest,
+    ): ResponseEntity<Void> {
+        val userId = (request.getAttribute("userId") as? Long)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required")
+        val post = teamPostRepository.findById(id).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Team post not found")
+        }
+        if (post.author.id != userId)
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only the author can delete this team post")
+
+        // Remove dependent join requests first; the group chat (if any) is left
+        // intact so existing members retain history.
+        teamRequestRepository.findByTeamPostId(id).forEach { teamRequestRepository.delete(it) }
+        teamPostRepository.delete(post)
+        return ResponseEntity.noContent().build()
+    }
+
     /** POST /api/team-posts/{id}/request — send a join request */
     @PostMapping("/{id}/request")
     fun requestJoin(

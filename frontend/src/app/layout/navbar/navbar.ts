@@ -9,6 +9,7 @@ import { of } from 'rxjs';
 
 import { NotificationDropdown } from '../../shared/notification-bell/notification-bell';
 import { NotificationService } from '../../shared/notification-bell/notification.service';
+import { WsService } from '../../shared/notification-bell/ws.service';
 import { SearchService, SearchResults } from '../../shared/search/search.service';
 import { AuthService } from '../../shared/auth/auth.service';
 import { ProfileService } from '../../features/profile/profile.service';
@@ -53,12 +54,16 @@ export class Navbar implements OnInit, OnDestroy {
 
   avatarUrl = computed(() => this.profileService.getProfile()?.avatar);
 
+  /** Mirror WebSocket connection state for the navbar status dot. */
+  wsConnected = computed(() => this.ws.connected());
+
   constructor(
     public  notificationService: NotificationService,
     private searchService: SearchService,
     private router: Router,
     private authService: AuthService,
     private profileService: ProfileService,
+    private ws: WsService,
   ) {}
 
   ngOnInit(): void {

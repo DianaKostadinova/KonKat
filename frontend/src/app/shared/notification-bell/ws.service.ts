@@ -1,10 +1,10 @@
-import { Injectable, OnDestroy, inject } from '@angular/core';
+import { Injectable, OnDestroy, inject, signal } from '@angular/core';
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import { Subject } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
-import { environment } from '../../../environments/environment';
+import { runtimeConfig } from '../config/runtime-config';
 
-const WS_URL = environment.wsUrl;
+const WS_URL = runtimeConfig.wsUrl;
 
 @Injectable({ providedIn: 'root' })
 export class WsService implements OnDestroy {
@@ -17,6 +17,10 @@ export class WsService implements OnDestroy {
   /** Emits incoming message delivery payloads { conversationId, type, message } */
   readonly incomingMessage$ = new Subject<any>();
 
+  /** True while the STOMP client has an active broker connection. */
+  private _connected = signal(false);
+  readonly connected = this._connected.asReadonly();
+
   connect(token: string): void {
     if (this.client?.active) return;
 
@@ -25,6 +29,7 @@ export class WsService implements OnDestroy {
       connectHeaders: { Authorization: `Bearer ${token}` },
       reconnectDelay: 5000,
       onConnect: () => {
+        this._connected.set(true);
         this.client!.subscribe('/user/queue/notifications', (msg: IMessage) => {
           try { this.message$.next(JSON.parse(msg.body)); } catch { /* ignore */ }
         });
@@ -32,7 +37,10 @@ export class WsService implements OnDestroy {
           try { this.incomingMessage$.next(JSON.parse(msg.body)); } catch { /* ignore */ }
         });
       },
+      onDisconnect: () => this._connected.set(false),
+      onWebSocketClose: () => this._connected.set(false),
       onStompError: frame => {
+        this._connected.set(false);
         console.warn('STOMP error', frame.headers['message']);
       },
     });
@@ -43,6 +51,7 @@ export class WsService implements OnDestroy {
   disconnect(): void {
     this.client?.deactivate();
     this.client = null;
+    this._connected.set(false);
   }
 
   ngOnDestroy(): void {

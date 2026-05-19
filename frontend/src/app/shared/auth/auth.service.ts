@@ -1,8 +1,8 @@
 import { Injectable, signal } from '@angular/core';
 import type { Clerk } from '@clerk/clerk-js';
-import { environment } from '../../../environments/environment';
+import { runtimeConfig } from '../config/runtime-config';
 
-const API = environment.apiUrl;
+const API = runtimeConfig.apiUrl;
 
 export interface AuthUser {
   id: string;       // Clerk user ID
@@ -116,14 +116,15 @@ export class AuthService {
         return;
       }
 
-      const base64      = environment.clerkPublishableKey.replace(/^pk_(test|live)_/, '');
+      const publishableKey = runtimeConfig.clerkPublishableKey;
+      const base64      = publishableKey.replace(/^pk_(test|live)_/, '');
       const frontendApi = atob(base64).replace(/\$$/, '');
 
-      (window as any).__clerk_publishable_key = environment.clerkPublishableKey;
+      (window as any).__clerk_publishable_key = publishableKey;
 
       const s = document.createElement('script');
       s.src   = `https://${frontendApi}/npm/@clerk/clerk-js@latest/dist/clerk.browser.js`;
-      s.setAttribute('data-clerk-publishable-key', environment.clerkPublishableKey);
+      s.setAttribute('data-clerk-publishable-key', publishableKey);
       s.crossOrigin = 'anonymous';
 
       s.onload = () => {

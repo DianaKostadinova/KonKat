@@ -5,6 +5,7 @@ import { provideHighlightOptions } from 'ngx-highlightjs';
 import { routes } from './app.routes';
 import { AuthService } from './shared/auth/auth.service';
 import { clerkTokenInterceptor } from './shared/auth/clerk-token.interceptor';
+import { httpErrorInterceptor } from './shared/http/error.interceptor';
 
 function initClerk(auth: AuthService) {
   return () => auth.init();
@@ -13,7 +14,7 @@ function initClerk(auth: AuthService) {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideHttpClient(withInterceptors([clerkTokenInterceptor])),
+    provideHttpClient(withInterceptors([clerkTokenInterceptor, httpErrorInterceptor])),
     {
       provide: APP_INITIALIZER,
       useFactory: initClerk,

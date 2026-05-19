@@ -55,6 +55,10 @@ data class User(
     @Enumerated(EnumType.STRING)
     val role: UserRole = UserRole.USER,
 
+    /** Earned via posts, comments, questions, answers. See ReputationService. */
+    @Column(nullable = false)
+    var reputation: Int = 0,
+
     @CreationTimestamp
     val joinedAt: LocalDateTime? = null   // nullable: existing rows may have NULL in DB
 )

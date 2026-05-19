@@ -7,10 +7,11 @@ import { Sidebar } from './layout/sidebar/sidebar';
 import { RightPanel } from './layout/right-panel/right-panel';
 import { LoadingScreen } from './shared/loading-screen/loading-screen';
 import { AuthService } from './shared/auth/auth.service';
+import { ToastHost } from './shared/toast/toast';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Navbar, Sidebar, RightPanel, LoadingScreen],
+  imports: [RouterOutlet, Navbar, Sidebar, RightPanel, LoadingScreen, ToastHost],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

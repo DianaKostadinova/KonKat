@@ -51,10 +51,40 @@ export class HackathonService {
       .pipe(tap(h => this._hackathons.update(list => [this.mapHackathon(h), ...list])));
   }
 
+  updateHackathon(id: number, payload: CreateHackathonPayload): Observable<Hackathon> {
+    return this.http
+      .put<any>(`${API}/hackathons/${id}`, payload)
+      .pipe(tap(h => {
+        const mapped = this.mapHackathon(h);
+        this._hackathons.update(list => list.map(x => x.id === id ? mapped : x));
+      }));
+  }
+
+  deleteHackathon(id: number): Observable<void> {
+    return this.http
+      .delete<void>(`${API}/hackathons/${id}`)
+      .pipe(tap(() => this._hackathons.update(list => list.filter(x => x.id !== id))));
+  }
+
   createWebinar(payload: CreateWebinarPayload): Observable<Webinar> {
     return this.http
       .post<any>(`${API}/webinars`, payload)
       .pipe(tap(w => this._webinars.update(list => [this.mapWebinar(w), ...list])));
+  }
+
+  updateWebinar(id: number, payload: CreateWebinarPayload): Observable<Webinar> {
+    return this.http
+      .put<any>(`${API}/webinars/${id}`, payload)
+      .pipe(tap(w => {
+        const mapped = this.mapWebinar(w);
+        this._webinars.update(list => list.map(x => x.id === id ? mapped : x));
+      }));
+  }
+
+  deleteWebinar(id: number): Observable<void> {
+    return this.http
+      .delete<void>(`${API}/webinars/${id}`)
+      .pipe(tap(() => this._webinars.update(list => list.filter(x => x.id !== id))));
   }
 
   /** Toggle save — also triggers right-panel refresh via EventService. */

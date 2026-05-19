@@ -31,6 +31,14 @@ export class TeamService {
     return this.http.post<TeamPost>(`${API}/team-posts`, data);
   }
 
+  update(id: number, data: CreateTeamPostRequest): Observable<TeamPost> {
+    return this.http.put<TeamPost>(`${API}/team-posts/${id}`, data);
+  }
+
+  remove(id: number): Observable<void> {
+    return this.http.delete<void>(`${API}/team-posts/${id}`);
+  }
+
   requestJoin(teamId: number): Observable<{ status: string }> {
     return this.http.post<{ status: string }>(`${API}/team-posts/${teamId}/request`, {});
   }

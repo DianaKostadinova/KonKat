@@ -276,6 +276,7 @@ fun User.toProfileDto(
         posts      = postCount.toInt(),
         followers  = followerCount.toInt(),
         following  = followingCount.toInt(),
-        // projects + hackathons + rep will be real once those features are built
+        rep        = reputation,
+        // projects + hackathons will be real once those features are built
     ),
 )

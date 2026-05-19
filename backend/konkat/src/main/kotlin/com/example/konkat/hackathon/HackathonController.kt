@@ -174,6 +174,61 @@ class HackathonController(
             .body(hackathonRepository.save(hackathon).toDto(false, false, 0))
     }
 
+    /** PUT /api/hackathons/{id} — update a hackathon (organizer only) */
+    @PutMapping("/{id}")
+    fun updateHackathon(
+        @PathVariable id: Long,
+        @jakarta.validation.Valid @RequestBody body: CreateHackathonRequest,
+        request: HttpServletRequest,
+    ): ResponseEntity<HackathonDto> {
+        val userId = (request.getAttribute("userId") as? Long)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required")
+        val hackathon = hackathonRepository.findById(id).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Hackathon not found")
+        }
+        if (hackathon.organizer.id != userId)
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only the organizer can edit this hackathon")
+
+        hackathon.title       = body.title.trim()
+        hackathon.description = body.description
+        hackathon.location    = body.location
+        hackathon.startDate   = body.startDate?.let { LocalDateTime.parse(it, ISO) }
+        hackathon.endDate     = body.endDate?.let   { LocalDateTime.parse(it, ISO) }
+        hackathon.prize       = body.prize
+        hackathon.maxTeamSize = body.maxTeamSize
+        body.bannerUrl?.let { hackathon.bannerUrl = it }
+        hackathon.tags.clear()
+        hackathon.tags.addAll(body.tags)
+
+        val saved = hackathonRepository.save(hackathon)
+        val savedFlag    = savedEventRepository.existsByUserIdAndEventTypeAndEventId(userId, EventType.HACKATHON, id)
+        val registered   = participantRepository.existsByUserIdAndHackathonId(userId, id)
+        val participants = participantRepository.countByHackathonId(id)
+        return ResponseEntity.ok(saved.toDto(savedFlag, registered, participants))
+    }
+
+    /** DELETE /api/hackathons/{id} — delete a hackathon (organizer only) */
+    @DeleteMapping("/{id}")
+    fun deleteHackathon(
+        @PathVariable id: Long,
+        request: HttpServletRequest,
+    ): ResponseEntity<Void> {
+        val userId = (request.getAttribute("userId") as? Long)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required")
+        val hackathon = hackathonRepository.findById(id).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Hackathon not found")
+        }
+        if (hackathon.organizer.id != userId)
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only the organizer can delete this hackathon")
+
+        // Clean up dependent rows the schema doesn't cascade automatically.
+        participantRepository.findByHackathonId(id).forEach { participantRepository.delete(it) }
+        savedEventRepository.findAllByEventTypeAndEventId(EventType.HACKATHON, id)
+            .forEach { savedEventRepository.delete(it) }
+        hackathonRepository.delete(hackathon)
+        return ResponseEntity.noContent().build()
+    }
+
     /** POST /api/hackathons/{id}/register — register (or unregister) for a hackathon */
     @PostMapping("/{id}/register")
     fun register(

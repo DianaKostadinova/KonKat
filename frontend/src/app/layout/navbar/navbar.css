@@ -486,3 +486,20 @@
 .search-dropdown__see-all:hover {
   background: #1a1a2e;
 }
+
+.navbar__ws-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5);
+  animation: ws-pulse 1.6s ease-in-out infinite;
+  margin-right: 4px;
+  flex: 0 0 auto;
+}
+
+@keyframes ws-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(245, 158, 11, 0.55); }
+  70%  { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);    }
+  100% { box-shadow: 0 0 0 0   rgba(245, 158, 11, 0);    }
+}

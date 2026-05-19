@@ -16,18 +16,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-server:
-  port: 8082
-
-app:
-  clerk:
-    jwks-uri: ${CLERK_JWKS_URI:https://frank-penguin-10.clerk.accounts.dev/.well-known/jwks.json}
-  mail:
-    enabled: ${MAIL_ENABLED:false}
-    from: ${MAIL_FROM:noreply@konkat.dev}
-    base-url: ${MAIL_BASE_URL:http://localhost:4200}
-
-spring:
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
@@ -39,3 +27,14 @@ spring:
           auth: true
           starttls:
             enable: true
+
+server:
+  port: 8082
+
+app:
+  clerk:
+    jwks-uri: ${CLERK_JWKS_URI:https://frank-penguin-10.clerk.accounts.dev/.well-known/jwks.json}
+  mail:
+    enabled: ${MAIL_ENABLED:false}
+    from: ${MAIL_FROM:noreply@konkat.dev}
+    base-url: ${MAIL_BASE_URL:http://localhost:4200}

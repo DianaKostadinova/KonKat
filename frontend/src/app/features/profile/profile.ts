@@ -184,7 +184,7 @@ export class Profile implements OnInit, OnDestroy {
   savedPosts = computed(() => this.profileService.getSavedPosts());
   myProjects = computed(() => this.projectService.getProjects());
 
-  ensureHttps(url: string): string {
+  ensureHttps(url: string | undefined): string {
     if (!url) return '';
     return url.startsWith('http') ? url : 'https://' + url;
   }
