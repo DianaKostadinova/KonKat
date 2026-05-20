@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -17,6 +17,48 @@ interface DatamuseWord {
 const WORDLE_MAX_GUESSES = 6;
 const WORDLE_LEN = 5;
 const PINPOINT_CLUES = 5;
+
+const WORDLE_WORDS = [
+  'crane','slate','trace','adieu','audio','raise','arise','stare','snare','share',
+  'shore','store','score','scare','spare','stale','scale','shale','shame','shake',
+  'shape','shade','shave','shale','brave','grave','graze','grace','grape','grade',
+  'grate','great','greet','green','greed','breed','bread','break','bream','dream',
+  'dread','tread','treat','trend','blend','bleed','bleak','bleat','clear','clean',
+  'cream','creak','cheat','cheap','chest','crest','crisp','crimp','crispy','crush',
+  'trust','trail','train','brain','brains','drain','grain','plain','claim','flame',
+  'place','plane','plant','plank','blank','black','blade','blast','bland','bland',
+  'brand','braid','brace','brown','crown','crowd','croud','cloud','clout','clown',
+  'cloth','cloak','clock','block','blown','blood','bloom','broom','brook','brood',
+  'flood','floor','floss','flout','float','flock','flick','flair','flame','flare',
+  'flake','flank','flask','flash','flesh','fresh','press','dress','cress','stress',
+  'bless','chess','guess','truss','trust','dross','gloss','floss','gross','cross',
+  'frost','broth','cloth','froth','sloth','truth','youth','south','mouth','shout',
+  'stout','scout','snout','about','trout','clout','grout','grout','proud','cloud',
+  'found','bound','round','sound','wound','pound','mound','hound','ground','stump',
+  'clump','plump','trump','thump','flump','slump','chump','grump','stung','sting',
+  'bring','cling','fling','sling','swing','sting','thing','prong','wrong','prawn',
+  'drawn','brawn','spawn','swamp','stomp','stamp','tramp','cramp','clamp','champ',
+  'stash','crash','clash','flash','gnash','brash','thrash','slash','latch','catch',
+  'hatch','match','patch','watch','fetch','retch','sketch','notch','botch','hutch',
+  'witch','ditch','pitch','stitch','bunch','hunch','lunch','punch','crunch','munch',
+  'perch','merge','verge','forge','gorge','purge','surge','lurge','judge','nudge',
+  'budge','fudge','hedge','ledge','wedge','sedge','ridge','bridge','midge','lodge',
+  'badge','cadge','cadge','plaid','braid','fraud','creed','freed','greed','treed',
+  'kneel','steel','wheel','dweel','steal','squeal','zeal','meal','deal','heal',
+  'field','yield','wield','fiend','blend','lend','trend','spend','blend','mend',
+  'light','night','sight','tight','right','might','fight','bight','plight','flight',
+  'cloth','broth','froth','sloth','troth','worth','forth','north','short','sport',
+  'snort','abort','exert','alert','blurt','flirt','shirt','skirt','squirt','spurt',
+  'swirl','twirl','whirl','curly','burly','surly','early','pearly','world','swore',
+  'shore','score','snore','adore','chore','spore','store','crore','before','ignore',
+];
+
+function dailyWord(): string {
+  const epoch = new Date('2024-01-01').getTime();
+  const day = Math.floor((Date.now() - epoch) / 86400000);
+  const idx = day % WORDLE_WORDS.length;
+  return WORDLE_WORDS[idx];
+}
 
 type LetterState = 'hit' | 'present' | 'miss' | 'empty';
 
@@ -54,6 +96,7 @@ export class Minigames {
   guess = signal('');
   pinpointStatus = signal<'playing' | 'won' | 'lost'>('playing');
   pinpointSolvedToday = computed(() => this.games.hasSolvedToday('pinpoint'));
+  pinpointPlayedToday = computed(() => this.games.hasPlayedToday('pinpoint'));
   visibleClues = computed(() => this.pinpointPuzzle()?.clues.slice(0, this.cluesShown()) ?? []);
 
   // Wordle state
@@ -61,6 +104,7 @@ export class Minigames {
   wordleStatus = signal<'loading' | 'playing' | 'won' | 'lost' | 'error'>('loading');
   wordleLoadError = signal('');
   wordleSolvedToday = computed(() => this.games.hasSolvedToday('wordle'));
+  wordlePlayedToday = computed(() => this.games.hasPlayedToday('wordle'));
   rows = signal<WordleCell[][]>([]);
   current = signal('');
   wordleError = signal('');
@@ -90,33 +134,22 @@ export class Minigames {
     this.guess.set('');
     this.pinpointStatus.set('playing');
 
-    try {
-      for (let attempt = 0; attempt < 5; attempt++) {
-        const answer = await this.fetchRandomWord();
-        if (!answer) continue;
+    const epoch = new Date('2024-01-01').getTime();
+    const day = Math.floor((Date.now() - epoch) / 86400000);
+    // Try words starting from today's offset until one has enough clues
+    for (let i = 0; i < WORDLE_WORDS.length; i++) {
+      const answer = WORDLE_WORDS[(day + i) % WORDLE_WORDS.length];
+      try {
         const clues = await this.fetchClues(answer);
         if (clues.length >= PINPOINT_CLUES) {
           this.pinpointPuzzle.set({ answer, clues: clues.slice(0, PINPOINT_CLUES) });
           this.pinpointLoading.set(false);
           return;
         }
-      }
-      this.pinpointLoadError.set('Could not generate a puzzle. Try again.');
-    } catch {
-      this.pinpointLoadError.set('Could not reach the puzzle service.');
+      } catch {}
     }
+    this.pinpointLoadError.set('Could not generate a puzzle. Try again.');
     this.pinpointLoading.set(false);
-  }
-
-  private async fetchRandomWord(): Promise<string | null> {
-    try {
-      const res = await firstValueFrom(
-        this.http.get<string[]>('https://random-word-api.herokuapp.com/word'),
-      );
-      const w = res?.[0];
-      if (w && /^[a-zA-Z]{4,10}$/.test(w)) return w.toLowerCase();
-    } catch {}
-    return null;
   }
 
   private async fetchClues(word: string): Promise<string[]> {
@@ -148,11 +181,13 @@ export class Minigames {
     const ok = this.guess().trim().toLowerCase() === puzzle.answer.toLowerCase();
     if (ok) {
       this.pinpointStatus.set('won');
+      this.games.markPlayed('pinpoint');
       if (!this.pinpointSolvedToday()) this.games.awardSolve('pinpoint');
       return;
     }
     if (this.cluesShown() >= puzzle.clues.length) {
       this.pinpointStatus.set('lost');
+      this.games.markPlayed('pinpoint');
       return;
     }
     this.cluesShown.update((n) => n + 1);
@@ -160,41 +195,23 @@ export class Minigames {
   }
 
   nextPinpoint() {
+    if (this.pinpointPlayedToday()) return;
     this.pinpointPuzzle.set(null);
     this.loadPinpoint();
   }
 
   /* ── Wordle ─────────────────────────────────────────────── */
-  async loadWordle() {
-    this.wordleStatus.set('loading');
-    this.wordleLoadError.set('');
+  loadWordle() {
     this.rows.set([]);
     this.current.set('');
     this.wordleError.set('');
     this.keyboardState.set({});
-
-    const word = await this.fetchTargetWord();
-    if (!word) {
-      this.wordleStatus.set('error');
-      this.wordleLoadError.set('Could not fetch a word. Try again.');
-      return;
-    }
-    this.target.set(word);
+    this.target.set(dailyWord());
     this.wordleStatus.set('playing');
   }
 
-  private async fetchTargetWord(): Promise<string | null> {
-    try {
-      const res = await firstValueFrom(
-        this.http.get<string[]>('https://random-word-api.herokuapp.com/word?length=5'),
-      );
-      const w = res?.[0];
-      if (w && /^[a-zA-Z]{5}$/.test(w)) return w.toLowerCase();
-    } catch {}
-    return null;
-  }
-
   private async isValidWord(word: string): Promise<boolean> {
+    if (WORDLE_WORDS.includes(word)) return true;
     try {
       await firstValueFrom(
         this.http.get(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`),
@@ -203,6 +220,15 @@ export class Minigames {
     } catch {
       return false;
     }
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(e: KeyboardEvent) {
+    if (this.view() !== 'wordle') return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Enter') this.pressKey('ENTER');
+    else if (e.key === 'Backspace') this.pressKey('BACK');
+    else if (/^[a-zA-Z]$/.test(e.key)) this.pressKey(e.key.toUpperCase());
   }
 
   pressKey(key: string) {
@@ -237,11 +263,13 @@ export class Minigames {
 
     if (guess === this.target()) {
       this.wordleStatus.set('won');
+      this.games.markPlayed('wordle');
       if (!this.wordleSolvedToday()) this.games.awardSolve('wordle');
       return;
     }
     if (this.rows().length >= WORDLE_MAX_GUESSES) {
       this.wordleStatus.set('lost');
+      this.games.markPlayed('wordle');
     }
   }
 

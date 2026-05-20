@@ -284,6 +284,13 @@
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
+.mg-comeback {
+  color: #888;
+  font-size: 13px;
+  text-align: center;
+  margin-top: 12px;
+}
+
 /* Wordle */
 .mg-loading {
   color: #888;

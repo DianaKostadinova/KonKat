@@ -18,9 +18,21 @@ interface SolveResponse {
 export class MinigamesService {
   private http = inject(HttpClient);
 
+  private static readonly LS_PLAYED = 'konkat_mg_played';
+  private static readonly LS_SOLVED = 'konkat_mg_solved';
+
   leaderboard = signal<LeaderboardEntry[]>([]);
   myRep = signal<number>(0);
-  private solvedLocal = signal<Record<string, string[]>>({}); // game -> ISO dates
+  private playedLocal = signal<Record<string, string[]>>(MinigamesService.readLS(MinigamesService.LS_PLAYED));
+  private solvedLocal = signal<Record<string, string[]>>(MinigamesService.readLS(MinigamesService.LS_SOLVED));
+
+  private static readLS(key: string): Record<string, string[]> {
+    try { return JSON.parse(localStorage.getItem(key) ?? '{}'); } catch { return {}; }
+  }
+
+  private static writeLS(key: string, data: Record<string, string[]>) {
+    localStorage.setItem(key, JSON.stringify(data));
+  }
 
   loadLeaderboard(limit = 3) {
     this.http
@@ -43,6 +55,20 @@ export class MinigamesService {
     return this.solvedLocal()[game]?.includes(today) ?? false;
   }
 
+  hasPlayedToday(game: string): boolean {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.playedLocal()[game]?.includes(today) ?? false;
+  }
+
+  markPlayed(game: string): void {
+    const today = new Date().toISOString().slice(0, 10);
+    this.playedLocal.update((s) => {
+      const next = { ...s, [game]: Array.from(new Set([...(s[game] ?? []), today])) };
+      MinigamesService.writeLS(MinigamesService.LS_PLAYED, next);
+      return next;
+    });
+  }
+
   async awardSolve(game: string): Promise<void> {
     return new Promise((resolve) => {
       this.http
@@ -51,10 +77,11 @@ export class MinigamesService {
           next: (res) => {
             this.myRep.set(res.rep);
             const today = new Date().toISOString().slice(0, 10);
-            this.solvedLocal.update((s) => ({
-              ...s,
-              [game]: Array.from(new Set([...(s[game] ?? []), today])),
-            }));
+            this.solvedLocal.update((s) => {
+              const next = { ...s, [game]: Array.from(new Set([...(s[game] ?? []), today])) };
+              MinigamesService.writeLS(MinigamesService.LS_SOLVED, next);
+              return next;
+            });
             this.loadLeaderboard();
             resolve();
           },

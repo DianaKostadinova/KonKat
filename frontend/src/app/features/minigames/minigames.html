@@ -39,6 +39,8 @@
         <span class="mg-tile-desc">Decode the category from 5 progressive clues.</span>
         @if (pinpointSolvedToday()) {
           <span class="mg-chip">Solved today</span>
+        } @else if (pinpointPlayedToday()) {
+          <span class="mg-chip">Played today</span>
         }
       </button>
 
@@ -48,6 +50,8 @@
         <span class="mg-tile-desc">Crack a 5-letter word in 6 tries.</span>
         @if (wordleSolvedToday()) {
           <span class="mg-chip">Solved today</span>
+        } @else if (wordlePlayedToday()) {
+          <span class="mg-chip">Played today</span>
         }
       </button>
     </div>
@@ -107,12 +111,16 @@
           <div class="mg-result mg-result-win">
             Solved! +3 rep · Answer: <strong>{{ puzzle.answer }}</strong>
           </div>
-          <button class="mg-btn-ghost" (click)="nextPinpoint()">Next puzzle</button>
+          @if (!pinpointPlayedToday()) {
+            <button class="mg-btn-ghost" (click)="nextPinpoint()">Next puzzle</button>
+          } @else {
+            <p class="mg-comeback">Come back tomorrow for a new puzzle.</p>
+          }
         } @else {
           <div class="mg-result mg-result-lose">
             Out of clues. Answer was <strong>{{ puzzle.answer }}</strong>.
           </div>
-          <button class="mg-btn-ghost" (click)="nextPinpoint()">Try another</button>
+          <p class="mg-comeback">Come back tomorrow for a new puzzle.</p>
         }
       }
     </section>
@@ -144,10 +152,10 @@
 
         @if (wordleStatus() === 'won') {
           <div class="mg-result mg-result-win">Got it! +3 rep · {{ revealTarget() }}</div>
-          <button class="mg-btn-ghost" (click)="loadWordle()">New word</button>
+          <p class="mg-comeback">Come back tomorrow for a new word.</p>
         } @else if (wordleStatus() === 'lost') {
           <div class="mg-result mg-result-lose">Out of guesses. Word was <strong>{{ revealTarget() }}</strong>.</div>
-          <button class="mg-btn-ghost" (click)="loadWordle()">New word</button>
+          <p class="mg-comeback">Come back tomorrow for a new word.</p>
         } @else {
           <div class="wordle-keyboard">
             @for (row of keyboardRows; track $index) {
