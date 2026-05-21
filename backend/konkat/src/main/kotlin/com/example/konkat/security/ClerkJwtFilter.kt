@@ -75,7 +75,7 @@ class ClerkJwtFilter(
                         User(
                             clerkId     = clerkId,
                             email       = if (email.isNotBlank()) email else "$clerkId@clerk.stub",
-                            displayName = displayName.ifBlank { clerkId },
+                            displayName = displayName,  // clerkSync will set the real name
                         )
                     )
                 }

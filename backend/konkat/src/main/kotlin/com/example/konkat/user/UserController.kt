@@ -81,11 +81,16 @@ class UserController(
             clerkUser
         }
 
-        // Sync Clerk data into blank fields only
-        if (finalUser.displayName.isBlank() && !body.name.isNullOrBlank())
+        // Always sync name/avatar from Clerk — overrides the clerkId stub that ClerkJwtFilter creates
+        if (!body.name.isNullOrBlank())
             finalUser.displayName = body.name
-        if (finalUser.avatarUrl == null && !body.avatarUrl.isNullOrBlank())
+        if (!body.avatarUrl.isNullOrBlank())
             finalUser.avatarUrl = body.avatarUrl
+        // Set username from Clerk sign-up if the user doesn't have one yet
+        if (!body.username.isNullOrBlank() && finalUser.username.isNullOrBlank()) {
+            if (!userRepository.existsByUsername(body.username))
+                finalUser.username = body.username
+        }
 
         val saved = userRepository.save(finalUser)
         return ResponseEntity.ok(saved.toProfileDto(
@@ -277,6 +282,7 @@ data class ClerkSyncRequest(
     val email: String = "",
     val name: String? = null,
     val avatarUrl: String? = null,
+    val username: String? = null,
 )
 
 data class UpdateProfileRequest(

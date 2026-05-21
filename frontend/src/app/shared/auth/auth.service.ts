@@ -93,6 +93,7 @@ export class AuthService {
           email:     clerkUser.email,
           name:      clerkUser.name,
           avatarUrl: clerkUser.avatar ?? null,
+          username:  (this.clerk.user as any)?.username ?? null,
         }),
         signal: controller.signal,
       });
