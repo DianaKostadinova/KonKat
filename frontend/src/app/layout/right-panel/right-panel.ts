@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, signal, computed, effect } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal, computed, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -21,7 +21,10 @@ import { EventWithCountdown, CountdownTime } from '../../shared/event/saved-even
 export class RightPanel implements OnInit, OnDestroy {
 
   isOpen           = signal(false);
-  profile          = signal<UserProfile | null>(null);
+  profile          = computed<UserProfile | null>(() => {
+    const p = this.profileService.profileSignal();
+    return p.id ? p : null;
+  });
   events           = signal<EventWithCountdown[]>([]);
   registeredEvents = signal<EventWithCountdown[]>([]);
   loading          = signal(true);
@@ -67,7 +70,7 @@ export class RightPanel implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (this.auth.isLoggedIn()) {
       this.profileService.loadProfile().subscribe({
-        next: p  => { this.profile.set(p); this.loading.set(false); },
+        next: ()  => this.loading.set(false),
         error: () => this.loading.set(false),
       });
 

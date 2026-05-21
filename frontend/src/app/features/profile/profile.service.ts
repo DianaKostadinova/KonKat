@@ -18,7 +18,8 @@ const EMPTY_PROFILE: UserProfile = {
 @Injectable({ providedIn: 'root' })
 export class ProfileService {
 
-  private profile    = signal<UserProfile>({ ...EMPTY_PROFILE });
+  private profile       = signal<UserProfile>({ ...EMPTY_PROFILE });
+  readonly profileSignal = this.profile.asReadonly();
   private myPosts    = signal<Post[]>([]);
   private savedPosts = signal<Post[]>([]);
   private likedPosts = signal<Post[]>([]);
