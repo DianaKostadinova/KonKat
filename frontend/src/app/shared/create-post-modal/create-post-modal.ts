@@ -57,9 +57,7 @@ export class CreatePostModal implements OnInit {
     const input = event.target as HTMLInputElement;
     const file  = input.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => this.imagePreview.set(reader.result as string);
-    reader.readAsDataURL(file);
+    resizeImage(file, 1280, 1280).then(dataUrl => this.imagePreview.set(dataUrl));
   }
 
   removeImage(): void {
@@ -111,4 +109,21 @@ export class CreatePostModal implements OnInit {
   close(): void {
     this.closed.emit();
   }
+}
+
+function resizeImage(file: File, maxW: number, maxH: number): Promise<string> {
+  return new Promise(resolve => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxW / img.width, maxH / img.height);
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.src = url;
+  });
 }

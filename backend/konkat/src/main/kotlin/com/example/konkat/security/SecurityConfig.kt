@@ -60,7 +60,7 @@ class SecurityConfig(private val clerkJwtFilter: ClerkJwtFilter) {
 
     private fun corsSource(): UrlBasedCorsConfigurationSource {
         val config = CorsConfiguration().apply {
-            allowedOrigins    = listOf("http://localhost:4200")
+            allowedOrigins    = listOf("http://localhost:4200", "http://localhost")
             allowedMethods    = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
             allowedHeaders    = listOf("*")
             allowCredentials  = true

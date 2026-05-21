@@ -79,9 +79,7 @@ export class EditProfile implements OnInit {
   onAvatarChange(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => { this.avatar = reader.result as string; };
-    reader.readAsDataURL(file);
+    resizeImage(file, 512, 512).then(dataUrl => { this.avatar = dataUrl; this.cdr.detectChanges(); });
   }
 
   // ── Username availability ─────────────────────────────────────────────────
@@ -200,4 +198,21 @@ export class EditProfile implements OnInit {
     '#E8593C', '#6366f1', '#10b981', '#f59e0b',
     '#ec4899', '#3b82f6', '#8b5cf6', '#14b8a6',
   ];
+}
+
+function resizeImage(file: File, maxW: number, maxH: number): Promise<string> {
+  return new Promise(resolve => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxW / img.width, maxH / img.height);
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.src = url;
+  });
 }

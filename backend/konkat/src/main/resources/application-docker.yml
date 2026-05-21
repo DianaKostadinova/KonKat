@@ -33,7 +33,7 @@ server:
 
 app:
   clerk:
-    jwks-uri: ${CLERK_JWKS_URI:https://frank-penguin-10.clerk.accounts.dev/.well-known/jwks.json}
+    jwks-uri: ${CLERK_JWKS_URI:https://just-peacock-98.clerk.accounts.dev/.well-known/jwks.json}
   mail:
     enabled: ${MAIL_ENABLED:false}
     from: ${MAIL_FROM:noreply@konkat.dev}

@@ -53,22 +53,17 @@
   max-height: 100vh;
   overflow-y: auto;
   padding: 1rem 0;
-  scrollbar-width: none;
-}
-
-.sign-in-content::-webkit-scrollbar {
-  display: none;
 }
 
 .sign-in-brand {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 8px;
 }
 
 .sign-in-logo-img {
-  height: 36px;
+  height: 30px;
   width: auto;
 }
 
@@ -76,23 +71,23 @@
   color: #fff;
   font-family: 'Inter', sans-serif;
   font-weight: 800;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   letter-spacing: -1px;
 }
 
 .sign-in-heading {
   color: #fff;
-  font-size: clamp(1.3rem, 3vw, 1.9rem);
+  font-size: clamp(1.1rem, 2.5vw, 1.6rem);
   font-weight: 700;
   line-height: 1.2;
-  margin: 0 0 8px;
+  margin: 0 0 4px;
 }
 
 .sign-in-sub {
   color: #999;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  margin: 0 0 20px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  margin: 0 0 12px;
 }
 
 /* ── Glass card ─────────────────────────────────────────────────────── */
@@ -100,7 +95,7 @@
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
-  padding: 1.5rem;
+  padding: 1rem;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   box-shadow:

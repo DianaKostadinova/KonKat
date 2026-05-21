@@ -31,3 +31,15 @@ body {
 *::-webkit-scrollbar {
   display: none;
 }
+
+/* ── Clerk widget overrides ─────────────────────────────────────────── */
+.cl-logoBox {
+  margin: 0 auto !important;
+}
+.cl-header {
+  align-items: center !important;
+}
+.cl-logoImage {
+  margin: 0 auto !important;
+  display: block !important;
+}

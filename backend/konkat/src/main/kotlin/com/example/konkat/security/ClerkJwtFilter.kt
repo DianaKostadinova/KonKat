@@ -62,7 +62,8 @@ class ClerkJwtFilter(
                 // Only attempt email lookup if the JWT includes an email claim
                 val byEmail = if (email.isNotBlank()) userRepository.findByEmail(email).orElse(null) else null
                 if (byEmail != null) {
-                    if (byEmail.clerkId == null) {
+                    if (byEmail.clerkId != clerkId) {
+                        // Re-link account to new Clerk instance (e.g. after switching Clerk apps)
                         byEmail.clerkId = clerkId
                         userRepository.save(byEmail)
                     } else {
