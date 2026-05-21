@@ -5,6 +5,7 @@ import { catchError, map } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { Conversation, Message, ConversationDto, MessageDto, UserSearchResult } from './chat.model';
 import { WsService } from '../../shared/notification-bell/ws.service';
+import { AuthService } from '../../shared/auth/auth.service';
 import { environment } from '../../../environments/environment';
 
 const API = environment.apiUrl;
@@ -22,10 +23,12 @@ export class ChatService implements OnDestroy {
   private msgWsSub?: Subscription;
   private notifWsSub?: Subscription;
 
-  constructor(private http: HttpClient, private ws: WsService) {
-    this.loadConversations();
+  constructor(private http: HttpClient, private ws: WsService, private auth: AuthService) {
+    if (this.auth.isLoggedIn()) this.loadConversations();
     // Fallback poll for reconnect gaps and tab visibility changes
-    this.convPollSub = interval(8000).subscribe(() => this.loadConversations());
+    this.convPollSub = interval(8000).subscribe(() => {
+      if (this.auth.isLoggedIn()) this.loadConversations();
+    });
 
     // Real-time message delivery via WebSocket
     this.msgWsSub = this.ws.incomingMessage$.subscribe(delivery => {

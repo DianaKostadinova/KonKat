@@ -2,6 +2,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, map } from 'rxjs';
 import { Post, PostType } from './post.model';
+import { AuthService } from '../auth/auth.service';
 import { environment } from '../../../environments/environment';
 
 export interface TrendingTag {
@@ -18,8 +19,8 @@ export class PostService {
   private _posts = signal<Post[]>([]);
   readonly posts = this._posts.asReadonly();
 
-  constructor(private http: HttpClient) {
-    this.loadFeed();
+  constructor(private http: HttpClient, private auth: AuthService) {
+    if (this.auth.isLoggedIn()) this.loadFeed();
   }
 
   // ── Queries ───────────────────────────────────────────────────────────────

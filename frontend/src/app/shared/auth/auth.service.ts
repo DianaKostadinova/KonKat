@@ -83,6 +83,8 @@ export class AuthService {
       return;
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10_000);
     try {
       const resp = await fetch(`${API}/users/me/clerk-sync`, {
         method:  'POST',
@@ -92,6 +94,7 @@ export class AuthService {
           name:      clerkUser.name,
           avatarUrl: clerkUser.avatar ?? null,
         }),
+        signal: controller.signal,
       });
 
       if (resp.ok) {
@@ -103,7 +106,11 @@ export class AuthService {
         console.error('[Auth] clerk-sync %d:', resp.status, text);
       }
     } catch (e) {
-      console.error('[Auth] clerk-sync error:', e);
+      if ((e as DOMException)?.name !== 'AbortError') {
+        console.error('[Auth] clerk-sync error:', e);
+      }
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 

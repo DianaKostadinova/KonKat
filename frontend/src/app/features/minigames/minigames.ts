@@ -53,11 +53,35 @@ const WORDLE_WORDS = [
   'shore','score','snore','adore','chore','spore','store','crore','before','ignore',
 ];
 
+// Conceptual nouns with clear, unambiguous Datamuse associations
+const PINPOINT_WORDS = [
+  'ocean','tiger','piano','castle','dragon','spider','pizza','coffee','guitar','rocket',
+  'island','jungle','doctor','winter','summer','circus','market','bridge','garden','museum',
+  'temple','palace','harbor','canyon','thunder','crystal','vampire','wizard','knight','pirate',
+  'cowboy','safari','desert','forest','glacier','volcano','diamond','penguin','dolphin','parrot',
+  'monkey','rabbit','turtle','snake','eagle','falcon','whale','shark','horse','camel',
+  'lion','tiger','zebra','giraffe','elephant','gorilla','leopard','cheetah','jaguar','panda',
+  'maple','cedar','bamboo','cactus','orchid','violet','daisy','tulip','lotus','fern',
+  'copper','silver','marble','granite','velvet','cotton','leather','rubber','plastic','bronze',
+  'butter','cheese','pepper','ginger','garlic','lemon','mango','cherry','peach','grape',
+  'storm','breeze','frost','smoke','flame','steam','shadow','mirror','candle','lantern',
+  'anchor','compass','ladder','hammer','shovel','needle','ribbon','button','zipper','pocket',
+  'helmet','shield','sword','arrow','cannon','trumpet','violin','drums','flute','harp',
+  'throne','prison','chapel','tower','tunnel','bridge','harbor','lighthouse','windmill','fountain',
+  'parade','festival','carnival','theater','library','stadium','airport','station','market','school',
+];
+
 function dailyWord(): string {
   const epoch = new Date('2024-01-01').getTime();
   const day = Math.floor((Date.now() - epoch) / 86400000);
   const idx = day % WORDLE_WORDS.length;
   return WORDLE_WORDS[idx];
+}
+
+function dailyPinpointWord(offset = 0): string {
+  const epoch = new Date('2024-01-01').getTime();
+  const day = Math.floor((Date.now() - epoch) / 86400000);
+  return PINPOINT_WORDS[(day + offset) % PINPOINT_WORDS.length];
 }
 
 type LetterState = 'hit' | 'present' | 'miss' | 'empty';
@@ -134,11 +158,9 @@ export class Minigames {
     this.guess.set('');
     this.pinpointStatus.set('playing');
 
-    const epoch = new Date('2024-01-01').getTime();
-    const day = Math.floor((Date.now() - epoch) / 86400000);
-    // Try words starting from today's offset until one has enough clues
-    for (let i = 0; i < WORDLE_WORDS.length; i++) {
-      const answer = WORDLE_WORDS[(day + i) % WORDLE_WORDS.length];
+    // Try today's word first, then next words in list until one has enough clues
+    for (let i = 0; i < PINPOINT_WORDS.length; i++) {
+      const answer = dailyPinpointWord(i);
       try {
         const clues = await this.fetchClues(answer);
         if (clues.length >= PINPOINT_CLUES) {

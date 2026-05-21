@@ -42,30 +42,27 @@
   opacity: 0.18;
 }
 
-/* ── Logo ────────────────────────────────────────────────────────────── */
+/* ── Spinner ─────────────────────────────────────────────────────────── */
 .loading-logo {
   position: relative;
   z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  animation: logo-fade-in 0.7s ease forwards;
+  animation: fade-in 0.5s ease forwards;
 }
 
-.loading-logo-img {
-  height: 44px;
-  width: auto;
+.loading-spinner-img {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  animation: spin 1.4s linear infinite;
+  display: block;
 }
 
-.loading-logo-text {
-  color: #fff;
-  font-family: 'Inter', sans-serif;
-  font-weight: 800;
-  font-size: 1.6rem;
-  letter-spacing: -1px;
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
-@keyframes logo-fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
 }

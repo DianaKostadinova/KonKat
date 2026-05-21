@@ -83,10 +83,12 @@ export class RightPanel implements OnInit, OnDestroy {
       this.loading.set(false);
     }
 
-    this.postService.loadTrendingTags().subscribe({
-      next: tags => this.trending.set(tags),
-      error: () => {},
-    });
+    if (this.auth.isLoggedIn()) {
+      this.postService.loadTrendingTags().subscribe({
+        next: tags => this.trending.set(tags),
+        error: () => {},
+      });
+    }
 
     // tick every second to update countdowns
     this.timer = setInterval(() => this.tickCountdowns(), 1000);
