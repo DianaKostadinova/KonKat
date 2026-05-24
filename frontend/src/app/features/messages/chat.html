@@ -91,9 +91,11 @@
         >
           <!-- Avatar -->
           <div class="relative flex-shrink-0">
-            <div class="w-10 h-10 rounded-full bg-[#2a2a2a] flex items-center justify-center">
+            <div class="w-10 h-10 rounded-full bg-[#2a2a2a] flex items-center justify-center overflow-hidden">
               @if (conv.type === 'group') {
                 <span class="material-icons text-[#888888]" style="font-size: 20px;">group</span>
+              } @else if (getOtherMember(conv)?.avatarUrl; as avatar) {
+                <img [src]="avatar" class="w-full h-full object-cover" alt="" />
               } @else {
                 <span class="material-icons text-[#888888]" style="font-size: 24px;">account_circle</span>
               }
@@ -149,9 +151,11 @@
         </button>
 
         <div class="relative flex-shrink-0">
-          <div class="w-9 h-9 rounded-full bg-[#2a2a2a] flex items-center justify-center">
+          <div class="w-9 h-9 rounded-full bg-[#2a2a2a] flex items-center justify-center overflow-hidden">
             @if (conv.type === 'group') {
               <span class="material-icons text-[#888888]" style="font-size: 18px;">group</span>
+            } @else if (getOtherMember(conv)?.avatarUrl; as avatar) {
+              <img [src]="avatar" class="w-full h-full object-cover" alt="" />
             } @else {
               <span class="material-icons text-[#888888]" style="font-size: 22px;">account_circle</span>
             }
@@ -187,7 +191,7 @@
                [class.items-end]="isMe(msg.senderId)"
                [class.items-start]="!isMe(msg.senderId)">
 
-            @if (!isMe(msg.senderId) && conv.type === 'group') {
+            @if (!isMe(msg.senderId)) {
               <span class="text-[#888888] text-[11px] ml-1 mb-0.5">
                 {{ msg.senderName ?? chatService.getMemberName(conv, msg.senderId) }}
               </span>

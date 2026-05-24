@@ -3,10 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { ProjectService } from './project.service';
 
 const STATUS_OPTIONS = [
-  { value: 'IN_PROGRESS',       label: '🔨 In Progress',         hint: 'Currently building' },
-  { value: 'COMPLETED',         label: '✅ Completed',            hint: 'Shipped and done' },
-  { value: 'LOOKING_FOR_TEAM',  label: '🤝 Looking for Team',     hint: 'Open to collaborators' },
-  { value: 'ARCHIVED',          label: '📦 Archived',             hint: 'No longer active' },
+  { value: 'IN_PROGRESS',       icon: 'construction',  label: 'In Progress',      hint: 'Currently building' },
+  { value: 'COMPLETED',         icon: 'task_alt',      label: 'Completed',        hint: 'Shipped and done' },
+  { value: 'LOOKING_FOR_TEAM',  icon: 'group_add',     label: 'Looking for Team', hint: 'Open to collaborators' },
+  { value: 'ARCHIVED',          icon: 'archive',       label: 'Archived',         hint: 'No longer active' },
 ];
 
 @Component({

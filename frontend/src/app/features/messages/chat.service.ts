@@ -1,4 +1,4 @@
-﻿import { Injectable, signal, OnDestroy } from '@angular/core';
+﻿import { Injectable, signal, OnDestroy, effect } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { interval, Subscription } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -24,6 +24,12 @@ export class ChatService implements OnDestroy {
   private notifWsSub?: Subscription;
 
   constructor(private http: HttpClient, private ws: WsService, private auth: AuthService) {
+    // Keep meId in sync with the authenticated user's DB id (set after clerkSync completes)
+    effect(() => {
+      const dbId = this.auth.user()?.dbId;
+      if (dbId) this.meId.set(dbId);
+    });
+
     if (this.auth.isLoggedIn()) this.loadConversations();
     // Fallback poll for reconnect gaps and tab visibility changes
     this.convPollSub = interval(8000).subscribe(() => {

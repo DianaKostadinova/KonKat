@@ -76,7 +76,9 @@
             [class.status-option--active]="status === opt.value"
             (click)="status = opt.value"
           >
-            <span class="status-option__label">{{ opt.label }}</span>
+            <span class="status-option__label">
+              <span class="material-icons-outlined" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">{{ opt.icon }}</span>{{ opt.label }}
+            </span>
             <span class="status-option__hint">{{ opt.hint }}</span>
           </button>
         }

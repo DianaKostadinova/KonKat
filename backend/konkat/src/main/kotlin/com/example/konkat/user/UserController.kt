@@ -71,11 +71,12 @@ class UserController(
             // both rows are in scope and the unique constraint fires at flush time.
             val clerkId = clerkUser.clerkId
             clerkUser.clerkId = null
-            userRepository.saveAndFlush(clerkUser)   // flush the NULL immediately
+            userRepository.saveAndFlush(clerkUser)   // flush the NULL immediately so the unique constraint doesn't fire
             oldUser.clerkId = clerkId
             userRepository.save(oldUser)
-            // Remove the empty stub created by ClerkJwtFilter (best-effort)
-            try { userRepository.delete(clerkUser) } catch (_: Exception) { /* FK refs — leave it */ }
+            // Intentionally leave the stub row — deleting it inside this transaction can cause
+            // a rollback-only state if it has any FK references, breaking the whole sync.
+            // The stub is harmless with a null clerkId: the filter finds the real account by clerkId.
             oldUser
         } else {
             clerkUser

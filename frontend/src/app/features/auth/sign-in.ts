@@ -86,8 +86,10 @@ export class SignIn implements OnInit, OnDestroy {
   }
 
   continueAsExisting(): void {
+    if (!this.auth.isLoggedIn()) return;
     const u = this.auth.user();
-    if (!u?.dbId) return;
-    this.router.navigate([u.username ? '/feed' : '/profile/edit']);
+    this.router.navigate([u?.username ? '/feed' : '/profile/edit'], {
+      queryParams: u?.username ? {} : { setup: 'true' },
+    });
   }
 }
