@@ -84,7 +84,7 @@ class UserController(
         // Always sync name/avatar from Clerk — overrides the clerkId stub that ClerkJwtFilter creates
         if (!body.name.isNullOrBlank())
             finalUser.displayName = body.name
-        if (!body.avatarUrl.isNullOrBlank())
+        if (!body.avatarUrl.isNullOrBlank() && finalUser.avatarUrl.isNullOrBlank())
             finalUser.avatarUrl = body.avatarUrl
         // Set username from Clerk sign-up if the user doesn't have one yet
         if (!body.username.isNullOrBlank() && finalUser.username.isNullOrBlank()) {

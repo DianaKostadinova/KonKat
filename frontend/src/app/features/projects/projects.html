@@ -1,9 +1,18 @@
 <div class="flex flex-col gap-6 p-4 max-w-4xl mx-auto w-full">
 
   <!-- Header -->
-  <div class="flex flex-col gap-1">
-    <h1 class="text-[#f0f0f0] text-xl font-bold m-0">Projects</h1>
-    <p class="text-[#888888] text-sm m-0">Discover what developers in MK are building</p>
+  <div class="flex items-center justify-between gap-3">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-[#f0f0f0] text-xl font-bold m-0">Projects</h1>
+      <p class="text-[#888888] text-sm m-0">Discover what developers in MK are building</p>
+    </div>
+    <button
+      class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#E8593C] text-white text-sm font-medium border-none cursor-pointer hover:bg-[#d44e33] transition-colors shrink-0"
+      (click)="openAddModal()"
+    >
+      <span class="material-icons-outlined" style="font-size: 18px;">add</span>
+      Post Project
+    </button>
   </div>
 
   <!-- Search + Sort -->
@@ -66,14 +75,37 @@
     </div>
 
     <!-- Sort -->
-    <select
-      class="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 h-9 text-sm text-[#888888] outline-none cursor-pointer hover:border-[#3a3a3a] transition-colors"
-      (change)="setSort($event)"
-    >
-      @for (opt of sortOptions; track opt.value) {
-        <option [value]="opt.value" class="bg-[#1a1a1a]">{{ opt.label }}</option>
+    <div class="relative">
+      <button
+        class="flex items-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 h-9 text-sm text-[#888888] cursor-pointer hover:border-[#3a3a3a] transition-colors"
+        (click)="toggleSortMenu()"
+        (blur)="closeSortMenu()"
+      >
+        <span class="material-icons-outlined" style="font-size: 16px;">sort</span>
+        {{ currentSortLabel() }}
+        <span class="material-icons" style="font-size: 16px;">{{ showSortMenu() ? 'expand_less' : 'expand_more' }}</span>
+      </button>
+
+      @if (showSortMenu()) {
+        <div class="absolute top-full right-0 mt-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg overflow-hidden z-50 shadow-lg min-w-[150px]">
+          @for (opt of sortOptions; track opt.value) {
+            <button
+              class="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left cursor-pointer hover:bg-[#2a2a2a] transition-colors border-none"
+              [class.text-[#E8593C]]="selectedSort() === opt.value"
+              [class.text-[#888888]]="selectedSort() !== opt.value"
+              (mousedown)="setSort(opt.value)"
+            >
+              @if (selectedSort() === opt.value) {
+                <span class="material-icons" style="font-size: 14px;">check</span>
+              } @else {
+                <span style="width: 14px; display: inline-block;"></span>
+              }
+              {{ opt.label }}
+            </button>
+          }
+        </div>
       }
-    </select>
+    </div>
   </div>
 
   <!-- Tech filters -->
@@ -154,3 +186,10 @@
   </div>
 
 </div>
+
+@if (showAddModal()) {
+  <app-add-project-modal
+    (closed)="closeAddModal()"
+    (created)="onProjectCreated()"
+  />
+}

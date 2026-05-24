@@ -2,11 +2,12 @@ import { Component, signal, computed } from '@angular/core';
 import { Project } from './project.model';
 import { ProjectService } from './project.service';
 import { ProjectCard } from './project-card';
+import { AddProjectModal } from './add-project-modal';
 
 @Component({
   selector: 'app-projects',
   standalone: true,
-  imports: [ProjectCard],
+  imports: [ProjectCard, AddProjectModal],
   templateUrl: './projects.html',
   styleUrl: './projects.css',
 })
@@ -15,6 +16,8 @@ export class Projects {
   selectedSort = signal('newest');
   searchQuery = signal('');
   showSuggestions = signal(false);
+  showSortMenu = signal(false);
+  showAddModal = signal(false);
 
   techFilters = ['All', 'Angular', 'React', 'Next.js', 'TypeScript', 'Python', 'Node.js'];
   sortOptions = [
@@ -26,6 +29,10 @@ export class Projects {
   constructor(private projectService: ProjectService) {}
 
   allProjects = computed(() => this.projectService.getProjects());
+
+  currentSortLabel = computed(() =>
+    this.sortOptions.find(o => o.value === this.selectedSort())?.label ?? 'Sort'
+  );
 
   suggestions = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
@@ -121,9 +128,24 @@ export class Projects {
     this.selectedTech.set(tech === 'All' ? '' : tech);
   }
 
-  setSort(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    this.selectedSort.set(select.value);
+  setSort(value: string) {
+    this.selectedSort.set(value);
+    this.showSortMenu.set(false);
+  }
+
+  toggleSortMenu() {
+    this.showSortMenu.update(v => !v);
+  }
+
+  closeSortMenu() {
+    setTimeout(() => this.showSortMenu.set(false), 150);
+  }
+
+  openAddModal() { this.showAddModal.set(true); }
+  closeAddModal() { this.showAddModal.set(false); }
+
+  onProjectCreated() {
+    this.closeAddModal();
   }
 
   clearSearch() {
