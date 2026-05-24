@@ -53,14 +53,17 @@ export class AuthService {
         }
       });
 
-      // Await so routes know the user's DB username before the guard runs
-      await this.clerkSync();
-
     } catch (e) {
       console.error('[Auth] Clerk failed to initialise:', e);
     } finally {
+      // Mark ready as soon as Clerk is loaded and session state is known.
+      // clerkSync runs in the background so the loading screen doesn't block on it.
       this._ready.set(true);
     }
+
+    // Run after ready so the loading screen hides immediately; clerkSync populates
+    // dbId/username in the background and the authGuard re-evaluates on the next navigation.
+    void this.clerkSync();
   }
 
   // ── DB account linking ───────────────────────────────────────────────
