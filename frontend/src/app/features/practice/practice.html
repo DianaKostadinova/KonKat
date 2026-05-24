@@ -1,0 +1,312 @@
+<div class="practice-layout">
+
+  <!-- ── LEFT: Problem List ───────────────────────────────────────────────── -->
+  <div class="problem-list">
+
+    <div class="problem-list__header">
+      <span class="text-[#f0f0f0] text-sm font-semibold">Practice</span>
+      <span class="text-[#888888] text-xs">{{ filtered().length }} problems</span>
+    </div>
+
+    <!-- Difficulty filter -->
+    <div class="problem-list__filters">
+      @for (f of ['All','Easy','Medium','Hard']; track f) {
+        <button
+          class="filter-chip"
+          [class.filter-chip--active]="diffFilter() === f"
+          [style.--chip-color]="f === 'Easy' ? '#10b981' : f === 'Medium' ? '#f59e0b' : f === 'Hard' ? '#ef4444' : '#E8593C'"
+          (click)="diffFilter.set($any(f))"
+        >{{ f }}</button>
+      }
+    </div>
+
+    <!-- Problem rows -->
+    <div class="problem-list__scroll">
+      @for (p of filtered(); track p.id) {
+        <button
+          class="problem-row"
+          [class.problem-row--active]="selectedId() === p.id"
+          (click)="selectProblem(p.id)"
+        >
+          <!-- Status icon -->
+          <span class="problem-row__status material-icons"
+                [style.color]="p.solved ? '#10b981' : p.attempted ? '#f59e0b' : '#3a3a3a'"
+                style="font-size: 14px;">
+            {{ p.solved ? 'check_circle' : p.attempted ? 'radio_button_partial' : 'radio_button_unchecked' }}
+          </span>
+
+          <div class="problem-row__body">
+            <span class="problem-row__num text-[#555] text-[11px]">#{{ p.id }}</span>
+            <span class="problem-row__title text-[#f0f0f0] text-xs font-medium truncate">{{ p.title }}</span>
+          </div>
+
+          <span class="problem-row__diff text-[10px] font-semibold"
+                [style.color]="diffColor(p.difficulty)">
+            {{ p.difficulty[0] }}
+          </span>
+        </button>
+      }
+    </div>
+
+  </div>
+
+  <!-- ── CENTER: Editor ───────────────────────────────────────────────────── -->
+  <div class="editor-pane">
+
+    <!-- Topbar -->
+    <div class="editor-topbar">
+      <!-- Language tabs -->
+      <div class="lang-tabs">
+        @for (lang of languages; track lang) {
+          <button
+            class="lang-tab"
+            [class.lang-tab--active]="language() === lang"
+            (click)="setLanguage(lang)"
+          >{{ lang }}</button>
+        }
+      </div>
+
+      <div class="flex-1"></div>
+
+      <!-- Reset -->
+      <button class="editor-btn editor-btn--ghost" (click)="resetCode()" title="Reset to starter code">
+        <span class="material-icons-outlined" style="font-size: 16px;">restart_alt</span>
+        Reset
+      </button>
+
+      <!-- Run -->
+      <button
+        class="editor-btn editor-btn--run"
+        [disabled]="runStatus() === 'running' || submitStatus() === 'running'"
+        (click)="run()"
+      >
+        @if (runStatus() === 'running') {
+          <span class="material-icons spin" style="font-size: 15px;">refresh</span>
+          Running…
+        } @else {
+          <span class="material-icons-outlined" style="font-size: 15px;">play_arrow</span>
+          Run
+        }
+      </button>
+
+      <!-- Submit -->
+      <button
+        class="editor-btn editor-btn--submit"
+        [disabled]="runStatus() === 'running' || submitStatus() === 'running'"
+        (click)="submit()"
+      >
+        @if (submitStatus() === 'running') {
+          <span class="material-icons spin" style="font-size: 15px;">refresh</span>
+          Judging…
+        } @else {
+          <span class="material-icons-outlined" style="font-size: 15px;">upload</span>
+          Submit
+        }
+      </button>
+    </div>
+
+    <!-- Code editor -->
+    <div class="code-wrap">
+      <div class="line-nums" aria-hidden="true">
+        @for (n of code().split('\n'); track $index) {
+          <div>{{ $index + 1 }}</div>
+        }
+      </div>
+      <textarea
+        class="code-editor"
+        spellcheck="false"
+        autocomplete="off"
+        autocorrect="off"
+        [value]="code()"
+        (input)="code.set($any($event.target).value)"
+      ></textarea>
+    </div>
+
+    <!-- Output / Results -->
+    <div class="output-pane">
+
+      <!-- Accepted banner -->
+      @if (submitStatus() === 'accepted') {
+        <div class="accepted-banner">
+          <span class="material-icons" style="font-size: 20px;">check_circle</span>
+          <div>
+            <div class="font-semibold text-sm">Accepted</div>
+            <div class="text-xs opacity-80">All test cases passed · Runtime 4 ms · Memory 17.2 MB</div>
+          </div>
+          <span class="ml-auto text-xs opacity-70">+15 rep</span>
+        </div>
+      }
+
+      @else if (runStatus() === 'idle' && submitStatus() === 'idle') {
+        <div class="output-empty">
+          <span class="material-icons-outlined text-[#3a3a3a]" style="font-size: 28px;">terminal</span>
+          <span class="text-[#555] text-xs">Run your code to see output</span>
+        </div>
+      }
+
+      @else if (runStatus() === 'running') {
+        <div class="output-empty">
+          <span class="material-icons spin text-[#888888]" style="font-size: 22px;">refresh</span>
+          <span class="text-[#888888] text-xs">Running against test cases…</span>
+        </div>
+      }
+
+      @else if (runStatus() === 'done') {
+        <div class="test-results">
+          <div class="test-results__header">
+            <span class="material-icons"
+                  [style.color]="passCount() === runResults().length ? '#10b981' : '#ef4444'"
+                  style="font-size: 16px;">
+              {{ passCount() === runResults().length ? 'check_circle' : 'cancel' }}
+            </span>
+            <span class="text-[#f0f0f0] text-xs font-semibold">
+              {{ passCount() }}/{{ runResults().length }} test cases passed
+            </span>
+          </div>
+          <div class="test-cases">
+            @for (r of runResults(); track r.label) {
+              <div class="test-case" [class.test-case--pass]="r.passed" [class.test-case--fail]="!r.passed">
+                <div class="test-case__label">
+                  <span class="material-icons" style="font-size:13px;">
+                    {{ r.passed ? 'check' : 'close' }}
+                  </span>
+                  {{ r.label }}
+                  @if (r.runtime) {
+                    <span class="text-[#555] text-[10px] ml-1">{{ r.runtime }}</span>
+                  }
+                </div>
+                <div class="test-case__detail">
+                  <span class="text-[#888888] text-[10px]">{{ r.input }}</span>
+                  @if (!r.passed) {
+                    <span class="text-[#ef4444] text-[10px]">Expected {{ r.expected }} · got {{ r.got }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+    </div>
+
+  </div>
+
+  <!-- ── RIGHT: Problem + Hints ───────────────────────────────────────────── -->
+  <div class="right-panel">
+
+    <!-- Tab switcher -->
+    <div class="right-tabs">
+      <button class="right-tab" [class.right-tab--active]="rightTab() === 'problem'"  (click)="rightTab.set('problem')">
+        <span class="material-icons-outlined" style="font-size: 16px;">description</span>
+        Problem
+      </button>
+      <button class="right-tab" [class.right-tab--active]="rightTab() === 'hints'" (click)="rightTab.set('hints')">
+        <span class="material-icons-outlined" style="font-size: 16px;">psychology</span>
+        AI Mentor
+        @if (hintMessages().length > 1) {
+          <span class="right-tab__badge">{{ hintMessages().length - 1 }}</span>
+        }
+      </button>
+    </div>
+
+    <!-- Problem description -->
+    @if (rightTab() === 'problem') {
+      <div class="problem-desc">
+
+        <div class="problem-desc__meta">
+          <h2 class="text-[#f0f0f0] text-base font-bold m-0">{{ selected().title }}</h2>
+          <span class="diff-badge" [style.color]="diffColor(selected().difficulty)" [style.border-color]="diffColor(selected().difficulty)">
+            {{ selected().difficulty }}
+          </span>
+        </div>
+
+        <div class="problem-desc__tags">
+          @for (tag of selected().tags; track tag) {
+            <span class="tag-chip">{{ tag }}</span>
+          }
+        </div>
+
+        <div class="problem-desc__body">
+          <p>Given an array of integers <code>nums</code> and an integer <code>target</code>, return <em>indices of the two numbers such that they add up to</em> <code>target</code>.</p>
+          <p>You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the same element twice.</p>
+          <p>You can return the answer in any order.</p>
+        </div>
+
+        <div class="problem-desc__section">Examples</div>
+
+        <div class="example-block">
+          <div class="example-block__line"><span class="example-block__key">Input:</span> <code>nums = [2,7,11,15], target = 9</code></div>
+          <div class="example-block__line"><span class="example-block__key">Output:</span> <code>[0,1]</code></div>
+          <div class="example-block__line"><span class="example-block__key">Explanation:</span> <span class="text-[#888888]">nums[0] + nums[1] == 9, so we return [0, 1].</span></div>
+        </div>
+
+        <div class="example-block">
+          <div class="example-block__line"><span class="example-block__key">Input:</span> <code>nums = [3,2,4], target = 6</code></div>
+          <div class="example-block__line"><span class="example-block__key">Output:</span> <code>[1,2]</code></div>
+        </div>
+
+        <div class="problem-desc__section">Constraints</div>
+        <ul class="constraint-list">
+          <li><code>2 ≤ nums.length ≤ 10⁴</code></li>
+          <li><code>-10⁹ ≤ nums[i] ≤ 10⁹</code></li>
+          <li><code>-10⁹ ≤ target ≤ 10⁹</code></li>
+          <li>Only one valid answer exists.</li>
+        </ul>
+
+        <div class="problem-desc__section">Follow-up</div>
+        <p class="text-[#888888] text-xs leading-relaxed">Can you come up with an algorithm that is less than O(n²) time complexity?</p>
+
+      </div>
+    }
+
+    <!-- AI Mentor hints -->
+    @if (rightTab() === 'hints') {
+      <div class="hints-panel">
+
+        <div class="hints-messages" #hintScroll>
+          @for (msg of hintMessages(); track $index) {
+            <div class="hint-msg" [class.hint-msg--user]="msg.role === 'user'" [class.hint-msg--ai]="msg.role === 'ai'">
+              @if (msg.role === 'ai') {
+                <div class="hint-msg__avatar">
+                  <span class="material-icons" style="font-size: 16px;">psychology</span>
+                </div>
+              }
+              <div class="hint-msg__bubble">{{ msg.content }}</div>
+            </div>
+          }
+          @if (hintThinking()) {
+            <div class="hint-msg hint-msg--ai">
+              <div class="hint-msg__avatar">
+                <span class="material-icons" style="font-size: 16px;">psychology</span>
+              </div>
+              <div class="hint-msg__bubble hint-msg__bubble--thinking">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="hints-input-wrap">
+          <textarea
+            class="hints-input"
+            placeholder="Ask for a hint… (Enter to send)"
+            rows="2"
+            [value]="hintInput()"
+            (input)="hintInput.set($any($event.target).value)"
+            (keydown)="onHintKeydown($event)"
+          ></textarea>
+          <button
+            class="hints-send"
+            [disabled]="!hintInput().trim() || hintThinking()"
+            (click)="sendHint()"
+          >
+            <span class="material-icons" style="font-size: 18px;">send</span>
+          </button>
+        </div>
+
+      </div>
+    }
+
+  </div>
+
+</div>
