@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { MinigamesService } from '../minigames/minigames.service';
+import { AuthService } from '../../shared/auth/auth.service';
 
 interface DailyQuestion {
   id: number;
@@ -293,8 +294,6 @@ const QUESTIONS: DailyQuestion[] = [
   },
 ];
 
-const STORAGE_KEY = 'konkat-daily-q';
-const STREAK_KEY  = 'konkat-daily-streak';
 
 function todayKey(): string {
   return new Date().toDateString();
@@ -311,6 +310,7 @@ function pickQuestion(): DailyQuestion {
 interface StoredAnswer {
   date: string;
   selected: number;
+  repAwarded?: boolean;
 }
 
 interface Streak {
@@ -329,6 +329,7 @@ export class Practice implements OnInit {
   readonly question = pickQuestion();
 
   private minigames = inject(MinigamesService);
+  private auth      = inject(AuthService);
 
   selected   = signal<number | null>(null);
   revealed   = signal(false);
@@ -336,6 +337,11 @@ export class Practice implements OnInit {
   repAwarded = signal<number | null>(null);
 
   readonly correct = computed(() => this.selected() === this.question.answer);
+
+  /** Per-user localStorage keys so switching accounts never leaks state. */
+  private uid(): string { return this.auth.user()?.id ?? 'anon'; }
+  private storageKey(): string { return `konkat-daily-q:${this.uid()}`; }
+  private streakKey():  string { return `konkat-daily-streak:${this.uid()}`; }
 
   ngOnInit(): void {
     this.loadStreak();
@@ -346,10 +352,12 @@ export class Practice implements OnInit {
     if (this.revealed()) return;
     this.selected.set(index);
     this.revealed.set(true);
-    this.saveAnswer(index);
     this.updateStreak();
 
-    if (index === this.question.answer && !this.minigames.hasSolvedToday('daily-question')) {
+    const alreadyAwarded = this.savedRepAwarded();
+    this.saveAnswer(index, index === this.question.answer && !alreadyAwarded);
+
+    if (index === this.question.answer && !alreadyAwarded) {
       void this.minigames.awardSolve('daily-question').then(() => {
         this.repAwarded.set(3);
       });
@@ -363,26 +371,37 @@ export class Practice implements OnInit {
     return 'default';
   }
 
-  private saveAnswer(selected: number): void {
-    const data: StoredAnswer = { date: todayKey(), selected };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  private readStoredAnswer(): StoredAnswer | null {
+    try {
+      const raw = localStorage.getItem(this.storageKey());
+      if (!raw) return null;
+      const data: StoredAnswer = JSON.parse(raw);
+      return data.date === todayKey() ? data : null;
+    } catch { return null; }
+  }
+
+  /** True if this user already earned rep for today's correct answer. */
+  private savedRepAwarded(): boolean {
+    return this.readStoredAnswer()?.repAwarded === true;
+  }
+
+  private saveAnswer(selected: number, repAwarded: boolean): void {
+    const data: StoredAnswer = { date: todayKey(), selected, repAwarded };
+    localStorage.setItem(this.storageKey(), JSON.stringify(data));
   }
 
   private loadSavedAnswer(): void {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const data: StoredAnswer = JSON.parse(raw);
-      if (data.date === todayKey()) {
-        this.selected.set(data.selected);
-        this.revealed.set(true);
-      }
-    } catch { /* ignore */ }
+    const data = this.readStoredAnswer();
+    if (!data) return;
+    this.selected.set(data.selected);
+    this.revealed.set(true);
+    // Rep was already awarded in a previous session — don't show the badge again
+    // but also don't re-call the backend.
   }
 
   private loadStreak(): void {
     try {
-      const raw = localStorage.getItem(STREAK_KEY);
+      const raw = localStorage.getItem(this.streakKey());
       if (!raw) return;
       const s: Streak = JSON.parse(raw);
       const today     = todayKey();
@@ -398,7 +417,7 @@ export class Practice implements OnInit {
     const yesterday = new Date(Date.now() - 86_400_000).toDateString();
     let count = 1;
     try {
-      const raw = localStorage.getItem(STREAK_KEY);
+      const raw = localStorage.getItem(this.streakKey());
       if (raw) {
         const s: Streak = JSON.parse(raw);
         if (s.lastDate === yesterday) count = s.count + 1;
@@ -406,7 +425,7 @@ export class Practice implements OnInit {
       }
     } catch { /* ignore */ }
     const newStreak: Streak = { lastDate: today, count };
-    localStorage.setItem(STREAK_KEY, JSON.stringify(newStreak));
+    localStorage.setItem(this.streakKey(), JSON.stringify(newStreak));
     this.streak.set(count);
   }
 }
