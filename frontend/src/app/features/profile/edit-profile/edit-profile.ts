@@ -55,7 +55,11 @@ export class EditProfile implements OnInit {
 
     this.profileService.loadProfile().subscribe({
       next: (p) => {
-        this.name             = p.name;
+        const u = this.auth.user();
+        // If DB name is empty or still set to the email (no real name synced yet),
+        // fall back to whatever Clerk has on the live user object.
+        const hasRealName = p.name && p.name !== u?.email;
+        this.name = hasRealName ? p.name : (u?.name !== u?.email ? (u?.name ?? '') : '');
         this.username         = p.username;
         this.originalUsername = p.username;
         this.role             = p.role;
@@ -176,8 +180,8 @@ export class EditProfile implements OnInit {
     this.profileService.saveProfile(updates).subscribe({
       next: () => {
         this.saving.set(false);
-        // Sync new username into AuthService so the authGuard sees it immediately
         this.auth.setUsername(updates.username ?? '');
+        if (updates.name) void this.auth.updateClerkName(updates.name);
         this.router.navigate(this.isSetup() ? ['/feed'] : ['/profile']);
       },
       error: (err) => {

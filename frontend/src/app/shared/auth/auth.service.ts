@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, NgZone, signal } from '@angular/core';
 import type { Clerk } from '@clerk/clerk-js';
 import { runtimeConfig } from '../config/runtime-config';
 
@@ -26,6 +26,8 @@ export class AuthService {
 
   private clerk!: Clerk;
 
+  constructor(private zone: NgZone) {}
+
   async init(): Promise<void> {
     try {
       this.clerk = await this.loadClerkFromCdn();
@@ -47,10 +49,12 @@ export class AuthService {
       // Session JWT may not be immediately available after load() with CDN approach —
       // trigger sync once now and again on every auth state change.
       this.clerk.addListener(() => {
-        this.syncUser();
-        if (this._isLoggedIn() && !this._user()?.dbId) {
-          void this.clerkSync();
-        }
+        this.zone.run(() => {
+          this.syncUser();
+          if (this._isLoggedIn() && !this._user()?.dbId) {
+            void this.clerkSync();
+          }
+        });
       });
 
     } catch (e) {
@@ -94,8 +98,8 @@ export class AuthService {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email:     clerkUser.email,
-          name:      clerkUser.name,
-          avatarUrl: clerkUser.avatar ?? null,
+          name:      (this.clerk.user as any)?.fullName ?? clerkUser.name,
+          avatarUrl: (this.clerk.user as any)?.imageUrl ?? clerkUser.avatar ?? null,
           username:  (this.clerk.user as any)?.username ?? null,
         }),
         signal: controller.signal,
@@ -180,6 +184,20 @@ export class AuthService {
 
   setUsername(username: string): void {
     this._user.update(u => u ? { ...u, username: username || undefined } : u);
+  }
+
+  async updateClerkName(fullName: string): Promise<void> {
+    if (!this.clerk?.user) return;
+    const parts = fullName.trim().split(/\s+/);
+    try {
+      await (this.clerk.user as any).update({
+        firstName: parts[0] ?? '',
+        lastName:  parts.slice(1).join(' ') || '',
+      });
+      this.syncUser();
+    } catch (e) {
+      console.error('[Auth] updateClerkName failed:', e);
+    }
   }
 
   async logout(): Promise<void> {
