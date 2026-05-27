@@ -46,11 +46,12 @@ export class Navbar implements OnInit, OnDestroy {
   isNotifOpen      = signal(false);
 
   navLinks = [
-    { label: 'Feed',       icon: 'home',           route: '/feed'       },
-    { label: 'Projects',   icon: 'folder_copy',    route: '/projects'   },
-    { label: 'Hackathons', icon: 'calendar_month', route: '/hackathons' },
-    { label: 'Find Team',  icon: 'group',          route: '/find-team'  },
-    { label: 'Practice',   icon: 'code',           route: '/practice'   },
+    { label: 'Feed',       icon: 'home',           route: '/feed'         },
+    { label: 'Projects',   icon: 'folder_copy',    route: '/projects'     },
+    { label: 'Hackathons', icon: 'calendar_month', route: '/hackathons'   },
+    { label: 'Find Team',  icon: 'group',          route: '/find-team'    },
+    { label: 'Workspace',  icon: 'workspaces',     route: '/myworkspaces' },
+    { label: 'Practice',   icon: 'code',           route: '/practice'     },
   ];
 
   avatarUrl = computed(() => this.profileService.getProfile()?.avatar);

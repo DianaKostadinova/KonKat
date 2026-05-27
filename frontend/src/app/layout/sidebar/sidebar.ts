@@ -16,8 +16,6 @@ export class Sidebar {
     { type: 'divider' },
     { label: 'Chat',           mobileLabel: 'Chat',     icon: 'chat_bubble_outline',   route: '/chat' },
     { type: 'divider' },
-    { label: 'Workspace',      mobileLabel: 'Work',     icon: 'group',                 route: '/myworkspaces' },
-    { type: 'divider' },
     { label: 'Minigames',      mobileLabel: 'Games',    icon: 'extension',             route: '/minigames' },
     { type: 'divider' },
     { label: 'Settings',      mobileLabel: 'Settings', icon: 'settings',              route: '/settings' },

@@ -169,6 +169,10 @@
   color: #f0f0f0;
 }
 
+.navbar__icon-btn--active {
+  color: #E8593C !important;
+}
+
 .navbar__badge {
   position: absolute;
   top: 4px;
