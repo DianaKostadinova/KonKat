@@ -197,6 +197,10 @@
   </div>
 </nav>
 
+@if (isMobileMenuOpen()) {
+  <div class="navbar__mobile-backdrop" (click)="isMobileMenuOpen.set(false)"></div>
+}
+
 <div class="navbar__mobile-menu" [class.open]="isMobileMenuOpen()">
   @for (link of navLinks; track link.route) {
     <a [routerLink]="link.route" (click)="toggleMobileMenu()">

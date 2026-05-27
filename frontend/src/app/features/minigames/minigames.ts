@@ -267,12 +267,57 @@ export class Minigames {
     this.view.set('menu');
   }
 
+  // ── localStorage helpers ────────────────────────────────────────────────
+  private today(): string { return new Date().toISOString().slice(0, 10); }
+
+  private saveWordleState(): void {
+    localStorage.setItem('konkat_wordle_day', JSON.stringify({
+      date: this.today(),
+      rows: this.rows(),
+      status: this.wordleStatus(),
+      keyboardState: this.keyboardState(),
+    }));
+  }
+
+  private restoreWordleState(): boolean {
+    try {
+      const raw = localStorage.getItem('konkat_wordle_day');
+      if (!raw) return false;
+      const s = JSON.parse(raw);
+      if (s.date !== this.today()) return false;
+      this.rows.set(s.rows ?? []);
+      this.wordleStatus.set(s.status ?? 'playing');
+      this.keyboardState.set(s.keyboardState ?? {});
+      return true;
+    } catch { return false; }
+  }
+
+  private savePinpointState(): void {
+    localStorage.setItem('konkat_pinpoint_day', JSON.stringify({
+      date: this.today(),
+      status: this.pinpointStatus(),
+      cluesShown: this.cluesShown(),
+    }));
+  }
+
+  private restorePinpointState(): void {
+    try {
+      const raw = localStorage.getItem('konkat_pinpoint_day');
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s.date !== this.today()) return;
+      this.pinpointStatus.set(s.status ?? 'playing');
+      this.cluesShown.set(s.cluesShown ?? 1);
+    } catch {}
+  }
+
   /* ── Pinpoint ───────────────────────────────────────────── */
   loadPinpoint() {
     this.cluesShown.set(1);
     this.guess.set('');
     this.pinpointStatus.set('playing');
     this.pinpointPuzzle.set(dailyPinpointPuzzle());
+    this.restorePinpointState();
   }
 
   onGuessInput(e: Event) {
@@ -286,15 +331,18 @@ export class Minigames {
     if (ok) {
       this.pinpointStatus.set('won');
       this.games.markPlayed('pinpoint');
+      this.savePinpointState();
       if (!this.pinpointSolvedToday()) this.games.awardSolve('pinpoint');
       return;
     }
     if (this.cluesShown() >= puzzle.clues.length) {
       this.pinpointStatus.set('lost');
       this.games.markPlayed('pinpoint');
+      this.savePinpointState();
       return;
     }
     this.cluesShown.update((n) => n + 1);
+    this.savePinpointState();
     this.guess.set('');
   }
 
@@ -306,12 +354,14 @@ export class Minigames {
 
   /* ── Wordle ─────────────────────────────────────────────── */
   loadWordle() {
-    this.rows.set([]);
     this.current.set('');
     this.wordleError.set('');
-    this.keyboardState.set({});
     this.target.set(dailyWord());
-    this.wordleStatus.set('playing');
+    if (!this.restoreWordleState()) {
+      this.rows.set([]);
+      this.keyboardState.set({});
+      this.wordleStatus.set('playing');
+    }
   }
 
   private async isValidWord(word: string): Promise<boolean> {
@@ -369,6 +419,7 @@ export class Minigames {
     if (guess === this.target()) {
       this.wordleStatus.set('won');
       this.games.markPlayed('wordle');
+      this.saveWordleState();
       if (!this.wordleSolvedToday()) this.games.awardSolve('wordle');
       return;
     }
@@ -376,6 +427,7 @@ export class Minigames {
       this.wordleStatus.set('lost');
       this.games.markPlayed('wordle');
     }
+    this.saveWordleState();
   }
 
   private scoreGuess(guess: string, target: string): WordleCell[] {
