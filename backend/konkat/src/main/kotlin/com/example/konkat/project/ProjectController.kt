@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import java.time.format.DateTimeFormatter
 
-private val ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+private val ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
 // ── Request / Response DTOs ───────────────────────────────────────────────────
 

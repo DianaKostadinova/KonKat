@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.LocalDateTime
 
-private val ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+private val ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
 data class NotificationDto(
     val id: Long,

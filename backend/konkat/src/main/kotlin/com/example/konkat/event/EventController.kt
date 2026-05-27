@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-private val ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+private val ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
 data class SavedEventDto(
     val id: Long,

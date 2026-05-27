@@ -100,7 +100,8 @@ export class Workspace implements OnInit, AfterViewChecked {
 
   formatTime(iso: string): string {
     try {
-      return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      const utc = /Z|[+-]\d{2}:\d{2}$/.test(iso) ? iso : iso + 'Z';
+      return new Date(utc).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     } catch { return iso; }
   }
 

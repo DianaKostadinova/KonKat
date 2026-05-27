@@ -16,7 +16,7 @@ import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-private val ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+private val ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
 // ── DTOs ──────────────────────────────────────────────────────────────────────
 

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import java.time.format.DateTimeFormatter
 
-private val TIME_FMT: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+private val TIME_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
 // ── DTOs ──────────────────────────────────────────────────────────────────────
 
