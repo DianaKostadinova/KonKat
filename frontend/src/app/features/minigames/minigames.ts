@@ -9,14 +9,8 @@ interface PinpointPuzzle {
   clues: string[];
 }
 
-interface DatamuseWord {
-  word: string;
-  score?: number;
-}
-
 const WORDLE_MAX_GUESSES = 6;
 const WORDLE_LEN = 5;
-const PINPOINT_CLUES = 5;
 
 const WORDLE_WORDS = [
   'crane','slate','trace','adieu','audio','raise','arise','stare','snare','share',
@@ -53,35 +47,158 @@ const WORDLE_WORDS = [
   'shore','score','snore','adore','chore','spore','store','crore','before','ignore',
 ];
 
-// Conceptual nouns with clear, unambiguous Datamuse associations
-const PINPOINT_WORDS = [
-  'ocean','tiger','piano','castle','dragon','spider','pizza','coffee','guitar','rocket',
-  'island','jungle','doctor','winter','summer','circus','market','bridge','garden','museum',
-  'temple','palace','harbor','canyon','thunder','crystal','vampire','wizard','knight','pirate',
-  'cowboy','safari','desert','forest','glacier','volcano','diamond','penguin','dolphin','parrot',
-  'monkey','rabbit','turtle','snake','eagle','falcon','whale','shark','horse','camel',
-  'lion','tiger','zebra','giraffe','elephant','gorilla','leopard','cheetah','jaguar','panda',
-  'maple','cedar','bamboo','cactus','orchid','violet','daisy','tulip','lotus','fern',
-  'copper','silver','marble','granite','velvet','cotton','leather','rubber','plastic','bronze',
-  'butter','cheese','pepper','ginger','garlic','lemon','mango','cherry','peach','grape',
-  'storm','breeze','frost','smoke','flame','steam','shadow','mirror','candle','lantern',
-  'anchor','compass','ladder','hammer','shovel','needle','ribbon','button','zipper','pocket',
-  'helmet','shield','sword','arrow','cannon','trumpet','violin','drums','flute','harp',
-  'throne','prison','chapel','tower','tunnel','bridge','harbor','lighthouse','windmill','fountain',
-  'parade','festival','carnival','theater','library','stadium','airport','station','market','school',
+// Curated puzzles — all 5 clues converge on exactly one answer (hardest → easiest)
+const PINPOINT_PUZZLES: PinpointPuzzle[] = [
+  { answer: 'ocean',      clues: ['Bathypelagic', 'Trench', 'Tide', 'Coral', 'Waves'] },
+  { answer: 'tiger',      clues: ['Bengal', 'Stripes', 'Pounce', 'Jungle', 'Roar'] },
+  { answer: 'piano',      clues: ['Ivory', 'Pedal', 'Keys', 'Beethoven', 'Keyboard'] },
+  { answer: 'castle',     clues: ['Moat', 'Turret', 'Drawbridge', 'Fortress', 'Chess'] },
+  { answer: 'dragon',     clues: ['Scales', 'Medieval', 'Legend', 'Wings', 'Fire'] },
+  { answer: 'spider',     clues: ['Venom', 'Fangs', 'Eight legs', 'Web', 'Silk'] },
+  { answer: 'pizza',      clues: ['Dough', 'Mozzarella', 'Slice', 'Italy', 'Oven'] },
+  { answer: 'coffee',     clues: ['Espresso', 'Roast', 'Barista', 'Beans', 'Mug'] },
+  { answer: 'guitar',     clues: ['Fret', 'Chord', 'Strum', 'Strings', 'Rock'] },
+  { answer: 'rocket',     clues: ['Thrust', 'Orbit', 'Booster', 'Launch', 'Space'] },
+  { answer: 'island',     clues: ['Atoll', 'Isolated', 'Tropical', 'Shore', 'Palm'] },
+  { answer: 'jungle',     clues: ['Canopy', 'Vines', 'Humid', 'Dense', 'Wild'] },
+  { answer: 'doctor',     clues: ['Diagnosis', 'Prescription', 'Stethoscope', 'Clinic', 'Heal'] },
+  { answer: 'winter',     clues: ['Blizzard', 'Frost', 'Hibernate', 'Cold', 'Snow'] },
+  { answer: 'summer',     clues: ['Humid', 'Vacation', 'Sunscreen', 'Beach', 'Hot'] },
+  { answer: 'circus',     clues: ['Trapeze', 'Acrobat', 'Juggle', 'Clown', 'Tent'] },
+  { answer: 'market',     clues: ['Stall', 'Vendor', 'Barter', 'Bazaar', 'Trade'] },
+  { answer: 'bridge',     clues: ['Suspension', 'Arch', 'Span', 'River', 'Cross'] },
+  { answer: 'garden',     clues: ['Soil', 'Trowel', 'Mulch', 'Weed', 'Bloom'] },
+  { answer: 'museum',     clues: ['Curator', 'Artifact', 'Exhibit', 'Gallery', 'History'] },
+  { answer: 'temple',     clues: ['Shrine', 'Incense', 'Ancient', 'Pillar', 'Sacred'] },
+  { answer: 'palace',     clues: ['Opulence', 'Courtyard', 'Royalty', 'Throne', 'King'] },
+  { answer: 'harbor',     clues: ['Berth', 'Dock', 'Anchor', 'Port', 'Ships'] },
+  { answer: 'canyon',     clues: ['Erosion', 'Gorge', 'Colorado', 'Ravine', 'Cliff'] },
+  { answer: 'thunder',    clues: ['Lightning', 'Storm', 'Rumble', 'Crack', 'Boom'] },
+  { answer: 'crystal',    clues: ['Quartz', 'Facet', 'Lattice', 'Clear', 'Gem'] },
+  { answer: 'vampire',    clues: ['Coffin', 'Nocturnal', 'Fangs', 'Blood', 'Cape'] },
+  { answer: 'wizard',     clues: ['Incantation', 'Spell', 'Potion', 'Wand', 'Magic'] },
+  { answer: 'knight',     clues: ['Joust', 'Squire', 'Armor', 'Lance', 'Medieval'] },
+  { answer: 'pirate',     clues: ['Plank', 'Parrot', 'Skull', 'Loot', 'Ship'] },
+  { answer: 'cowboy',     clues: ['Lasso', 'Spur', 'Ranch', 'Wrangler', 'Hat'] },
+  { answer: 'safari',     clues: ['Binoculars', 'Savanna', 'Jeep', 'Wild', 'Animals'] },
+  { answer: 'desert',     clues: ['Oasis', 'Dune', 'Mirage', 'Arid', 'Sand'] },
+  { answer: 'forest',     clues: ['Canopy', 'Moss', 'Fern', 'Deer', 'Trees'] },
+  { answer: 'glacier',    clues: ['Crevasse', 'Arctic', 'Melt', 'Frozen', 'Ice'] },
+  { answer: 'volcano',    clues: ['Magma', 'Caldera', 'Ash', 'Lava', 'Eruption'] },
+  { answer: 'diamond',    clues: ['Carat', 'Facet', 'Carbon', 'Brilliant', 'Gem'] },
+  { answer: 'penguin',    clues: ['Antarctic', 'Waddle', 'Flipper', 'Tuxedo', 'Ice'] },
+  { answer: 'dolphin',    clues: ['Echolocation', 'Pod', 'Flipper', 'Aquatic', 'Smart'] },
+  { answer: 'parrot',     clues: ['Mimic', 'Tropical', 'Exotic', 'Beak', 'Bird'] },
+  { answer: 'monkey',     clues: ['Primate', 'Swing', 'Banana', 'Tree', 'Tail'] },
+  { answer: 'rabbit',     clues: ['Warren', 'Burrow', 'Hutch', 'Easter', 'Hop'] },
+  { answer: 'turtle',     clues: ['Shell', 'Ancient', 'Reptile', 'Slow', 'Sea'] },
+  { answer: 'snake',      clues: ['Venom', 'Scales', 'Fangs', 'Slither', 'Coil'] },
+  { answer: 'eagle',      clues: ['Raptor', 'Soar', 'Talon', 'Bald', 'Sky'] },
+  { answer: 'falcon',     clues: ['Dive', 'Raptor', 'Swoop', 'Hunt', 'Speed'] },
+  { answer: 'whale',      clues: ['Blowhole', 'Migrate', 'Pod', 'Baleen', 'Ocean'] },
+  { answer: 'shark',      clues: ['Fin', 'Prey', 'Teeth', 'Jaw', 'Predator'] },
+  { answer: 'horse',      clues: ['Mane', 'Gallop', 'Saddle', 'Stable', 'Ride'] },
+  { answer: 'camel',      clues: ['Hump', 'Caravan', 'Sahara', 'Desert', 'Thirst'] },
+  { answer: 'lion',       clues: ['Mane', 'Roar', 'Pride', 'Savanna', 'King'] },
+  { answer: 'zebra',      clues: ['Stripes', 'Savanna', 'Herd', 'Africa', 'Wild'] },
+  { answer: 'giraffe',    clues: ['Tallest', 'Neck', 'Savanna', 'Spots', 'Africa'] },
+  { answer: 'elephant',   clues: ['Tusk', 'Trunk', 'Ivory', 'Herd', 'Largest'] },
+  { answer: 'gorilla',    clues: ['Silverback', 'Primate', 'Chest beat', 'Jungle', 'Ape'] },
+  { answer: 'leopard',    clues: ['Spots', 'Nocturnal', 'Camouflage', 'Pounce', 'Cat'] },
+  { answer: 'cheetah',    clues: ['Fastest', 'Sprint', 'Savanna', 'Spots', 'Cat'] },
+  { answer: 'jaguar',     clues: ['Amazon', 'Rosette', 'Stealthy', 'Pounce', 'Cat'] },
+  { answer: 'panda',      clues: ['Bamboo', 'Endangered', 'China', 'Black-white', 'Bear'] },
+  { answer: 'maple',      clues: ['Syrup', 'Canada', 'Autumn', 'Leaf', 'Tree'] },
+  { answer: 'cedar',      clues: ['Aromatic', 'Lebanon', 'Durable', 'Evergreen', 'Wood'] },
+  { answer: 'bamboo',     clues: ['Panda', 'Hollow', 'Fast', 'Stalks', 'Grass'] },
+  { answer: 'cactus',     clues: ['Spine', 'Succulent', 'Drought', 'Prickle', 'Desert'] },
+  { answer: 'orchid',     clues: ['Exotic', 'Fragile', 'Fragrant', 'Tropical', 'Flower'] },
+  { answer: 'violet',     clues: ['Purple', 'Shy', 'Fragrant', 'Petals', 'Small'] },
+  { answer: 'daisy',      clues: ['Chain', 'Meadow', 'White', 'Petals', 'Flower'] },
+  { answer: 'tulip',      clues: ['Holland', 'Bulb', 'Spring', 'Cup', 'Bloom'] },
+  { answer: 'lotus',      clues: ['Muddy', 'Buddhism', 'Float', 'Sacred', 'Pink'] },
+  { answer: 'fern',       clues: ['Spore', 'Frond', 'Shaded', 'Ancient', 'Green'] },
+  { answer: 'copper',     clues: ['Penny', 'Wire', 'Pipe', 'Tarnish', 'Metal'] },
+  { answer: 'silver',     clues: ['Tarnish', 'Lustrous', 'Lunar', 'Mirror', 'Metal'] },
+  { answer: 'marble',     clues: ['Quarry', 'Veins', 'Smooth', 'Statue', 'Stone'] },
+  { answer: 'granite',    clues: ['Rough', 'Countertop', 'Intrusive', 'Igneous', 'Rock'] },
+  { answer: 'velvet',     clues: ['Plush', 'Rope', 'Soft', 'Royal', 'Fabric'] },
+  { answer: 'cotton',     clues: ['Boll', 'Weave', 'Breathable', 'Natural', 'Fiber'] },
+  { answer: 'leather',    clues: ['Tan', 'Hide', 'Durable', 'Cowhide', 'Skin'] },
+  { answer: 'rubber',     clues: ['Elastic', 'Latex', 'Bounce', 'Stretch', 'Band'] },
+  { answer: 'plastic',    clues: ['Polymer', 'Mold', 'Synthetic', 'Flexible', 'Material'] },
+  { answer: 'bronze',     clues: ['Alloy', 'Patina', 'Medal', 'Copper-tin', 'Metal'] },
+  { answer: 'butter',     clues: ['Churn', 'Spread', 'Dairy', 'Yellow', 'Melt'] },
+  { answer: 'cheese',     clues: ['Curd', 'Brie', 'Aged', 'Rind', 'Dairy'] },
+  { answer: 'pepper',     clues: ['Mill', 'Grind', 'Spice', 'Black', 'Hot'] },
+  { answer: 'ginger',     clues: ['Root', 'Snap', 'Ale', 'Warm', 'Spice'] },
+  { answer: 'garlic',     clues: ['Clove', 'Bulb', 'Pungent', 'Herb', 'Cook'] },
+  { answer: 'lemon',      clues: ['Sour', 'Citrus', 'Zest', 'Yellow', 'Squeeze'] },
+  { answer: 'mango',      clues: ['Tropical', 'Stone', 'Juice', 'Orange', 'Sweet'] },
+  { answer: 'cherry',     clues: ['Pit', 'Stem', 'Red', 'Blossom', 'Sweet'] },
+  { answer: 'peach',      clues: ['Fuzz', 'Soft', 'Georgia', 'Pit', 'Fruit'] },
+  { answer: 'grape',      clues: ['Vine', 'Bunch', 'Wine', 'Purple', 'Harvest'] },
+  { answer: 'storm',      clues: ['Gale', 'Thunder', 'Rain', 'Lightning', 'Dark'] },
+  { answer: 'breeze',     clues: ['Gentle', 'Cool', 'Rustling', 'Soft', 'Wind'] },
+  { answer: 'frost',      clues: ['Crystal', 'Icy', 'Morning', 'White', 'Cold'] },
+  { answer: 'smoke',      clues: ['Signal', 'Haze', 'Chimney', 'Gray', 'Fire'] },
+  { answer: 'flame',      clues: ['Flicker', 'Blaze', 'Candle', 'Burn', 'Light'] },
+  { answer: 'steam',      clues: ['Pressure', 'Boil', 'Fog', 'Engine', 'Hot'] },
+  { answer: 'shadow',     clues: ['Silhouette', 'Dark', 'Shade', 'Follow', 'Light'] },
+  { answer: 'mirror',     clues: ['Silver', 'Reflect', 'Glass', 'Reverse', 'Face'] },
+  { answer: 'candle',     clues: ['Wax', 'Drip', 'Wick', 'Glow', 'Flame'] },
+  { answer: 'lantern',    clues: ['Hang', 'Carry', 'Glow', 'Old', 'Light'] },
+  { answer: 'anchor',     clues: ['Chain', 'Drop', 'Weight', 'Hold', 'Ship'] },
+  { answer: 'compass',    clues: ['Needle', 'North', 'Bearing', 'Navigate', 'Direction'] },
+  { answer: 'ladder',     clues: ['Rung', 'Climb', 'Lean', 'Height', 'Steps'] },
+  { answer: 'hammer',     clues: ['Forge', 'Nail', 'Strike', 'Tool', 'Drive'] },
+  { answer: 'shovel',     clues: ['Blade', 'Dig', 'Scoop', 'Dirt', 'Earth'] },
+  { answer: 'needle',     clues: ['Eye', 'Thread', 'Sharp', 'Sew', 'Point'] },
+  { answer: 'ribbon',     clues: ['Bow', 'Prize', 'Wrap', 'Silk', 'Tie'] },
+  { answer: 'button',     clues: ['Stitch', 'Sew', 'Press', 'Click', 'Fastener'] },
+  { answer: 'zipper',     clues: ['Slider', 'Pull', 'Teeth', 'Close', 'Fasten'] },
+  { answer: 'pocket',     clues: ['Hidden', 'Billiard', 'Square', 'Lint', 'Pouch'] },
+  { answer: 'helmet',     clues: ['Visor', 'Strap', 'Protect', 'Head', 'Guard'] },
+  { answer: 'shield',     clues: ['Crest', 'Deflect', 'Coat-of-arms', 'Defend', 'Block'] },
+  { answer: 'sword',      clues: ['Hilt', 'Scabbard', 'Duel', 'Forge', 'Blade'] },
+  { answer: 'arrow',      clues: ['Quiver', 'Bow', 'Aim', 'Point', 'Target'] },
+  { answer: 'cannon',     clues: ['Ball', 'Powder', 'Boom', 'Fire', 'Iron'] },
+  { answer: 'trumpet',    clues: ['Valve', 'Brass', 'Fanfare', 'Blow', 'Jazz'] },
+  { answer: 'violin',     clues: ['Rosin', 'Bow', 'String', 'Pitch', 'Classical'] },
+  { answer: 'drums',      clues: ['Cymbal', 'Sticks', 'Beat', 'Kit', 'Rhythm'] },
+  { answer: 'flute',      clues: ['Breath', 'Key', 'Woodwind', 'Blow', 'Orchestra'] },
+  { answer: 'harp',       clues: ['Pluck', 'Angel', 'Pedal', 'Gold', 'Strings'] },
+  { answer: 'throne',     clues: ['Crown', 'Royalty', 'Seat', 'Power', 'King'] },
+  { answer: 'prison',     clues: ['Cell', 'Guard', 'Bar', 'Sentence', 'Lock'] },
+  { answer: 'chapel',     clues: ['Pew', 'Altar', 'Bell', 'Holy', 'Small'] },
+  { answer: 'tower',      clues: ['Turret', 'Tall', 'Height', 'Clock', 'Beacon'] },
+  { answer: 'tunnel',     clues: ['Bore', 'Underground', 'Dark', 'Through', 'Exit'] },
+  { answer: 'lighthouse', clues: ['Beacon', 'Coast', 'Keeper', 'Rocky', 'Light'] },
+  { answer: 'windmill',   clues: ['Vane', 'Grain', 'Dutch', 'Sail', 'Wind'] },
+  { answer: 'fountain',   clues: ['Coin', 'Jet', 'Splash', 'Park', 'Water'] },
+  { answer: 'parade',     clues: ['Float', 'March', 'Crowd', 'Music', 'Street'] },
+  { answer: 'festival',   clues: ['Stage', 'Crowd', 'Celebrate', 'Music', 'Event'] },
+  { answer: 'carnival',   clues: ['Ride', 'Game', 'Cotton candy', 'Ferris wheel', 'Fun'] },
+  { answer: 'theater',    clues: ['Stage', 'Curtain', 'Act', 'Perform', 'Show'] },
+  { answer: 'library',    clues: ['Shelf', 'Quiet', 'Catalog', 'Borrow', 'Books'] },
+  { answer: 'stadium',    clues: ['Crowd', 'Field', 'Seat', 'Cheer', 'Sports'] },
+  { answer: 'airport',    clues: ['Terminal', 'Gate', 'Runway', 'Luggage', 'Fly'] },
+  { answer: 'station',    clues: ['Platform', 'Depart', 'Track', 'Schedule', 'Train'] },
+  { answer: 'school',     clues: ['Homework', 'Lesson', 'Grade', 'Class', 'Learn'] },
 ];
+
+const WORDLE_WORDS_5 = WORDLE_WORDS.filter(w => w.length === WORDLE_LEN);
 
 function dailyWord(): string {
   const epoch = new Date('2024-01-01').getTime();
   const day = Math.floor((Date.now() - epoch) / 86400000);
-  const idx = day % WORDLE_WORDS.length;
-  return WORDLE_WORDS[idx];
+  return WORDLE_WORDS_5[day % WORDLE_WORDS_5.length];
 }
 
-function dailyPinpointWord(offset = 0): string {
+function dailyPinpointPuzzle(): PinpointPuzzle {
   const epoch = new Date('2024-01-01').getTime();
   const day = Math.floor((Date.now() - epoch) / 86400000);
-  return PINPOINT_WORDS[(day + offset) % PINPOINT_WORDS.length];
+  return PINPOINT_PUZZLES[day % PINPOINT_PUZZLES.length];
 }
 
 type LetterState = 'hit' | 'present' | 'miss' | 'empty';
@@ -151,46 +268,11 @@ export class Minigames {
   }
 
   /* ── Pinpoint ───────────────────────────────────────────── */
-  async loadPinpoint() {
-    this.pinpointLoading.set(true);
-    this.pinpointLoadError.set('');
+  loadPinpoint() {
     this.cluesShown.set(1);
     this.guess.set('');
     this.pinpointStatus.set('playing');
-
-    // Try today's word first, then next words in list until one has enough clues
-    for (let i = 0; i < PINPOINT_WORDS.length; i++) {
-      const answer = dailyPinpointWord(i);
-      try {
-        const clues = await this.fetchClues(answer);
-        if (clues.length >= PINPOINT_CLUES) {
-          this.pinpointPuzzle.set({ answer, clues: clues.slice(0, PINPOINT_CLUES) });
-          this.pinpointLoading.set(false);
-          return;
-        }
-      } catch {}
-    }
-    this.pinpointLoadError.set('Could not generate a puzzle. Try again.');
-    this.pinpointLoading.set(false);
-  }
-
-  private async fetchClues(word: string): Promise<string[]> {
-    try {
-      const res = await firstValueFrom(
-        this.http.get<DatamuseWord[]>(
-          `https://api.datamuse.com/words?rel_trg=${encodeURIComponent(word)}&max=20`,
-        ),
-      );
-      const clues = (res ?? [])
-        .map((d) => d.word)
-        .filter((w) => /^[a-zA-Z][a-zA-Z\- ]{1,20}$/.test(w))
-        .filter((w) => !w.toLowerCase().includes(word.toLowerCase()))
-        .filter((w) => !word.toLowerCase().includes(w.toLowerCase()))
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1));
-      return Array.from(new Set(clues));
-    } catch {
-      return [];
-    }
+    this.pinpointPuzzle.set(dailyPinpointPuzzle());
   }
 
   onGuessInput(e: Event) {
@@ -233,7 +315,8 @@ export class Minigames {
   }
 
   private async isValidWord(word: string): Promise<boolean> {
-    if (WORDLE_WORDS.includes(word)) return true;
+    if (word.length !== WORDLE_LEN) return false;
+    if (WORDLE_WORDS_5.includes(word)) return true;
     try {
       await firstValueFrom(
         this.http.get(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`),
