@@ -2,6 +2,10 @@ package com.example.konkat.user
 import org.hibernate.annotations.CreationTimestamp
 import jakarta.persistence.*
 import java.time.LocalDateTime
+
+enum class ProfileVisibility { PUBLIC, CONNECTIONS, PRIVATE }
+enum class AllowDms { EVERYONE, FOLLOWING, NOBODY }
+
 @Entity
 @Table(name = "users")
 data class User(
@@ -60,7 +64,23 @@ data class User(
     var reputation: Int = 0,
 
     @CreationTimestamp
-    val joinedAt: LocalDateTime? = null   // nullable: existing rows may have NULL in DB
+    val joinedAt: LocalDateTime? = null,   // nullable: existing rows may have NULL in DB
+
+    // ── Notification prefs ────────────────────────────────────────────────
+    var emailOnFollow:      Boolean = true,
+    var emailOnPostLike:    Boolean = true,
+    var emailOnPostComment: Boolean = true,
+    var emailOnMessage:     Boolean = true,
+    var emailOnHackathon:   Boolean = true,
+    var emailOnWebinar:     Boolean = true,
+    var emailOnQa:          Boolean = true,
+
+    // ── Privacy ───────────────────────────────────────────────────────────
+    @Enumerated(EnumType.STRING)
+    var profileVisibility: ProfileVisibility = ProfileVisibility.PUBLIC,
+    @Enumerated(EnumType.STRING)
+    var allowDms: AllowDms = AllowDms.EVERYONE,
+    var showOnlineStatus: Boolean = true,
 )
 
 enum class UserRole { USER, ADMIN }

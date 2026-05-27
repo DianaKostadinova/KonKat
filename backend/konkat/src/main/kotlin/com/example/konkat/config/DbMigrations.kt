@@ -44,6 +44,32 @@ class DbMigrations {
                 stmt.execute("""
                     ALTER TABLE notifications ADD COLUMN IF NOT EXISTS webinar_id bigint
                 """.trimIndent())
+
+                // users: add notification preference columns if they don't exist yet
+                stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_on_follow boolean NOT NULL DEFAULT true")
+                stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_on_post_like boolean NOT NULL DEFAULT true")
+                stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_on_post_comment boolean NOT NULL DEFAULT true")
+                stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_on_message boolean NOT NULL DEFAULT true")
+                stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_on_hackathon boolean NOT NULL DEFAULT true")
+                stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_on_webinar boolean NOT NULL DEFAULT true")
+                stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_on_qa boolean NOT NULL DEFAULT true")
+                stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS show_online_status boolean NOT NULL DEFAULT true")
+
+                // users: add privacy enum columns if they don't exist yet
+                stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_visibility varchar(255) NOT NULL DEFAULT 'PUBLIC'")
+                stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS allow_dms varchar(255) NOT NULL DEFAULT 'EVERYONE'")
+
+                // users: drop and recreate check constraints for the enum columns
+                stmt.execute("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_profile_visibility_check")
+                stmt.execute("""
+                    ALTER TABLE users ADD CONSTRAINT users_profile_visibility_check
+                    CHECK (profile_visibility::text = ANY(ARRAY['PUBLIC', 'CONNECTIONS', 'PRIVATE']::text[]))
+                """.trimIndent())
+                stmt.execute("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_allow_dms_check")
+                stmt.execute("""
+                    ALTER TABLE users ADD CONSTRAINT users_allow_dms_check
+                    CHECK (allow_dms::text = ANY(ARRAY['EVERYONE', 'FOLLOWING', 'NOBODY']::text[]))
+                """.trimIndent())
             }
         }
     }

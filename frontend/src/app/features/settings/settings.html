@@ -1,0 +1,415 @@
+<div class="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
+  <div class="max-w-5xl mx-auto px-4 py-8 flex gap-6">
+
+    <!-- Sidebar nav -->
+    <aside class="w-52 flex-shrink-0 hidden md:block">
+      <div class="sticky top-8 flex flex-col gap-1">
+        <p class="text-[10px] font-bold tracking-widest uppercase text-[#555] px-3 mb-2">Settings</p>
+        @for (s of sections; track s.value) {
+          <button
+            (click)="setSection(s.value)"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left w-full"
+            [class.bg-[#1e1e1e]]="activeSection() === s.value"
+            [class.text-[#f0f0f0]]="activeSection() === s.value"
+            [class.text-[#888]]="activeSection() !== s.value"
+            [class.hover:bg-[#1a1a1a]]="activeSection() !== s.value"
+            [class.text-red-400]="s.value === 'danger'"
+          >
+            <span class="material-icons-outlined" style="font-size: 18px;">{{ s.icon }}</span>
+            {{ s.label }}
+          </button>
+        }
+      </div>
+    </aside>
+
+    <!-- Mobile section tabs -->
+    <div class="flex gap-2 overflow-x-auto pb-1 md:hidden w-full">
+      @for (s of sections; track s.value) {
+        <button
+          (click)="setSection(s.value)"
+          class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all border"
+          [class.bg-[#E8593C]]="activeSection() === s.value"
+          [class.border-[#E8593C]]="activeSection() === s.value"
+          [class.text-white]="activeSection() === s.value"
+          [class.border-[#2a2a2a]]="activeSection() !== s.value"
+          [class.text-[#888]]="activeSection() !== s.value"
+        >
+          <span class="material-icons-outlined" style="font-size: 14px;">{{ s.icon }}</span>
+          {{ s.label }}
+        </button>
+      }
+    </div>
+
+    <!-- Content -->
+    <main class="flex-1 min-w-0">
+
+      @if (loading()) {
+        <div class="flex items-center justify-center py-20">
+          <span class="material-icons animate-spin text-[#555]">refresh</span>
+        </div>
+      }
+
+      @if (!loading()) {
+
+        <!-- ── Account ── -->
+        @if (activeSection() === 'account') {
+          <div class="flex flex-col gap-6">
+            <div>
+              <h1 class="text-lg font-bold text-[var(--color-text)]">Account</h1>
+              <p class="text-sm text-[#888] mt-1">Update your public profile information.</p>
+            </div>
+
+            <!-- Read-only info row -->
+            <div class="rounded-xl border border-[#2a2a2a] bg-[#111] divide-y divide-[#2a2a2a]">
+              <div class="px-5 py-3 flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-xs text-[#555] uppercase tracking-wider mb-0.5">Email</p>
+                  <p class="text-sm text-[var(--color-text)]">{{ userEmail }}</p>
+                </div>
+                <div class="flex items-center gap-1.5 text-xs text-[#888]">
+                  <span class="material-icons-outlined text-purple-400" style="font-size: 14px;">verified_user</span>
+                  Clerk
+                </div>
+              </div>
+            </div>
+
+            <!-- Editable fields -->
+            <div class="rounded-xl border border-[#2a2a2a] bg-[#111] px-5 py-5 flex flex-col gap-4">
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs text-[#555] uppercase tracking-wider">Display Name</label>
+                  <input type="text" [(ngModel)]="account.displayName" placeholder="Your full name"
+                    class="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:border-[#E8593C] placeholder:text-[#555] transition-colors" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs text-[#555] uppercase tracking-wider">Username</label>
+                  <input type="text" [(ngModel)]="account.username" placeholder="@username"
+                    class="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:border-[#E8593C] placeholder:text-[#555] transition-colors" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs text-[#555] uppercase tracking-wider">Title / Role</label>
+                  <input type="text" [(ngModel)]="account.title" placeholder="e.g. Software Engineer"
+                    class="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:border-[#E8593C] placeholder:text-[#555] transition-colors" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs text-[#555] uppercase tracking-wider">Company</label>
+                  <input type="text" [(ngModel)]="account.company" placeholder="Where you work"
+                    class="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:border-[#E8593C] placeholder:text-[#555] transition-colors" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs text-[#555] uppercase tracking-wider">Location</label>
+                  <input type="text" [(ngModel)]="account.location" placeholder="City, Country"
+                    class="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:border-[#E8593C] placeholder:text-[#555] transition-colors" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs text-[#555] uppercase tracking-wider">GitHub</label>
+                  <input type="text" [(ngModel)]="account.github" placeholder="https://github.com/you"
+                    class="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:border-[#E8593C] placeholder:text-[#555] transition-colors" />
+                </div>
+                <div class="flex flex-col gap-1.5 sm:col-span-2">
+                  <label class="text-xs text-[#555] uppercase tracking-wider">Website</label>
+                  <input type="text" [(ngModel)]="account.website" placeholder="https://yoursite.com"
+                    class="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:border-[#E8593C] placeholder:text-[#555] transition-colors" />
+                </div>
+                <div class="flex flex-col gap-1.5 sm:col-span-2">
+                  <label class="text-xs text-[#555] uppercase tracking-wider">Bio</label>
+                  <textarea [(ngModel)]="account.bio" placeholder="Tell people about yourself..." rows="4"
+                    class="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:border-[#E8593C] placeholder:text-[#555] transition-colors resize-none"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-end items-center gap-3">
+              @if (savedAccount()) {
+                <span class="flex items-center gap-1.5 text-sm text-green-400">
+                  <span class="material-icons" style="font-size: 16px;">check_circle</span> Saved
+                </span>
+              }
+              @if (globalError()) {
+                <span class="text-sm text-red-400">{{ globalError() }}</span>
+              }
+              <button
+                (click)="saveAccount()"
+                [disabled]="savingAccount()"
+                class="px-5 py-2 rounded-lg bg-[#E8593C] text-white text-sm font-semibold hover:bg-[#d44e33] transition-all disabled:opacity-50"
+              >
+                {{ savingAccount() ? 'Saving…' : 'Save Account' }}
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- ── Notifications ── -->
+        @if (activeSection() === 'notifications') {
+          <div class="flex flex-col gap-6">
+            <div>
+              <h1 class="text-lg font-bold text-[var(--color-text)]">Notifications</h1>
+              <p class="text-sm text-[#888] mt-1">Choose which emails you want to receive.</p>
+            </div>
+
+            <div class="rounded-xl border border-[#2a2a2a] bg-[#111] divide-y divide-[#2a2a2a]">
+              @for (row of [
+                { label: 'New follower',      sub: 'Someone follows you',            field: 'emailOnFollow' },
+                { label: 'Post liked',        sub: 'Someone likes your post',        field: 'emailOnPostLike' },
+                { label: 'Post commented',    sub: 'Someone comments on your post',  field: 'emailOnPostComment' },
+                { label: 'New message',       sub: 'You receive a direct message',   field: 'emailOnMessage' },
+                { label: 'Hackathon updates', sub: 'Registration and invite alerts',  field: 'emailOnHackathon' },
+                { label: 'Webinar attendee',  sub: 'Someone attends your webinar',   field: 'emailOnWebinar' },
+                { label: 'Q&A activity',      sub: 'Answers and votes on your posts',field: 'emailOnQa' }
+              ]; track row.field) {
+                <div class="flex items-center justify-between px-5 py-4">
+                  <div>
+                    <p class="text-sm text-[var(--color-text)]">{{ row.label }}</p>
+                    <p class="text-xs text-[#888]">{{ row.sub }}</p>
+                  </div>
+                  <button
+                    (click)="updateField($any(row.field), !getNotifField(row.field))"
+                    class="relative w-11 h-6 rounded-full transition-colors flex-shrink-0"
+                    [class.bg-[#E8593C]]="getNotifField(row.field)"
+                    [class.bg-[#2a2a2a]]="!getNotifField(row.field)"
+                  >
+                    <span
+                      class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"
+                      [class.translate-x-5]="getNotifField(row.field)"
+                      [class.translate-x-0.5]="!getNotifField(row.field)"
+                    ></span>
+                  </button>
+                </div>
+              }
+            </div>
+
+            <div class="flex justify-end gap-3">
+              @if (saved()) {
+                <span class="flex items-center gap-1.5 text-sm text-green-400">
+                  <span class="material-icons" style="font-size: 16px;">check_circle</span>
+                  Saved
+                </span>
+              }
+              <button
+                (click)="save()"
+                [disabled]="saving()"
+                class="px-5 py-2 rounded-lg bg-[#E8593C] text-white text-sm font-semibold hover:bg-[#d44e33] transition-all disabled:opacity-50"
+              >
+                {{ saving() ? 'Saving…' : 'Save changes' }}
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- ── Privacy ── -->
+        @if (activeSection() === 'privacy') {
+          <div class="flex flex-col gap-6">
+            <div>
+              <h1 class="text-lg font-bold text-[var(--color-text)]">Privacy</h1>
+              <p class="text-sm text-[#888] mt-1">Control who can see your profile and contact you.</p>
+            </div>
+
+            <div class="rounded-xl border border-[#2a2a2a] bg-[#111] divide-y divide-[#2a2a2a]">
+
+              <!-- Profile visibility -->
+              <div class="px-5 py-4">
+                <p class="text-sm font-medium text-[var(--color-text)] mb-1">Profile visibility</p>
+                <p class="text-xs text-[#888] mb-3">Who can view your profile page.</p>
+                <div class="flex gap-2 flex-wrap">
+                  @for (opt of [{v:'PUBLIC',l:'Public'},{v:'CONNECTIONS',l:'Connections only'},{v:'PRIVATE',l:'Private'}]; track opt.v) {
+                    <button
+                      (click)="updateField('profileVisibility', opt.v)"
+                      class="px-3 py-1.5 rounded-full text-xs font-medium border transition-all"
+                      [class.bg-[#E8593C]]="settings().profileVisibility === opt.v"
+                      [class.border-[#E8593C]]="settings().profileVisibility === opt.v"
+                      [class.text-white]="settings().profileVisibility === opt.v"
+                      [class.border-[#2a2a2a]]="settings().profileVisibility !== opt.v"
+                      [class.text-[#888]]="settings().profileVisibility !== opt.v"
+                    >{{ opt.l }}</button>
+                  }
+                </div>
+              </div>
+
+              <!-- Allow DMs -->
+              <div class="px-5 py-4">
+                <p class="text-sm font-medium text-[var(--color-text)] mb-1">Direct messages</p>
+                <p class="text-xs text-[#888] mb-3">Who can send you direct messages.</p>
+                <div class="flex gap-2 flex-wrap">
+                  @for (opt of [{v:'EVERYONE',l:'Everyone'},{v:'FOLLOWING',l:'People I follow'},{v:'NOBODY',l:'Nobody'}]; track opt.v) {
+                    <button
+                      (click)="updateField('allowDms', opt.v)"
+                      class="px-3 py-1.5 rounded-full text-xs font-medium border transition-all"
+                      [class.bg-[#E8593C]]="settings().allowDms === opt.v"
+                      [class.border-[#E8593C]]="settings().allowDms === opt.v"
+                      [class.text-white]="settings().allowDms === opt.v"
+                      [class.border-[#2a2a2a]]="settings().allowDms !== opt.v"
+                      [class.text-[#888]]="settings().allowDms !== opt.v"
+                    >{{ opt.l }}</button>
+                  }
+                </div>
+              </div>
+
+              <!-- Online status -->
+              <div class="flex items-center justify-between px-5 py-4">
+                <div>
+                  <p class="text-sm text-[var(--color-text)]">Show online status</p>
+                  <p class="text-xs text-[#888]">Let others see when you're active</p>
+                </div>
+                <button
+                  (click)="updateField('showOnlineStatus', !settings().showOnlineStatus)"
+                  class="relative w-11 h-6 rounded-full transition-colors flex-shrink-0"
+                  [class.bg-[#E8593C]]="settings().showOnlineStatus"
+                  [class.bg-[#2a2a2a]]="!settings().showOnlineStatus"
+                >
+                  <span
+                    class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"
+                    [class.translate-x-5]="settings().showOnlineStatus"
+                    [class.translate-x-0.5]="!settings().showOnlineStatus"
+                  ></span>
+                </button>
+              </div>
+
+            </div>
+
+            <div class="flex justify-end gap-3">
+              @if (saved()) {
+                <span class="flex items-center gap-1.5 text-sm text-green-400">
+                  <span class="material-icons" style="font-size: 16px;">check_circle</span>
+                  Saved
+                </span>
+              }
+              <button
+                (click)="save()"
+                [disabled]="saving()"
+                class="px-5 py-2 rounded-lg bg-[#E8593C] text-white text-sm font-semibold hover:bg-[#d44e33] transition-all disabled:opacity-50"
+              >
+                {{ saving() ? 'Saving…' : 'Save changes' }}
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- ── Appearance ── -->
+        @if (activeSection() === 'appearance') {
+          <div class="flex flex-col gap-6">
+            <div>
+              <h1 class="text-lg font-bold text-[var(--color-text)]">Appearance</h1>
+              <p class="text-sm text-[#888] mt-1">Personalise how KonKat looks for you.</p>
+            </div>
+
+            <div class="rounded-xl border border-[#2a2a2a] bg-[#111] px-5 py-5">
+              <p class="text-sm font-semibold text-[var(--color-text)] mb-4">Theme</p>
+              <div class="flex gap-4 flex-wrap">
+
+                <!-- Dark option -->
+                <button
+                  (click)="themeService.set('dark')"
+                  class="flex flex-col items-center gap-2 group"
+                >
+                  <div
+                    class="w-36 h-24 rounded-xl border-2 overflow-hidden transition-all"
+                    [class.border-[#E8593C]]="isDark()"
+                    [class.border-[#2a2a2a]]="!isDark()"
+                  >
+                    <div class="w-full h-full bg-[#0f0f0f] flex flex-col gap-1 p-2">
+                      <div class="h-2 w-3/4 rounded bg-[#2a2a2a]"></div>
+                      <div class="h-1.5 w-1/2 rounded bg-[#1a1a1a]"></div>
+                      <div class="mt-1 h-8 w-full rounded-lg bg-[#1a1a1a] border border-[#2a2a2a]"></div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    @if (isDark()) {
+                      <span class="material-icons text-[#E8593C]" style="font-size: 14px;">check_circle</span>
+                    }
+                    <span class="text-xs" [class.text-[#E8593C]]="isDark()" [class.text-[#888]]="!isDark()">Dark</span>
+                  </div>
+                </button>
+
+                <!-- Light option -->
+                <button
+                  (click)="themeService.set('light')"
+                  class="flex flex-col items-center gap-2 group"
+                >
+                  <div
+                    class="w-36 h-24 rounded-xl border-2 overflow-hidden transition-all"
+                    [class.border-[#E8593C]]="!isDark()"
+                    [class.border-[#2a2a2a]]="isDark()"
+                  >
+                    <div class="w-full h-full bg-[#f5f5f5] flex flex-col gap-1 p-2">
+                      <div class="h-2 w-3/4 rounded bg-[#ddd]"></div>
+                      <div class="h-1.5 w-1/2 rounded bg-[#e8e8e8]"></div>
+                      <div class="mt-1 h-8 w-full rounded-lg bg-white border border-[#ddd]"></div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    @if (!isDark()) {
+                      <span class="material-icons text-[#E8593C]" style="font-size: 14px;">check_circle</span>
+                    }
+                    <span class="text-xs" [class.text-[#E8593C]]="!isDark()" [class.text-[#888]]="isDark()">Light</span>
+                  </div>
+                </button>
+
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- ── Danger Zone ── -->
+        @if (activeSection() === 'danger') {
+          <div class="flex flex-col gap-6">
+            <div>
+              <h1 class="text-lg font-bold text-red-400">Danger Zone</h1>
+              <p class="text-sm text-[#888] mt-1">Irreversible actions. Proceed with caution.</p>
+            </div>
+
+            <div class="rounded-xl border border-red-900/50 bg-red-950/10 px-5 py-5 flex flex-col gap-4">
+              <div class="flex items-start gap-3">
+                <span class="material-icons text-red-400 mt-0.5" style="font-size: 20px;">warning_amber</span>
+                <div>
+                  <p class="text-sm font-semibold text-red-400">Delete account</p>
+                  <p class="text-xs text-[#888] mt-0.5">
+                    Permanently delete your account and all associated data including posts, projects, messages, and saved events.
+                    This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+
+              @if (!deleteConfirm()) {
+                <button
+                  (click)="deleteConfirm.set(true)"
+                  class="self-start px-4 py-2 rounded-lg border border-red-800 text-red-400 text-sm font-medium hover:bg-red-900/20 transition-all"
+                >
+                  Delete my account
+                </button>
+              } @else {
+                <div class="flex flex-col gap-3 bg-[#111] rounded-lg border border-red-800/50 p-4">
+                  <p class="text-xs text-[#888]">Type <span class="font-bold text-red-400">DELETE</span> to confirm deletion.</p>
+                  <input
+                    type="text"
+                    placeholder="Type DELETE here"
+                    [(ngModel)]="deleteInput"
+                    (ngModelChange)="deleteError.set('')"
+                    class="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:border-red-700 placeholder:text-[#555]"
+                  />
+                  @if (deleteError()) {
+                    <p class="text-xs text-red-400">{{ deleteError() }}</p>
+                  }
+                  <div class="flex gap-2">
+                    <button
+                      (click)="deleteConfirm.set(false); deleteInput.set(''); deleteError.set('')"
+                      class="px-4 py-2 rounded-lg border border-[#2a2a2a] text-[#888] text-sm hover:text-[var(--color-text)] transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      (click)="confirmDelete()"
+                      class="px-4 py-2 rounded-lg bg-red-700 text-white text-sm font-semibold hover:bg-red-800 transition-all"
+                    >
+                      Permanently delete
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+      }
+    </main>
+  </div>
+</div>

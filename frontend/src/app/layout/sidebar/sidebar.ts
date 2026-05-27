@@ -19,5 +19,7 @@ export class Sidebar {
     { label: 'Workspace',      mobileLabel: 'Work',     icon: 'group',                 route: '/myworkspaces' },
     { type: 'divider' },
     { label: 'Minigames',      mobileLabel: 'Games',    icon: 'extension',             route: '/minigames' },
+    { type: 'divider' },
+    { label: 'Settings',      mobileLabel: 'Settings', icon: 'settings',              route: '/settings' },
   ];
 }

@@ -52,8 +52,25 @@ class NotificationSender(
             return
         }
 
+        // Check recipient's email preferences before sending
+        val shouldEmail = when (type) {
+            NotificationType.FOLLOW             -> recipient.emailOnFollow
+            NotificationType.POST_LIKE,
+            NotificationType.POST_SHARE         -> recipient.emailOnPostLike
+            NotificationType.POST_COMMENT       -> recipient.emailOnPostComment
+            NotificationType.MESSAGE            -> recipient.emailOnMessage
+            NotificationType.HACKATHON_REGISTER,
+            NotificationType.HACKATHON_SAVED,
+            NotificationType.HACKATHON_INVITE,
+            NotificationType.HACKATHON_STARTED  -> recipient.emailOnHackathon
+            NotificationType.WEBINAR_ATTEND     -> recipient.emailOnWebinar
+            NotificationType.QA_ANSWER,
+            NotificationType.QA_ANSWER_ACCEPTED,
+            NotificationType.QA_VOTE            -> recipient.emailOnQa
+            else                                -> true
+        }
         // Send email asynchronously (fire-and-forget, never blocks the request)
-        emailService.sendNotificationEmail(recipient, actor, type)
+        if (shouldEmail) emailService.sendNotificationEmail(recipient, actor, type)
 
         // Push via WebSocket only after the REQUIRES_NEW transaction commits,
         // so the client's follow-up GET will always find the row.

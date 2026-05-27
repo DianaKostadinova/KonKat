@@ -17,6 +17,7 @@ import { Trending } from './features/trending/trending';
 import { SearchResultsPage } from './features/search/search-results';
 import { Minigames } from './features/minigames/minigames';
 import { Practice } from './features/practice/practice';
+import { Settings } from './features/settings/settings';
 
 export const routes: Routes = [
   { path: '',        redirectTo: 'feed', pathMatch: 'full' },
@@ -39,4 +40,5 @@ export const routes: Routes = [
   { path: 'search',        component: SearchResultsPage,    canActivate: [authGuard] },
   { path: 'minigames',     component: Minigames,            canActivate: [authGuard] },
   { path: 'practice',      component: Practice,             canActivate: [authGuard] },
+  { path: 'settings',      component: Settings,             canActivate: [authGuard] },
 ];

@@ -1,8 +1,11 @@
 package com.example.konkat.user
 
+import com.example.konkat.event.SavedEventRepository
+import com.example.konkat.notification.NotificationRepository
 import com.example.konkat.post.PostRepository
 import com.example.konkat.social.FollowRepository
 import jakarta.servlet.http.HttpServletRequest
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.HttpStatus
@@ -21,7 +24,10 @@ class UserController(
     private val postRepository: PostRepository,
     private val reputationService: ReputationService,
     private val minigameSolveRepository: MinigameSolveRepository,
+    private val savedEventRepository: SavedEventRepository,
+    private val notificationRepository: NotificationRepository,
 ) {
+    private val log = LoggerFactory.getLogger(UserController::class.java)
 
     // ── Own profile ───────────────────────────────────────────────────────────
 
@@ -233,6 +239,80 @@ class UserController(
             isFollowing    = isFollowing,
         ))
     }
+
+    // ── Settings ──────────────────────────────────────────────────────────────
+
+    /**
+     * GET /api/users/me/settings
+     * Returns the authenticated user's notification and privacy settings.
+     */
+    @GetMapping("/me/settings")
+    fun getSettings(request: HttpServletRequest): ResponseEntity<UserSettingsDto> {
+        val userId = request.getAttribute("userId") as? Long
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        val user = userRepository.findById(userId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+        }
+        return ResponseEntity.ok(user.toSettingsDto())
+    }
+
+    /**
+     * PUT /api/users/me/settings
+     * Updates notification and privacy settings.
+     */
+    @PutMapping("/me/settings")
+    fun updateSettings(
+        @RequestBody body: UpdateSettingsRequest,
+        request: HttpServletRequest,
+    ): ResponseEntity<UserSettingsDto> {
+        val userId = request.getAttribute("userId") as? Long
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        val user = userRepository.findById(userId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+        }
+
+        body.emailOnFollow?.let      { user.emailOnFollow      = it }
+        body.emailOnPostLike?.let    { user.emailOnPostLike    = it }
+        body.emailOnPostComment?.let { user.emailOnPostComment = it }
+        body.emailOnMessage?.let     { user.emailOnMessage     = it }
+        body.emailOnHackathon?.let   { user.emailOnHackathon   = it }
+        body.emailOnWebinar?.let     { user.emailOnWebinar     = it }
+        body.emailOnQa?.let          { user.emailOnQa          = it }
+        body.profileVisibility?.let  { user.profileVisibility  = ProfileVisibility.valueOf(it) }
+        body.allowDms?.let           { user.allowDms           = AllowDms.valueOf(it) }
+        body.showOnlineStatus?.let   { user.showOnlineStatus   = it }
+
+        val saved = userRepository.save(user)
+        return ResponseEntity.ok(saved.toSettingsDto())
+    }
+
+    /**
+     * DELETE /api/users/me
+     * Deletes the authenticated user's account and all associated data.
+     */
+    @DeleteMapping("/me")
+    fun deleteAccount(request: HttpServletRequest): ResponseEntity<Void> {
+        val userId = request.getAttribute("userId") as? Long
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+
+        return try {
+            // Delete saved events
+            val savedEvents = savedEventRepository.findByUserId(userId)
+            savedEventRepository.deleteAll(savedEvents)
+
+            // Delete notifications where user is recipient
+            val notifications = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(userId)
+            notificationRepository.deleteAll(notifications)
+
+            // Delete the user
+            userRepository.deleteById(userId)
+
+            ResponseEntity.noContent().build()
+        } catch (ex: Exception) {
+            log.error("Failed to delete account for userId={}: {}", userId, ex.message)
+            ResponseEntity.status(HttpStatus.CONFLICT).build()
+        }
+    }
 }
 
 // ── DTOs ──────────────────────────────────────────────────────────────────────
@@ -313,6 +393,32 @@ data class UpdateProfileRequest(
     val interests: List<String>?  = null,
 )
 
+data class UserSettingsDto(
+    val emailOnFollow: Boolean,
+    val emailOnPostLike: Boolean,
+    val emailOnPostComment: Boolean,
+    val emailOnMessage: Boolean,
+    val emailOnHackathon: Boolean,
+    val emailOnWebinar: Boolean,
+    val emailOnQa: Boolean,
+    val profileVisibility: String,
+    val allowDms: String,
+    val showOnlineStatus: Boolean,
+)
+
+data class UpdateSettingsRequest(
+    val emailOnFollow: Boolean? = null,
+    val emailOnPostLike: Boolean? = null,
+    val emailOnPostComment: Boolean? = null,
+    val emailOnMessage: Boolean? = null,
+    val emailOnHackathon: Boolean? = null,
+    val emailOnWebinar: Boolean? = null,
+    val emailOnQa: Boolean? = null,
+    val profileVisibility: String? = null,
+    val allowDms: String? = null,
+    val showOnlineStatus: Boolean? = null,
+)
+
 // ── Mapping ───────────────────────────────────────────────────────────────────
 
 private val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy")
@@ -347,4 +453,17 @@ fun User.toProfileDto(
         rep        = reputation,
         // projects + hackathons will be real once those features are built
     ),
+)
+
+fun User.toSettingsDto() = UserSettingsDto(
+    emailOnFollow      = emailOnFollow,
+    emailOnPostLike    = emailOnPostLike,
+    emailOnPostComment = emailOnPostComment,
+    emailOnMessage     = emailOnMessage,
+    emailOnHackathon   = emailOnHackathon,
+    emailOnWebinar     = emailOnWebinar,
+    emailOnQa          = emailOnQa,
+    profileVisibility  = profileVisibility.name,
+    allowDms           = allowDms.name,
+    showOnlineStatus   = showOnlineStatus,
 )
