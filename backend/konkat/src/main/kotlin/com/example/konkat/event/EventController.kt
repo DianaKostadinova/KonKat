@@ -57,7 +57,7 @@ class EventController(
                             )
                         }
 
-                EventType.WEBINAR ->
+                EventType.WEBINAR, EventType.WEBINAR_ATTEND ->
                     webinarRepository.findById(saved.eventId).orElse(null)
                         ?.takeIf { it.startDate == null || it.startDate!!.isAfter(now) }
                         ?.let { w ->
@@ -71,8 +71,6 @@ class EventController(
                                 tags      = w.tags.toList(),
                             )
                         }
-
-                EventType.WEBINAR_ATTEND -> null
             }
         }.sortedBy { it.startDate }
 

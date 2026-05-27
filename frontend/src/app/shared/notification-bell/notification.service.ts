@@ -25,6 +25,7 @@ function mapType(t: string): NotificationType {
     case 'QA_ANSWER':          return 'comment';
     case 'QA_ANSWER_ACCEPTED': return 'join_approved';
     case 'QA_VOTE':            return 'like';
+    case 'WEBINAR_ATTEND':     return 'hackathon_reminder';
     default:                   return 'mention';
   }
 }
@@ -47,6 +48,7 @@ function buildMessage(dto: any): string {
     case 'QA_ANSWER':          return `${actor} answered your question`;
     case 'QA_ANSWER_ACCEPTED': return 'Your answer was accepted as the solution!';
     case 'QA_VOTE':            return `${actor} upvoted your question`;
+    case 'WEBINAR_ATTEND':     return `${actor} is attending your webinar`;
     default:                   return `${actor} interacted with you`;
   }
 }
@@ -68,6 +70,7 @@ function buildTitle(type: string): string {
     case 'QA_ANSWER':          return 'New Answer';
     case 'QA_ANSWER_ACCEPTED': return 'Answer Accepted!';
     case 'QA_VOTE':            return 'Question Upvoted';
+    case 'WEBINAR_ATTEND':     return 'New Attendee';
     default:                   return 'Notification';
   }
 }
@@ -184,6 +187,7 @@ export class NotificationService {
                                                                                                      ? `/feed?post=${dto.postId}`
                : (dto.type === 'QA_ANSWER' || dto.type === 'QA_ANSWER_ACCEPTED' || dto.type === 'QA_VOTE')
                                                                                                      ? '/qa'
+               : dto.webinarId                                                                       ? '/hackathons'
                : dto.hackathonId                                                                     ? '/hackathons'
                : dto.projectId                                                                       ? '/projects'
                : dto.type === 'TEAM_REQUEST'                                                         ? '/find-team'

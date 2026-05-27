@@ -32,6 +32,7 @@ class NotificationSender(
         postId:      Long? = null,
         projectId:   Long? = null,
         hackathonId: Long? = null,
+        webinarId:   Long? = null,
     ) {
         val saved = try {
             notificationRepository.save(
@@ -42,6 +43,7 @@ class NotificationSender(
                     postId      = postId,
                     projectId   = projectId,
                     hackathonId = hackathonId,
+                    webinarId   = webinarId,
                 )
             )
         } catch (ex: Exception) {
@@ -66,6 +68,7 @@ class NotificationSender(
                     hackathonId = saved.hackathonId,
                     postId      = saved.postId,
                     projectId   = saved.projectId,
+                    webinarId   = saved.webinarId,
                     read        = false,
                     createdAt   = saved.createdAt?.toString() ?: "",
                     timeAgo     = "just now",

@@ -36,6 +36,7 @@ enum class NotificationType {
     QA_ANSWER,          // someone answered your question
     QA_ANSWER_ACCEPTED, // your answer was accepted as the solution
     QA_VOTE,            // someone upvoted your question or answer
+    WEBINAR_ATTEND,     // someone marked attendance on your webinar
 }
 
 // ── Entity ────────────────────────────────────────────────────────────────────
@@ -80,6 +81,7 @@ class Notification(
     val postId: Long? = null,
     val projectId: Long? = null,
     val hackathonId: Long? = null,
+    val webinarId: Long? = null,
 
     /** False until the user views/clicks the notification */
     var read: Boolean = false,

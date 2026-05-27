@@ -3,6 +3,8 @@ package com.example.konkat.webinar
 import com.example.konkat.event.EventType
 import com.example.konkat.event.SavedEvent
 import com.example.konkat.event.SavedEventRepository
+import com.example.konkat.notification.NotificationSender
+import com.example.konkat.notification.NotificationType
 import com.example.konkat.user.UserRepository
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.HttpStatus
@@ -57,6 +59,7 @@ class WebinarController(
     private val webinarRepository: WebinarRepository,
     private val savedEventRepository: SavedEventRepository,
     private val userRepository: UserRepository,
+    private val notificationSender: NotificationSender,
 ) {
 
     /** GET /api/webinars — list upcoming/live webinars (public) */
@@ -174,13 +177,21 @@ class WebinarController(
             savedEventRepository.delete(existing)
             ResponseEntity.ok(mapOf("attending" to false))
         } else {
-            webinarRepository.findById(id).orElseThrow {
+            val webinar = webinarRepository.findById(id).orElseThrow {
                 ResponseStatusException(HttpStatus.NOT_FOUND, "Webinar not found")
             }
             val user = userRepository.findById(userId).orElseThrow {
                 ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
             }
             savedEventRepository.save(SavedEvent(user = user, eventType = EventType.WEBINAR_ATTEND, eventId = id))
+            if (webinar.organizer.id != userId) {
+                notificationSender.send(
+                    recipient  = webinar.organizer,
+                    actor      = user,
+                    type       = NotificationType.WEBINAR_ATTEND,
+                    webinarId  = id,
+                )
+            }
             ResponseEntity.ok(mapOf("attending" to true))
         }
     }
