@@ -33,6 +33,7 @@ export interface Webinar {
   tags: string[];
   organizerName: string;
   saved?: boolean;
+  attending?: boolean;
 }
 
 export interface CreateHackathonPayload {

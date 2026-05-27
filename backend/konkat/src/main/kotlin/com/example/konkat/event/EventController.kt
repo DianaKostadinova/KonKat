@@ -71,6 +71,8 @@ class EventController(
                                 tags      = w.tags.toList(),
                             )
                         }
+
+                EventType.WEBINAR_ATTEND -> null
             }
         }.sortedBy { it.startDate }
 

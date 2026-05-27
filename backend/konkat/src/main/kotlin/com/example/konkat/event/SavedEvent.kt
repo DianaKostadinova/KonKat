@@ -5,7 +5,7 @@ import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import java.time.LocalDateTime
 
-enum class EventType { HACKATHON, WEBINAR }
+enum class EventType { HACKATHON, WEBINAR, WEBINAR_ATTEND }
 
 @Entity
 @Table(

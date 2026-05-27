@@ -74,10 +74,18 @@ export class RegisterEventModal {
       });
 
     } else if (this.webinar) {
-      // Webinars: no registration endpoint yet — just offer the share step
-      this.buildPostContent();
-      this.step.set('share');
-      this.registered.emit();
+      this.hackathonService.attendWebinar(this.webinar.id).subscribe({
+        next: () => {
+          this.buildPostContent();
+          this.step.set('share');
+          this.registered.emit();
+        },
+        error: (err) => {
+          const msg = err?.error?.message ?? err?.message ?? '';
+          this.error.set(msg || 'Could not mark attendance. Please try again.');
+          this.step.set('choose');
+        },
+      });
     }
   }
 

@@ -32,6 +32,7 @@ data class WebinarDto(
     val tags: List<String>,
     val organizerName: String,
     val saved: Boolean = false,
+    val attending: Boolean = false,
 )
 
 data class CreateWebinarRequest(
@@ -70,7 +71,10 @@ class WebinarController(
             val saved = currentUserId?.let {
                 savedEventRepository.existsByUserIdAndEventTypeAndEventId(it, EventType.WEBINAR, w.id)
             } ?: false
-            w.toDto(saved)
+            val attending = currentUserId?.let {
+                savedEventRepository.existsByUserIdAndEventTypeAndEventId(it, EventType.WEBINAR_ATTEND, w.id)
+            } ?: false
+            w.toDto(saved, attending)
         })
     }
 
@@ -132,7 +136,8 @@ class WebinarController(
 
         val saved = webinarRepository.save(webinar)
         val savedFlag = savedEventRepository.existsByUserIdAndEventTypeAndEventId(userId, EventType.WEBINAR, id)
-        return ResponseEntity.ok(saved.toDto(savedFlag))
+        val attendingFlag = savedEventRepository.existsByUserIdAndEventTypeAndEventId(userId, EventType.WEBINAR_ATTEND, id)
+        return ResponseEntity.ok(saved.toDto(savedFlag, attendingFlag))
     }
 
     /** DELETE /api/webinars/{id} — delete a webinar (organizer only) */
@@ -153,6 +158,31 @@ class WebinarController(
             .forEach { savedEventRepository.delete(it) }
         webinarRepository.delete(webinar)
         return ResponseEntity.noContent().build()
+    }
+
+    /** POST /api/webinars/{id}/attend — toggle attend for current user (auth required) */
+    @PostMapping("/{id}/attend")
+    fun toggleAttend(
+        @PathVariable id: Long,
+        request: HttpServletRequest,
+    ): ResponseEntity<Map<String, Boolean>> {
+        val userId = (request.getAttribute("userId") as? Long)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required")
+        val existing = savedEventRepository.findByUserIdAndEventTypeAndEventId(userId, EventType.WEBINAR_ATTEND, id)
+
+        return if (existing != null) {
+            savedEventRepository.delete(existing)
+            ResponseEntity.ok(mapOf("attending" to false))
+        } else {
+            webinarRepository.findById(id).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Webinar not found")
+            }
+            val user = userRepository.findById(userId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+            }
+            savedEventRepository.save(SavedEvent(user = user, eventType = EventType.WEBINAR_ATTEND, eventId = id))
+            ResponseEntity.ok(mapOf("attending" to true))
+        }
     }
 
     /** POST /api/webinars/{id}/save — toggle save for current user (auth required) */
@@ -182,7 +212,7 @@ class WebinarController(
 
     // ── Mapping ───────────────────────────────────────────────────────────────
 
-    private fun Webinar.toDto(saved: Boolean) = WebinarDto(
+    private fun Webinar.toDto(saved: Boolean, attending: Boolean = false) = WebinarDto(
         id           = id,
         title        = title,
         description  = description,
@@ -197,5 +227,6 @@ class WebinarController(
         tags         = tags.toList(),
         organizerName = organizer.displayName,
         saved        = saved,
+        attending    = attending,
     )
 }

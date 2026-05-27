@@ -51,4 +51,9 @@ export class WebinarCard implements OnInit, OnDestroy {
   openRegister() { this.showRegModal.set(true); }
 
   pad(n: number): string { return String(n).padStart(2, '0'); }
+
+  safeJoinUrl(url: string | null): string | null {
+    if (!url) return null;
+    return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+  }
 }

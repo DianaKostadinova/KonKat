@@ -102,8 +102,16 @@ export class HackathonService {
       .post<{ saved: boolean }>(`${API}/webinars/${id}/save`, {})
       .subscribe({ next: ({ saved }) => {
         this._webinars.update(list => list.map(w => w.id === id ? { ...w, saved } : w));
-        this.eventService.triggerRefresh();   // ← right panel reloads
+        this.eventService.triggerRefresh();
       }});
+  }
+
+  attendWebinar(id: number): Observable<{ attending: boolean }> {
+    return this.http
+      .post<{ attending: boolean }>(`${API}/webinars/${id}/attend`, {})
+      .pipe(tap(({ attending }) => {
+        this._webinars.update(list => list.map(w => w.id === id ? { ...w, attending } : w));
+      }));
   }
 
   /** Register (or unregister) for a hackathon. */
@@ -167,6 +175,7 @@ export class HackathonService {
       tags:         w.tags         ?? [],
       organizerName: w.organizerName ?? '',
       saved:        w.saved        ?? false,
+      attending:    w.attending    ?? false,
     };
   }
 

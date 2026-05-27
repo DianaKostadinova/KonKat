@@ -694,7 +694,7 @@ CREATE TABLE public.saved_events (
     event_type character varying(255) NOT NULL,
     saved_at timestamp(6) without time zone,
     user_id bigint NOT NULL,
-    CONSTRAINT saved_events_event_type_check CHECK (((event_type)::text = ANY ((ARRAY['HACKATHON'::character varying, 'WEBINAR'::character varying])::text[])))
+    CONSTRAINT saved_events_event_type_check CHECK (((event_type)::text = ANY ((ARRAY['HACKATHON'::character varying, 'WEBINAR'::character varying, 'WEBINAR_ATTEND'::character varying])::text[])))
 );
 
 
