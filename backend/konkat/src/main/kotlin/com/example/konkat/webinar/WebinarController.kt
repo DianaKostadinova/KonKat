@@ -81,6 +81,25 @@ class WebinarController(
         })
     }
 
+    /** GET /api/webinars/{id} — single webinar by id */
+    @GetMapping("/{id}")
+    fun getOne(
+        @PathVariable id: Long,
+        request: HttpServletRequest,
+    ): ResponseEntity<WebinarDto> {
+        val currentUserId = request.getAttribute("userId") as? Long
+        val w = webinarRepository.findById(id).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Webinar not found")
+        }
+        val saved = currentUserId?.let {
+            savedEventRepository.existsByUserIdAndEventTypeAndEventId(it, EventType.WEBINAR, w.id)
+        } ?: false
+        val attending = currentUserId?.let {
+            savedEventRepository.existsByUserIdAndEventTypeAndEventId(it, EventType.WEBINAR_ATTEND, w.id)
+        } ?: false
+        return ResponseEntity.ok(w.toDto(saved, attending))
+    }
+
     /** POST /api/webinars — create a webinar (auth required) */
     @PostMapping
     fun createWebinar(

@@ -1,6 +1,6 @@
 ﻿import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { forkJoin, Observable, tap } from 'rxjs';
+import { forkJoin, Observable, tap, map } from 'rxjs';
 import { Hackathon, Webinar, CreateHackathonPayload, CreateWebinarPayload } from './hackathons.model';
 import { EventService } from '../../shared/event/event.service';
 import { environment } from '../../../environments/environment';
@@ -64,6 +64,18 @@ export class HackathonService {
     return this.http
       .delete<void>(`${API}/hackathons/${id}`)
       .pipe(tap(() => this._hackathons.update(list => list.filter(x => x.id !== id))));
+  }
+
+  getHackathonById(id: number): Observable<Hackathon> {
+    return this.http.get<any>(`${API}/hackathons/${id}`).pipe(
+      map(h => this.mapHackathon(h)),
+    );
+  }
+
+  getWebinarById(id: number): Observable<Webinar> {
+    return this.http.get<any>(`${API}/webinars/${id}`).pipe(
+      map(w => this.mapWebinar(w)),
+    );
   }
 
   createWebinar(payload: CreateWebinarPayload): Observable<Webinar> {

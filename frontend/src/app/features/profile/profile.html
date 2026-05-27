@@ -308,6 +308,13 @@
       }
     }
 
+    @if (selectedEvent()) {
+      <app-event-detail-modal
+        [event]="selectedEvent()!"
+        (close)="selectedEvent.set(null)"
+      />
+    }
+
     @if (activeTab() === 'events') {
       @if (allEvents().length === 0) {
         <div class="empty-state">
@@ -317,9 +324,12 @@
       }
       @for (ev of allEvents(); track ev.id + ev.type) {
         <div
-          class="flex flex-col gap-2 rounded-xl border bg-[#1a1a1a] p-4"
+          class="flex flex-col gap-2 rounded-xl border bg-[#1a1a1a] p-4 cursor-pointer transition-all duration-200"
           [class.border-purple-700]="ev.type === 'WEBINAR'"
+          [class.hover:border-purple-500]="ev.type === 'WEBINAR'"
           [class.border-green-800]="ev.type === 'HACKATHON'"
+          [class.hover:border-[#3a3a3a]]="ev.type === 'HACKATHON'"
+          (click)="selectedEvent.set(ev)"
         >
           <div class="flex items-center justify-between">
             <span

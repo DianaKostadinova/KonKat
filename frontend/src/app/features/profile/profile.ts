@@ -11,6 +11,7 @@ import { FollowService } from '../../shared/follow/follow.service';
 import { FollowListModal } from '../../shared/follow/follow-list-modal';
 import { CreatePostModal } from '../../shared/create-post-modal/create-post-modal';
 import { AddProjectModal } from '../projects/add-project-modal';
+import { EventDetailModal } from './event-detail-modal/event-detail-modal';
 import { EventService } from '../../shared/event/event.service';
 import { HackathonService } from '../hackathons/hackathons.service';
 import { EventWithCountdown, SavedEvent } from '../../shared/event/saved-event.model';
@@ -20,7 +21,7 @@ type Tab = 'posts' | 'liked' | 'saved' | 'projects' | 'events';
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [PostCard, ProjectCard, RouterLink, CreatePostModal, FollowListModal, AddProjectModal, DatePipe],
+  imports: [PostCard, ProjectCard, RouterLink, CreatePostModal, FollowListModal, AddProjectModal, DatePipe, EventDetailModal],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -55,8 +56,9 @@ export class Profile implements OnInit, OnDestroy {
     { value: 'events',   label: 'Events',   icon: 'calendar_month' },
   ];
 
-  savedEvents  = signal<SavedEvent[]>([]);
+  savedEvents      = signal<SavedEvent[]>([]);
   registeredEvents = signal<EventWithCountdown[]>([]);
+  selectedEvent    = signal<SavedEvent | null>(null);
 
   constructor(
     public  profileService: ProfileService,

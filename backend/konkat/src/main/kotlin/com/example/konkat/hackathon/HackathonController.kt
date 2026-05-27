@@ -129,6 +129,26 @@ class HackathonController(
         })
     }
 
+    /** GET /api/hackathons/{id} — single hackathon by id */
+    @GetMapping("/{id}")
+    fun getOne(
+        @PathVariable id: Long,
+        request: HttpServletRequest,
+    ): ResponseEntity<HackathonDto> {
+        val currentUserId = request.getAttribute("userId") as? Long
+        val h = hackathonRepository.findById(id).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Hackathon not found")
+        }
+        val saved = currentUserId?.let {
+            savedEventRepository.existsByUserIdAndEventTypeAndEventId(it, EventType.HACKATHON, h.id)
+        } ?: false
+        val registered = currentUserId?.let {
+            participantRepository.existsByUserIdAndHackathonId(it, h.id)
+        } ?: false
+        val count = participantRepository.countByHackathonId(h.id)
+        return ResponseEntity.ok(h.toDto(saved, registered, count))
+    }
+
     /** GET /api/hackathons/registered — upcoming hackathons the current user is registered for */
     @GetMapping("/registered")
     fun getRegistered(request: HttpServletRequest): ResponseEntity<List<HackathonDto>> {
