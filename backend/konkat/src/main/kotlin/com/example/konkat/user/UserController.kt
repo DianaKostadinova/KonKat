@@ -463,7 +463,7 @@ fun User.toSettingsDto() = UserSettingsDto(
     emailOnHackathon   = emailOnHackathon,
     emailOnWebinar     = emailOnWebinar,
     emailOnQa          = emailOnQa,
-    profileVisibility  = profileVisibility.name,
-    allowDms           = allowDms.name,
+    profileVisibility  = profileVisibility?.name ?: "PUBLIC",
+    allowDms           = allowDms?.name ?: "EVERYONE",
     showOnlineStatus   = showOnlineStatus,
 )

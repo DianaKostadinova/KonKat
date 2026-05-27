@@ -1,8 +1,7 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { ThemeService } from '../../shared/theme/theme.service';
 import { AuthService } from '../../shared/auth/auth.service';
 import { environment } from '../../../environments/environment';
 
@@ -32,7 +31,7 @@ interface AccountForm {
   website: string;
 }
 
-type Section = 'account' | 'notifications' | 'privacy' | 'appearance' | 'danger';
+type Section = 'account' | 'notifications' | 'privacy' | 'danger';
 
 @Component({
   selector: 'app-settings',
@@ -81,16 +80,12 @@ export class Settings implements OnInit {
   sections: { value: Section; label: string; icon: string }[] = [
     { value: 'account',       label: 'Account',       icon: 'manage_accounts' },
     { value: 'notifications', label: 'Notifications',  icon: 'notifications_none' },
-    { value: 'privacy',       label: 'Privacy',        icon: 'lock_outline' },
-    { value: 'appearance',    label: 'Appearance',     icon: 'palette' },
+    { value: 'privacy',       label: 'Privacy',        icon: 'lock' },
     { value: 'danger',        label: 'Danger Zone',    icon: 'warning_amber' },
   ];
 
-  isDark = computed(() => this.themeService.theme() === 'dark');
-
   constructor(
     private http: HttpClient,
-    public themeService: ThemeService,
     public authService: AuthService,
     private router: Router,
   ) {}
