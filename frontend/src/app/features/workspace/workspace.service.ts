@@ -49,6 +49,10 @@ export class WorkspaceService {
       .subscribe({ next: ws => this._summaries.update(list => [...list, ws]) });
   }
 
+  openFromTeam(teamPostId: number) {
+    return this.http.post<WorkspaceSummary>(`${API}/workspaces/from-team/${teamPostId}`, {});
+  }
+
   addTask(workspaceId: number, title: string, priority: string) {
     this.http.post<WorkspaceTask>(
       `${API}/workspaces/${workspaceId}/tasks`,

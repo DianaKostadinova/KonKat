@@ -136,7 +136,7 @@ export class ChatService implements OnDestroy {
       id: -Date.now(),
       senderId: this.meId(),
       content,
-      createdAt: new Date().toISOString().slice(0, 19),
+      createdAt: new Date().toISOString(),
       read: false,
       fileUrl,
       fileName,

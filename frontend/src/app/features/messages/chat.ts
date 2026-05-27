@@ -106,7 +106,9 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
 
   formatTime(iso: string | undefined): string {
     if (!iso) return '';
-    const d = new Date(iso);
+    // Treat bare ISO strings (no Z / offset) as UTC so the browser converts to local time
+    const utc = /Z|[+-]\d{2}:\d{2}$/.test(iso) ? iso : iso + 'Z';
+    const d = new Date(utc);
     if (isNaN(d.getTime())) return iso;
     const now = new Date();
     const isToday = d.toDateString() === now.toDateString();

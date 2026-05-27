@@ -24,6 +24,15 @@ class WorkspaceController(private val workspaceService: WorkspaceService) {
         return ResponseEntity.status(HttpStatus.CREATED).body(workspaceService.create(userId, body.name))
     }
 
+    @PostMapping("/from-team/{teamPostId}")
+    fun openFromTeam(
+        @PathVariable teamPostId: Long,
+        request: HttpServletRequest,
+    ): ResponseEntity<WorkspaceSummaryDto> {
+        val userId = request.getAttribute("userId") as Long
+        return ResponseEntity.ok(workspaceService.getOrCreateFromTeamPost(teamPostId, userId))
+    }
+
     @GetMapping("/{id}")
     fun getWorkspace(
         @PathVariable id: Long,

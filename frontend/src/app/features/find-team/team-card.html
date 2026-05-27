@@ -168,11 +168,19 @@
 
     @if (team.isOwn) {
       <button
-        class="flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-[#f0f0f0] bg-transparent border border-[#2a2a2a] cursor-pointer hover:border-[#E8593C] hover:text-[#E8593C] transition-all"
+        class="flex items-center justify-center gap-2 rounded-lg py-2 px-3 text-sm font-medium text-[#f0f0f0] bg-transparent border border-[#2a2a2a] cursor-pointer hover:border-[#E8593C] hover:text-[#E8593C] transition-all"
         (click)="showRequests.set(true)"
+        title="Manage requests"
       >
         <span class="material-icons-outlined" style="font-size: 16px;">manage_accounts</span>
-        Manage Requests
+      </button>
+      <button
+        class="flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-[#28c840] bg-[#28c840]/10 border border-[#28c840]/30 cursor-pointer hover:bg-[#28c840]/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+        [disabled]="openingWorkspace()"
+        (click)="openWorkspace()"
+      >
+        <span class="material-icons-outlined" style="font-size: 16px;">{{ openingWorkspace() ? 'hourglass_empty' : 'rocket_launch' }}</span>
+        {{ openingWorkspace() ? 'Opening…' : 'Open Workspace' }}
       </button>
       <button
         class="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-[#888888] bg-transparent border border-[#2a2a2a] cursor-pointer hover:border-[#E8593C] hover:text-[#E8593C] transition-all"
@@ -207,11 +215,12 @@
       </button>
     } @else if (team.requestStatus === 'approved') {
       <button
-        class="flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-[#28c840] bg-[#28c840]/10 border border-[#28c840]/30 cursor-pointer hover:bg-[#28c840]/20 transition-all"
-        [routerLink]="['/myworkspaces']"
+        class="flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-[#28c840] bg-[#28c840]/10 border border-[#28c840]/30 cursor-pointer hover:bg-[#28c840]/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+        [disabled]="openingWorkspace()"
+        (click)="openWorkspace()"
       >
-        <span class="material-icons-outlined" style="font-size: 16px;">rocket_launch</span>
-        Open Workspace
+        <span class="material-icons-outlined" style="font-size: 16px;">{{ openingWorkspace() ? 'hourglass_empty' : 'rocket_launch' }}</span>
+        {{ openingWorkspace() ? 'Opening…' : 'Open Workspace' }}
       </button>
       <button
         class="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-[#888888] bg-transparent border border-[#2a2a2a] cursor-pointer hover:border-[#E8593C] hover:text-[#E8593C] transition-all"

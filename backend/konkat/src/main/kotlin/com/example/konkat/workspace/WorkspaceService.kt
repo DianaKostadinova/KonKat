@@ -1,6 +1,9 @@
 package com.example.konkat.workspace
 
 import com.example.konkat.hackathon.Hackathon
+import com.example.konkat.teampost.RequestStatus
+import com.example.konkat.teampost.TeamPostRepository
+import com.example.konkat.teampost.TeamRequestRepository
 import com.example.konkat.user.User
 import com.example.konkat.user.UserRepository
 import org.springframework.data.repository.findByIdOrNull
@@ -20,6 +23,8 @@ class WorkspaceService(
     private val taskRepository: WorkspaceTaskRepository,
     private val messageRepository: WorkspaceMessageRepository,
     private val userRepository: UserRepository,
+    private val teamPostRepository: TeamPostRepository,
+    private val teamRequestRepository: TeamRequestRepository,
 ) {
 
     // ── List ──────────────────────────────────────────────────────────────────
@@ -41,6 +46,49 @@ class WorkspaceService(
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
         val ws = workspaceRepository.save(Workspace(name = name.trim(), createdBy = user))
         memberRepository.save(WorkspaceMember(workspace = ws, user = user))
+        return ws.toSummaryDto()
+    }
+
+    /** Called when a team member clicks "Open Workspace" on a Find-Team post. */
+    fun getOrCreateFromTeamPost(teamPostId: Long, userId: Long): WorkspaceSummaryDto {
+        val post = teamPostRepository.findByIdOrNull(teamPostId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Team post not found")
+
+        val isAuthor   = post.author.id == userId
+        val isApproved = teamRequestRepository
+            .findByTeamPostIdAndRequesterId(teamPostId, userId)
+            ?.status == RequestStatus.APPROVED
+        if (!isAuthor && !isApproved)
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only team members can open the workspace")
+
+        // Reuse existing workspace if already created for this team post
+        val existing = workspaceRepository.findByTeamPostId(teamPostId)
+        if (existing != null) {
+            // Ensure the calling user is a member (they may have been added after creation)
+            if (!memberRepository.existsByWorkspaceIdAndUserId(existing.id, userId)) {
+                val user = userRepository.findByIdOrNull(userId)
+                    ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+                memberRepository.save(WorkspaceMember(workspace = existing, user = user))
+            }
+            return existing.toSummaryDto()
+        }
+
+        // Create new workspace named after the team post
+        val creator = userRepository.findByIdOrNull(post.author.id)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Author not found")
+        val ws = workspaceRepository.save(
+            Workspace(name = post.title, createdBy = creator, teamPostId = teamPostId)
+        )
+
+        // Add author + all approved members
+        val approvedIds = teamRequestRepository
+            .findByTeamPostIdAndStatus(teamPostId, RequestStatus.APPROVED)
+            .map { it.requester.id }
+        (listOf(post.author.id) + approvedIds).distinct().forEach { memberId ->
+            val user = userRepository.findByIdOrNull(memberId) ?: return@forEach
+            memberRepository.save(WorkspaceMember(workspace = ws, user = user))
+        }
+
         return ws.toSummaryDto()
     }
 

@@ -25,6 +25,9 @@ data class Workspace(
     /** The team name from hackathon registration — used to link participants to this workspace */
     var teamName: String? = null,
 
+    /** Links this workspace to a Find-Team post so the same workspace is reused */
+    var teamPostId: Long? = null,
+
     @CreationTimestamp
     val createdAt: LocalDateTime = LocalDateTime.now(),
 )

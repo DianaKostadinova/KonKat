@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository
 @Repository
 interface WorkspaceRepository : JpaRepository<Workspace, Long> {
     fun findByHackathonIdAndTeamName(hackathonId: Long, teamName: String): Workspace?
+    fun findByTeamPostId(teamPostId: Long): Workspace?
 }
 
 @Repository

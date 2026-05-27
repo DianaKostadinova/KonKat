@@ -55,6 +55,9 @@ class DbMigrations {
                 stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_on_qa boolean NOT NULL DEFAULT true")
                 stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS show_online_status boolean NOT NULL DEFAULT true")
 
+                // workspaces: add team_post_id for Find-Team workspace linking
+                stmt.execute("ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS team_post_id bigint")
+
                 // users: add privacy enum columns if they don't exist yet
                 stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_visibility varchar(255) NOT NULL DEFAULT 'PUBLIC'")
                 stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS allow_dms varchar(255) NOT NULL DEFAULT 'EVERYONE'")

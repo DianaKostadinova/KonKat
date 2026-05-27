@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { TeamPost } from './teammates.model';
 import { TeamRequestsModal } from './team-requests-modal';
+import { WorkspaceService } from '../workspace/workspace.service';
 import { environment } from '../../../environments/environment';
 
 const API = environment.apiUrl;
@@ -24,8 +25,9 @@ export class TeamCard {
   showHackathonInfo = signal(false);
   showRequests      = signal(false);
   openingChat       = signal(false);
+  openingWorkspace  = signal(false);
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(private http: HttpClient, private router: Router, private workspaceService: WorkspaceService) {}
 
   toggleMembers()        { this.showMembers.update(v => !v); }
   toggleHackathonInfo()  { this.showHackathonInfo.update(v => !v); }
@@ -67,6 +69,18 @@ export class TeamCard {
         },
         error: () => this.openingChat.set(false),
       });
+  }
+
+  openWorkspace(): void {
+    if (this.openingWorkspace()) return;
+    this.openingWorkspace.set(true);
+    this.workspaceService.openFromTeam(this.team.id).subscribe({
+      next: ws => {
+        this.openingWorkspace.set(false);
+        this.router.navigate(['/workspace', ws.id]);
+      },
+      error: () => this.openingWorkspace.set(false),
+    });
   }
 
   onMembersChanged() {
