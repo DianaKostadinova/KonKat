@@ -162,6 +162,11 @@ export class Navbar implements OnInit, OnDestroy {
   toggleMobileMenu(): void { this.isMobileMenuOpen.update(v => !v); }
   toggleNotif(): void      { this.isNotifOpen.update(v => !v); }
 
+  @HostListener('window:resize')
+  onResize(): void {
+    if (window.innerWidth > 768) this.isMobileMenuOpen.set(false);
+  }
+
   @HostListener('document:keydown.escape')
   onEscape(): void {
     this.searchQuery.set('');
