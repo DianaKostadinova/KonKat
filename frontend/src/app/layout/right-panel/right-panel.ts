@@ -164,11 +164,12 @@ export class RightPanel implements OnInit, OnDestroy {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  toggle()       { this.isOpen.update(v => !v); }
-  goToFindTeam() { this.router.navigate(['/find-team']); this.isOpen.set(false); }
+  toggle()         { this.isOpen.update(v => !v); }
+  goToFindTeam()   { this.router.navigate(['/find-team']); this.isOpen.set(false); }
   goToHackathons() { this.router.navigate(['/hackathons']); }
-  goToProfile()  { this.router.navigate(['/profile']); }
-  goToLogin()    { this.router.navigate(['/login']); }
+  goToProfile()    { this.router.navigate(['/profile']); }
+  goToEvents()     { this.router.navigate(['/profile'], { queryParams: { tab: 'events' } }); this.isOpen.set(false); }
+  goToLogin()      { this.router.navigate(['/login']); }
 
   goToTag(raw: string) {
     const clean = raw.replace(/^#/, '').toLowerCase().trim();

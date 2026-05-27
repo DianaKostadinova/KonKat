@@ -308,6 +308,50 @@
       }
     }
 
+    @if (activeTab() === 'events') {
+      @if (allEvents().length === 0) {
+        <div class="empty-state">
+          <span class="material-icons text-[#2a2a2a]" style="font-size: 48px;">calendar_month</span>
+          <p class="text-[#888888] text-sm m-0">No upcoming events saved yet</p>
+        </div>
+      }
+      @for (ev of allEvents(); track ev.id + ev.type) {
+        <div
+          class="flex flex-col gap-2 rounded-xl border bg-[#1a1a1a] p-4"
+          [class.border-purple-700]="ev.type === 'WEBINAR'"
+          [class.border-green-800]="ev.type === 'HACKATHON'"
+        >
+          <div class="flex items-center justify-between">
+            <span
+              class="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full text-white"
+              [class.bg-purple-600]="ev.type === 'WEBINAR'"
+              [class.bg-orange-500]="ev.type === 'HACKATHON'"
+            >{{ ev.type }}</span>
+            @if (ev.location) {
+              <span class="text-[#555] text-xs flex items-center gap-1">
+                <span class="material-icons-outlined" style="font-size: 13px;">place</span>
+                {{ ev.location }}
+              </span>
+            }
+          </div>
+          <span class="text-[#f0f0f0] text-sm font-semibold leading-snug">{{ ev.title }}</span>
+          @if (ev.tags.length > 0) {
+            <div class="flex flex-wrap gap-1.5">
+              @for (tag of ev.tags.slice(0, 4); track tag) {
+                <span class="text-[11px] bg-[#2a2a2a] text-[#888] px-2 py-0.5 rounded-md">{{ tag }}</span>
+              }
+            </div>
+          }
+          @if (ev.startDate) {
+            <div class="flex items-center gap-1.5 text-[#888888] text-xs mt-1">
+              <span class="material-icons-outlined" style="font-size: 14px;">schedule</span>
+              {{ ev.startDate | date:'d MMM y, HH:mm' }}
+            </div>
+          }
+        </div>
+      }
+    }
+
   </div>
 
   <!-- Create Post Modal -->
