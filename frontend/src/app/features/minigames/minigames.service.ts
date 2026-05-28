@@ -20,13 +20,15 @@ export class MinigamesService {
   private http           = inject(HttpClient);
   private profileService = inject(ProfileService);
 
-  private static readonly LS_PLAYED = 'konkat_mg_played';
-  private static readonly LS_SOLVED = 'konkat_mg_solved';
+  private userId: number | string = 'guest';
 
   leaderboard = signal<LeaderboardEntry[]>([]);
-  myRep = signal<number>(0);
-  private playedLocal = signal<Record<string, string[]>>(MinigamesService.readLS(MinigamesService.LS_PLAYED));
-  private solvedLocal = signal<Record<string, string[]>>(MinigamesService.readLS(MinigamesService.LS_SOLVED));
+  myRep       = signal<number>(0);
+  private playedLocal = signal<Record<string, string[]>>({});
+  private solvedLocal = signal<Record<string, string[]>>({});
+
+  private keyPlayed(): string { return `konkat_mg_played_${this.userId}`; }
+  private keySolved(): string { return `konkat_mg_solved_${this.userId}`; }
 
   private static readLS(key: string): Record<string, string[]> {
     try { return JSON.parse(localStorage.getItem(key) ?? '{}'); } catch { return {}; }
@@ -34,6 +36,13 @@ export class MinigamesService {
 
   private static writeLS(key: string, data: Record<string, string[]>) {
     localStorage.setItem(key, JSON.stringify(data));
+  }
+
+  /** Call once after the user's DB id is known. Loads user-specific local state. */
+  init(userId: number | string): void {
+    this.userId = userId;
+    this.playedLocal.set(MinigamesService.readLS(this.keyPlayed()));
+    this.solvedLocal.set(MinigamesService.readLS(this.keySolved()));
   }
 
   loadLeaderboard(limit = 3) {
@@ -66,7 +75,7 @@ export class MinigamesService {
     const today = new Date().toISOString().slice(0, 10);
     this.playedLocal.update((s) => {
       const next = { ...s, [game]: Array.from(new Set([...(s[game] ?? []), today])) };
-      MinigamesService.writeLS(MinigamesService.LS_PLAYED, next);
+      MinigamesService.writeLS(this.keyPlayed(), next);
       return next;
     });
   }
@@ -82,7 +91,7 @@ export class MinigamesService {
             const today = new Date().toISOString().slice(0, 10);
             this.solvedLocal.update((s) => {
               const next = { ...s, [game]: Array.from(new Set([...(s[game] ?? []), today])) };
-              MinigamesService.writeLS(MinigamesService.LS_SOLVED, next);
+              MinigamesService.writeLS(this.keySolved(), next);
               return next;
             });
             this.loadLeaderboard();

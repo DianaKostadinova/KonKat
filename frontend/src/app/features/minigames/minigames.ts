@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { MinigamesService } from './minigames.service';
+import { AuthService } from '../../shared/auth/auth.service';
 
 interface PinpointPuzzle {
   answer: string;
@@ -217,7 +218,8 @@ interface WordleCell {
 })
 export class Minigames {
   private games = inject(MinigamesService);
-  private http = inject(HttpClient);
+  private auth  = inject(AuthService);
+  private http  = inject(HttpClient);
 
   rep = this.games.myRep;
   leaderboard = this.games.leaderboard;
@@ -225,6 +227,8 @@ export class Minigames {
   view = signal<'menu' | 'pinpoint' | 'wordle'>('menu');
 
   constructor() {
+    const userId = this.auth.user()?.dbId ?? this.auth.user()?.id ?? 'guest';
+    this.games.init(userId);
     this.games.loadLeaderboard();
     this.games.loadMyRep();
   }
