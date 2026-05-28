@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { ProfileService } from '../profile/profile.service';
 
 export interface LeaderboardEntry {
   id: number;
@@ -16,7 +17,8 @@ interface SolveResponse {
 
 @Injectable({ providedIn: 'root' })
 export class MinigamesService {
-  private http = inject(HttpClient);
+  private http           = inject(HttpClient);
+  private profileService = inject(ProfileService);
 
   private static readonly LS_PLAYED = 'konkat_mg_played';
   private static readonly LS_SOLVED = 'konkat_mg_solved';
@@ -76,6 +78,7 @@ export class MinigamesService {
         .subscribe({
           next: (res) => {
             this.myRep.set(res.rep);
+            this.profileService.rep.set(res.rep);
             const today = new Date().toISOString().slice(0, 10);
             this.solvedLocal.update((s) => {
               const next = { ...s, [game]: Array.from(new Set([...(s[game] ?? []), today])) };

@@ -181,8 +181,8 @@ export class RightPanel implements OnInit, OnDestroy {
     return raw.startsWith('#') ? raw : `#${raw}`;
   }
 
-  get repLabel(): string {
-    const rep = this.profile()?.stats?.rep ?? 0;
+  repLabel = computed(() => {
+    const rep = this.profileService.rep();
     return rep >= 1000 ? `${(rep / 1000).toFixed(1)}k` : String(rep);
-  }
+  });
 }

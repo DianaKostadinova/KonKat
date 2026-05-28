@@ -20,6 +20,7 @@ export class ProfileService {
 
   private profile       = signal<UserProfile>({ ...EMPTY_PROFILE });
   readonly profileSignal = this.profile.asReadonly();
+  readonly rep           = signal<number>(0);
   private myPosts    = signal<Post[]>([]);
   private savedPosts = signal<Post[]>([]);
   private likedPosts = signal<Post[]>([]);
@@ -128,6 +129,7 @@ export class ProfileService {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   private setFromDto(data: any): void {
+    this.rep.set(data.stats?.rep ?? 0);
     this.profile.set({
       id:         data.id        ?? 0,
       name:       data.name      ?? '',
