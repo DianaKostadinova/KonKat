@@ -4,20 +4,20 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideHighlightOptions } from 'ngx-highlightjs';
 import { routes } from './app.routes';
 import { AuthService } from './shared/auth/auth.service';
-import { clerkTokenInterceptor } from './shared/auth/clerk-token.interceptor';
+import { firebaseTokenInterceptor } from './shared/auth/firebase-token.interceptor';
 import { httpErrorInterceptor } from './shared/http/error.interceptor';
 
-function initClerk(auth: AuthService) {
+function initFirebase(auth: AuthService) {
   return () => auth.init();
 }
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideHttpClient(withInterceptors([clerkTokenInterceptor, httpErrorInterceptor])),
+    provideHttpClient(withInterceptors([firebaseTokenInterceptor, httpErrorInterceptor])),
     {
       provide: APP_INITIALIZER,
-      useFactory: initClerk,
+      useFactory: initFirebase,
       deps: [AuthService],
       multi: true,
     },

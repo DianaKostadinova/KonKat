@@ -21,7 +21,6 @@ server:
   port: 8082
 
 app:
-  clerk:
-    # Find your Frontend API URL at: https://dashboard.clerk.com → API Keys
-    # Format: https://<your-app>.clerk.accounts.dev
-    jwks-uri: "https://YOUR_CLERK_FRONTEND_API/.well-known/jwks.json"
+  firebase:
+    project-id: "YOUR_FIREBASE_PROJECT_ID"
+    jwks-uri: "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"

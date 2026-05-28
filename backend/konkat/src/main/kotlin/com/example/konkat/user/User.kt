@@ -12,14 +12,12 @@ data class User(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    /** Clerk user ID — set for all Clerk-authenticated users */
-    @Column(unique = true)
-    var clerkId: String? = null,
+    @Column(name = "firebase_uid", unique = true)
+    var firebaseUid: String? = null,
 
     @Column(unique = true, nullable = false)
     val email: String,
 
-    /** Legacy field — not used for Clerk auth */
     @Column(nullable = false)
     var password: String = "",
 
@@ -29,10 +27,10 @@ data class User(
     @Column(unique = true)
     var username: String? = null,
 
-    @Column(columnDefinition = "TEXT")           // base64 data-URLs can be 100s of KB
+    @Column(columnDefinition = "TEXT")
     var avatarUrl: String? = null,
 
-    var title: String? = null,                   // job title, e.g. "Software Engineer"
+    var title: String? = null,
 
     @Column(columnDefinition = "TEXT")
     var bio: String? = null,
@@ -43,7 +41,7 @@ data class User(
     var website: String? = null,
     var coverColor: String? = null,
 
-    @Column(columnDefinition = "TEXT")           // cover images are also base64
+    @Column(columnDefinition = "TEXT")
     var coverImageUrl: String? = null,
 
     @ElementCollection
@@ -59,14 +57,12 @@ data class User(
     @Enumerated(EnumType.STRING)
     val role: UserRole = UserRole.USER,
 
-    /** Earned via posts, comments, questions, answers. See ReputationService. */
     @Column(nullable = false)
     var reputation: Int = 0,
 
     @CreationTimestamp
-    val joinedAt: LocalDateTime? = null,   // nullable: existing rows may have NULL in DB
+    val joinedAt: LocalDateTime? = null,
 
-    // ── Notification prefs ────────────────────────────────────────────────
     var emailOnFollow:      Boolean = true,
     var emailOnPostLike:    Boolean = true,
     var emailOnPostComment: Boolean = true,
@@ -75,7 +71,6 @@ data class User(
     var emailOnWebinar:     Boolean = true,
     var emailOnQa:          Boolean = true,
 
-    // ── Privacy ───────────────────────────────────────────────────────────
     @Enumerated(EnumType.STRING)
     var profileVisibility: ProfileVisibility = ProfileVisibility.PUBLIC,
     @Enumerated(EnumType.STRING)

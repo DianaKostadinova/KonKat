@@ -32,8 +32,9 @@ server:
   port: 8082
 
 app:
-  clerk:
-    jwks-uri: ${CLERK_JWKS_URI:https://just-peacock-98.clerk.accounts.dev/.well-known/jwks.json}
+  firebase:
+    project-id: ${FIREBASE_PROJECT_ID:k0nkat}
+    jwks-uri: "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
   mail:
     enabled: ${MAIL_ENABLED:false}
     from: ${MAIL_FROM:noreply@konkat.dev}

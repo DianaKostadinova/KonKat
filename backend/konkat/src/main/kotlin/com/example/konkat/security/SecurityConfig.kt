@@ -16,7 +16,7 @@ import org.springframework.web.filter.CorsFilter
 
 @Configuration
 @EnableWebSecurity
-class SecurityConfig(private val clerkJwtFilter: ClerkJwtFilter) {
+class SecurityConfig(private val firebaseJwtFilter: FirebaseJwtFilter) {
 
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain =
@@ -28,43 +28,31 @@ class SecurityConfig(private val clerkJwtFilter: ClerkJwtFilter) {
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
-                    // CORS pre-flight
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                    // Posts — public reads
                     .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/**").permitAll()
-                    // Questions — public reads
                     .requestMatchers(HttpMethod.GET, "/api/questions", "/api/questions/**").permitAll()
-                    // Hackathons & webinars — public reads
                     .requestMatchers(HttpMethod.GET, "/api/hackathons", "/api/hackathons/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/webinars", "/api/webinars/**").permitAll()
-                    // Team posts — public reads
                     .requestMatchers(HttpMethod.GET, "/api/team-posts", "/api/team-posts/**").permitAll()
-                    // Users — public profile lookup
                     .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
-                    // Uploaded chat files — public so browsers can display them
                     .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
-                    // WebSocket upgrade — auth is handled by the STOMP ChannelInterceptor
                     .requestMatchers("/ws/**").permitAll()
                     .anyRequest().authenticated()
             }
-            .addFilterBefore(clerkJwtFilter, UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterBefore(firebaseJwtFilter, UsernamePasswordAuthenticationFilter::class.java)
             .build()
 
-    /**
-     * Standalone CorsFilter registered at highest precedence — runs BEFORE Spring Security
-     * so that preflight OPTIONS requests are resolved without hitting the auth layer at all.
-     */
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
     fun corsFilter(): CorsFilter = CorsFilter(corsSource())
 
     private fun corsSource(): UrlBasedCorsConfigurationSource {
         val config = CorsConfiguration().apply {
-            allowedOrigins    = listOf("http://localhost:4200", "http://localhost")
-            allowedMethods    = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-            allowedHeaders    = listOf("*")
-            allowCredentials  = true
-            maxAge            = 3600L
+            allowedOrigins   = listOf("http://localhost:4200", "http://localhost")
+            allowedMethods   = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+            allowedHeaders   = listOf("*")
+            allowCredentials = true
+            maxAge           = 3600L
         }
         return UrlBasedCorsConfigurationSource().apply {
             registerCorsConfiguration("/**", config)

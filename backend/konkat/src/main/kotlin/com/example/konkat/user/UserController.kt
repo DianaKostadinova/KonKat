@@ -51,19 +51,19 @@ class UserController(
     }
 
     /**
-     * POST /api/users/me/clerk-sync
-     * Called once after Clerk login. Links the Clerk account to an existing DB
-     * account by email (handles users who registered before Clerk was added).
+     * POST /api/users/me/firebase-sync
+     * Called once after Firebase login. Links the Firebase account to an existing DB
+     * account by email (handles users who registered before Firebase was added).
      * Also syncs name / avatar if the DB record is still empty.
      */
-    @PostMapping("/me/clerk-sync")
-    fun clerkSync(
-        @RequestBody body: ClerkSyncRequest,
+    @PostMapping("/me/firebase-sync")
+    fun firebaseSync(
+        @RequestBody body: FirebaseSyncRequest,
         request: HttpServletRequest,
     ): ResponseEntity<UserProfileDto> {
-        val clerkUserId = request.getAttribute("userId") as? Long
+        val fbUserId = request.getAttribute("userId") as? Long
             ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
-        val clerkUser   = userRepository.findById(clerkUserId).orElseThrow {
+        val fbUser   = userRepository.findById(fbUserId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
         }
 
@@ -72,32 +72,23 @@ class UserController(
             userRepository.findByEmail(body.email).orElse(null)
         else null
 
-        val finalUser = if (oldUser != null && oldUser.id != clerkUserId) {
-            // Must clear clerk_id from the stub BEFORE setting it on oldUser —
+        val finalUser = if (oldUser != null && oldUser.id != fbUserId) {
+            // Must clear firebase_uid from the stub BEFORE setting it on oldUser —
             // both rows are in scope and the unique constraint fires at flush time.
-            val clerkId = clerkUser.clerkId
-            clerkUser.clerkId = null
-            userRepository.saveAndFlush(clerkUser)   // flush the NULL immediately so the unique constraint doesn't fire
-            oldUser.clerkId = clerkId
+            val firebaseUid = fbUser.firebaseUid
+            fbUser.firebaseUid = null
+            userRepository.saveAndFlush(fbUser)
+            oldUser.firebaseUid = firebaseUid
             userRepository.save(oldUser)
-            // Intentionally leave the stub row — deleting it inside this transaction can cause
-            // a rollback-only state if it has any FK references, breaking the whole sync.
-            // The stub is harmless with a null clerkId: the filter finds the real account by clerkId.
             oldUser
         } else {
-            clerkUser
+            fbUser
         }
 
-        // Always sync name/avatar from Clerk — overrides the clerkId stub that ClerkJwtFilter creates
         if (!body.name.isNullOrBlank())
             finalUser.displayName = body.name
         if (!body.avatarUrl.isNullOrBlank() && finalUser.avatarUrl.isNullOrBlank())
             finalUser.avatarUrl = body.avatarUrl
-        // Set username from Clerk sign-up if the user doesn't have one yet
-        if (!body.username.isNullOrBlank() && finalUser.username.isNullOrBlank()) {
-            if (!userRepository.existsByUsername(body.username))
-                finalUser.username = body.username
-        }
 
         val saved = userRepository.save(finalUser)
         return ResponseEntity.ok(saved.toProfileDto(
@@ -359,11 +350,10 @@ data class StatsDto(
     val following: Int  = 0,
 )
 
-data class ClerkSyncRequest(
+data class FirebaseSyncRequest(
     val email: String = "",
     val name: String? = null,
     val avatarUrl: String? = null,
-    val username: String? = null,
 )
 
 data class UpdateProfileRequest(

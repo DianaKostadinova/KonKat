@@ -1,35 +1,29 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, effect, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, effect, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { AuthService } from '../../shared/auth/auth.service';
 
 @Component({
   selector: 'app-sign-in',
   standalone: true,
-  imports: [],
+  imports: [FormsModule, RouterLink],
   templateUrl: './sign-in.html',
   styleUrl:    './sign-in.css',
 })
-export class SignIn implements OnInit, OnDestroy {
-  @ViewChild('clerkMount') clerkMount?: ElementRef<HTMLDivElement>;
+export class SignIn {
+  email    = '';
+  password = '';
+  error    = signal('');
+  loading  = signal(false);
 
-  /**
-   * True if the user already had a Clerk session when they navigated to /sign-in
-   * (e.g. opened the page in a new tab while logged in elsewhere). In that case
-   * we DON'T auto-redirect — we show a "switch account" panel so they can sign
-   * out and log in as someone else.
-   */
   alreadySignedIn = signal(false);
   existingUser    = signal<{ name: string; email: string; avatar?: string } | null>(null);
 
-  /** Snapshot of the auth state on arrival, captured before the effect runs. */
   private wasLoggedInOnArrival = false;
-  /** One-shot guard so the effect navigates at most once. */
   private didRedirect = false;
 
-  constructor(
-    private auth: AuthService,
-    private router: Router,
-  ) {
+  constructor(private auth: AuthService, private router: Router) {
     this.wasLoggedInOnArrival = this.auth.isLoggedIn();
     if (this.wasLoggedInOnArrival) {
       const u = this.auth.user();
@@ -37,18 +31,11 @@ export class SignIn implements OnInit, OnDestroy {
       if (u) this.existingUser.set({ name: u.name, email: u.email, avatar: u.avatar });
     }
 
-    // Redirect as soon as Clerk reports a session — don't wait for the
-    // backend clerk-sync round-trip. Email/code sign-in completes in-place
-    // and won't navigate on its own; OAuth providers do a full bounce, so
-    // they trigger this path on the post-redirect re-init.
     effect(() => {
       if (this.didRedirect || this.wasLoggedInOnArrival) return;
       if (!this.auth.isLoggedIn()) return;
-
       this.didRedirect = true;
       const u = this.auth.user();
-      // Brand-new accounts won't have a username yet → go to profile setup.
-      // Existing accounts (or anyone with sync still in flight) → feed.
       if (u?.dbId != null && !u.username) {
         this.router.navigate(['/profile/edit'], { queryParams: { setup: 'true' } });
       } else {
@@ -57,32 +44,38 @@ export class SignIn implements OnInit, OnDestroy {
     });
   }
 
-  ngOnInit(): void {
-    if (!this.alreadySignedIn()) {
-      // Defer to next tick so @ViewChild has resolved after view init.
-      setTimeout(() => {
-        const el = this.clerkMount?.nativeElement;
-        if (el) this.auth.mountSignIn(el);
-      });
+  async signIn(): Promise<void> {
+    if (!this.email || !this.password) return;
+    this.loading.set(true);
+    this.error.set('');
+    try {
+      await signInWithEmailAndPassword(getAuth(), this.email, this.password);
+    } catch (e: any) {
+      this.error.set(this.friendlyError(e.code));
+    } finally {
+      this.loading.set(false);
     }
   }
 
-  ngOnDestroy(): void {
-    const el = this.clerkMount?.nativeElement;
-    if (el) this.auth.unmountSignIn(el);
+  async signInWithGoogle(): Promise<void> {
+    this.loading.set(true);
+    this.error.set('');
+    try {
+      await signInWithPopup(getAuth(), new GoogleAuthProvider());
+    } catch (e: any) {
+      if (e.code !== 'auth/popup-closed-by-user') {
+        this.error.set(this.friendlyError(e.code));
+      }
+    } finally {
+      this.loading.set(false);
+    }
   }
 
-  /** Sign out the existing session and show the Clerk widget for fresh sign-in. */
   async signOutAndSwitch(): Promise<void> {
     await this.auth.logout();
     this.wasLoggedInOnArrival = false;
     this.alreadySignedIn.set(false);
     this.existingUser.set(null);
-    // After logout the Clerk widget needs to be mounted in the now-rendered div.
-    setTimeout(() => {
-      const el = this.clerkMount?.nativeElement;
-      if (el) this.auth.mountSignIn(el);
-    });
   }
 
   continueAsExisting(): void {
@@ -91,5 +84,20 @@ export class SignIn implements OnInit, OnDestroy {
     this.router.navigate([u?.username ? '/feed' : '/profile/edit'], {
       queryParams: u?.username ? {} : { setup: 'true' },
     });
+  }
+
+  private friendlyError(code: string): string {
+    switch (code) {
+      case 'auth/invalid-credential':
+      case 'auth/wrong-password':
+      case 'auth/user-not-found':
+        return 'Invalid email or password.';
+      case 'auth/too-many-requests':
+        return 'Too many attempts. Try again later.';
+      case 'auth/network-request-failed':
+        return 'Network error. Check your connection.';
+      default:
+        return 'Sign in failed. Please try again.';
+    }
   }
 }

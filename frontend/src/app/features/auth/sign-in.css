@@ -155,3 +155,101 @@
   transition: border-color 120ms ease;
 }
 .btn-secondary:hover { border-color: #E8593C; color: #E8593C; }
+
+/* ── Firebase auth form ─────────────────────────────────────────────── */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  min-width: 300px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: left;
+}
+
+.form-label {
+  color: #aaa;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.form-input {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 120ms ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+.form-input::placeholder { color: #555; }
+.form-input:focus { border-color: #E8593C; }
+
+.btn-full { width: 100%; margin-top: 4px; }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.auth-error {
+  background: rgba(232, 89, 60, 0.12);
+  border: 1px solid rgba(232, 89, 60, 0.3);
+  border-radius: 8px;
+  color: #ff8a70;
+  font-size: 13px;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #444;
+  font-size: 12px;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #2a2a2a;
+}
+
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+  width: 100%;
+}
+.btn-google:hover { border-color: #555; background: rgba(255,255,255,0.04); }
+.btn-google:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.auth-switch {
+  color: #666;
+  font-size: 13px;
+  margin: 0;
+  text-align: center;
+}
+.auth-switch a {
+  color: #E8593C;
+  text-decoration: none;
+  font-weight: 500;
+}
+.auth-switch a:hover { text-decoration: underline; }
