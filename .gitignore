@@ -4,6 +4,8 @@
 
 # Docker / environment
 .env
+*.env
+.env.*
 
 # Frontend build output
 frontend/dist/
