@@ -27,8 +27,10 @@ export class MinigamesService {
   private playedLocal = signal<Record<string, string[]>>({});
   private solvedLocal = signal<Record<string, string[]>>({});
 
-  private keyPlayed(): string { return `konkat_mg_played_${this.userId}`; }
-  private keySolved(): string { return `konkat_mg_solved_${this.userId}`; }
+  private keyPlayed(): string   { return `konkat_mg_played_${this.userId}`; }
+  private keySolved(): string   { return `konkat_mg_solved_${this.userId}`; }
+  keyWordle(): string           { return `konkat_wordle_day_${this.userId}`; }
+  keyPinpoint(): string         { return `konkat_pinpoint_day_${this.userId}`; }
 
   private static readLS(key: string): Record<string, string[]> {
     try { return JSON.parse(localStorage.getItem(key) ?? '{}'); } catch { return {}; }

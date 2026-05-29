@@ -275,7 +275,7 @@ export class Minigames {
   private today(): string { return new Date().toISOString().slice(0, 10); }
 
   private saveWordleState(): void {
-    localStorage.setItem('konkat_wordle_day', JSON.stringify({
+    localStorage.setItem(this.games.keyWordle(), JSON.stringify({
       date: this.today(),
       rows: this.rows(),
       status: this.wordleStatus(),
@@ -285,7 +285,7 @@ export class Minigames {
 
   private restoreWordleState(): boolean {
     try {
-      const raw = localStorage.getItem('konkat_wordle_day');
+      const raw = localStorage.getItem(this.games.keyWordle());
       if (!raw) return false;
       const s = JSON.parse(raw);
       if (s.date !== this.today()) return false;
@@ -297,7 +297,7 @@ export class Minigames {
   }
 
   private savePinpointState(): void {
-    localStorage.setItem('konkat_pinpoint_day', JSON.stringify({
+    localStorage.setItem(this.games.keyPinpoint(), JSON.stringify({
       date: this.today(),
       status: this.pinpointStatus(),
       cluesShown: this.cluesShown(),
@@ -306,7 +306,7 @@ export class Minigames {
 
   private restorePinpointState(): void {
     try {
-      const raw = localStorage.getItem('konkat_pinpoint_day');
+      const raw = localStorage.getItem(this.games.keyPinpoint());
       if (!raw) return;
       const s = JSON.parse(raw);
       if (s.date !== this.today()) return;
