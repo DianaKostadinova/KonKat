@@ -1,11 +1,13 @@
 package com.example.konkat.post
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDateTime
 import com.example.konkat.user.User
 
 @Entity
 @Table(name = "posts")
+@SQLRestriction("deleted_at IS NULL")      // soft-delete: Hibernate auto-filters deleted rows
 data class Post(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
@@ -34,7 +36,13 @@ data class Post(
     var tags: MutableList<String> = mutableListOf(),
 
     @CreationTimestamp
-    val createdAt: LocalDateTime = LocalDateTime.now()
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    /** Soft delete timestamp — null means the post is active */
+    var deletedAt: LocalDateTime? = null,
+
+    /** Who deleted this post (user or admin) */
+    var deletedById: Long? = null,
 )
 
 enum class PostType { TEXT, CODE, MEDIA }

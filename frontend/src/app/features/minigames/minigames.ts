@@ -263,8 +263,10 @@ export class Minigames {
 
   openGame(g: 'pinpoint' | 'wordle') {
     this.view.set(g);
-    if (g === 'pinpoint' && !this.pinpointPuzzle()) this.loadPinpoint();
-    if (g === 'wordle' && !this.target()) this.loadWordle();
+    if (g === 'pinpoint' && this.pinpointPuzzle()?.answer !== dailyPinpointPuzzle().answer) {
+      this.loadPinpoint();
+    }
+    if (g === 'wordle' && this.target() !== dailyWord()) this.loadWordle();
   }
 
   backToMenu() {

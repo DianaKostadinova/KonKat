@@ -31,29 +31,52 @@ class PostService(
     private val reputationService: ReputationService,
 ) {
 
-    // ── Feed ──────────────────────────────────────────────────────────────────
+    // ── Feed (batched — no N+1) ──────────────────────────────────────────────
 
-    fun getFeed(currentUserId: Long?): List<PostDto> =
-        postRepository.findAllByOrderByCreatedAtDesc().map { it.toDto(currentUserId) }
+    fun getFeed(currentUserId: Long?): List<PostDto> {
+        val posts = postRepository.findAllByOrderByCreatedAtDesc()
+        return batchToDto(posts, currentUserId)
+    }
 
     fun getFeedPaged(currentUserId: Long?, page: Int, size: Int): PagedResponse<PostDto> {
-        val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
+        val safePage = page.coerceAtLeast(0)
+        val safeSize = size.coerceIn(1, 100)
+        val pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"))
         val result   = postRepository.findAllByOrderByCreatedAtDesc(pageable)
-        return PagedResponse.of(result.map { it.toDto(currentUserId) })
+        val dtos     = batchToDto(result.content, currentUserId)
+        return PagedResponse(
+            content       = dtos,
+            page          = result.number,
+            size          = result.size,
+            totalElements = result.totalElements,
+            totalPages    = result.totalPages,
+            hasMore       = !result.isLast,
+        )
     }
 
     fun getFollowingFeed(currentUserId: Long): List<PostDto> {
         val followedIds = followRepository.findByFollowerId(currentUserId).map { it.following.id }
         if (followedIds.isEmpty()) return emptyList()
-        return postRepository.findByAuthorIdInOrderByCreatedAtDesc(followedIds).map { it.toDto(currentUserId) }
+        val posts = postRepository.findByAuthorIdInOrderByCreatedAtDesc(followedIds)
+        return batchToDto(posts, currentUserId)
     }
 
     fun getFollowingFeedPaged(currentUserId: Long, page: Int, size: Int): PagedResponse<PostDto> {
         val followedIds = followRepository.findByFollowerId(currentUserId).map { it.following.id }
         if (followedIds.isEmpty()) return PagedResponse(content = emptyList(), page = page, size = size, totalElements = 0, totalPages = 0, hasMore = false)
-        val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
+        val safePage = page.coerceAtLeast(0)
+        val safeSize = size.coerceIn(1, 100)
+        val pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"))
         val result   = postRepository.findByAuthorIdInOrderByCreatedAtDesc(followedIds, pageable)
-        return PagedResponse.of(result.map { it.toDto(currentUserId) })
+        val dtos     = batchToDto(result.content, currentUserId)
+        return PagedResponse(
+            content       = dtos,
+            page          = result.number,
+            size          = result.size,
+            totalElements = result.totalElements,
+            totalPages    = result.totalPages,
+            hasMore       = !result.isLast,
+        )
     }
 
     fun getPost(postId: Long, currentUserId: Long?): PostDto {
@@ -62,15 +85,28 @@ class PostService(
         return post.toDto(currentUserId, includeComments = true)
     }
 
-    fun getPostsByUser(authorId: Long, currentUserId: Long?): List<PostDto> =
-        postRepository.findByAuthorIdOrderByCreatedAtDesc(authorId).map { it.toDto(currentUserId) }
+    fun getPostsByUser(authorId: Long, currentUserId: Long?, page: Int = 0, size: Int = 50): List<PostDto> {
+        val safeSize = size.coerceIn(1, 100)
+        val pageable = PageRequest.of(page.coerceAtLeast(0), safeSize, Sort.by(Sort.Direction.DESC, "createdAt"))
+        val posts = postRepository.findByAuthorIdOrderByCreatedAtDesc(authorId, pageable)
+        return batchToDto(posts, currentUserId)
+    }
 
-    fun getSavedPosts(userId: Long): List<PostDto> =
-        postReactionRepository.findByUserIdAndType(userId, ReactionType.SAVE)
-            .map { it.post.toDto(userId) }
+    fun getSavedPosts(userId: Long, page: Int = 0, size: Int = 50): List<PostDto> {
+        val reactions = postReactionRepository.findByUserIdAndType(userId, ReactionType.SAVE)
+        // Paginate in-memory for now; reaction table is bounded per user
+        val paged = reactions.drop(page.coerceAtLeast(0) * size.coerceIn(1, 100))
+            .take(size.coerceIn(1, 100))
+        val posts = paged.map { it.post }
+        return batchToDto(posts, userId)
+    }
 
-    fun getPostsByTag(tag: String, currentUserId: Long?): List<PostDto> =
-        postRepository.findByTagIgnoreCase("#${tag.trimStart('#')}").map { it.toDto(currentUserId) }
+    fun getPostsByTag(tag: String, currentUserId: Long?, page: Int = 0, size: Int = 50): List<PostDto> {
+        val posts = postRepository.findByTagIgnoreCase("#${tag.trimStart('#')}")
+        val safeSize = size.coerceIn(1, 100)
+        val paged = posts.drop(page.coerceAtLeast(0) * safeSize).take(safeSize)
+        return batchToDto(paged, currentUserId)
+    }
 
     fun getTrendingTags(): List<TrendingTagDto> =
         postRepository.findTrendingTags().map { row ->
@@ -102,7 +138,10 @@ class PostService(
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found")
         if (post.author.id != requestingUserId)
             throw ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot delete another user's post")
-        postRepository.delete(post)
+        // Soft delete — keeps the row for audit, @SQLRestriction hides it from queries
+        post.deletedAt = java.time.LocalDateTime.now()
+        post.deletedById = requestingUserId
+        postRepository.save(post)
     }
 
     // ── Reactions ─────────────────────────────────────────────────────────────
@@ -143,12 +182,14 @@ class PostService(
         )
     }
 
-    // ── Comments ──────────────────────────────────────────────────────────────
+    // ── Comments (paginated) ─────────────────────────────────────────────────
 
-    fun getComments(postId: Long): List<PostCommentDto> {
+    fun getComments(postId: Long, page: Int = 0, size: Int = 50): List<PostCommentDto> {
         if (!postRepository.existsById(postId))
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found")
-        return postCommentRepository.findByPostIdOrderByCreatedAtAsc(postId).map { it.toDto() }
+        val safeSize = size.coerceIn(1, 100)
+        val pageable = PageRequest.of(page.coerceAtLeast(0), safeSize)
+        return postCommentRepository.findByPostIdOrderByCreatedAtAsc(postId, pageable).map { it.toDto() }
     }
 
     fun addComment(postId: Long, authorId: Long, request: CreateCommentRequest): PostCommentDto {
@@ -174,10 +215,62 @@ class PostService(
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Comment does not belong to this post")
         if (comment.author.id != requestingUserId)
             throw ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot delete another user's comment")
-        postCommentRepository.delete(comment)
+        // Soft delete — @SQLRestriction hides deleted comments from queries
+        comment.deletedAt = java.time.LocalDateTime.now()
+        postCommentRepository.save(comment)
     }
 
-    // ── Mapping ───────────────────────────────────────────────────────────────
+    // ── Batch mapping (eliminates N+1) ───────────────────────────────────────
+
+    /**
+     * Convert a list of posts to DTOs using batch queries for counts/reactions.
+     * This replaces per-post count queries with 3 total queries regardless of list size.
+     */
+    private fun batchToDto(posts: List<Post>, currentUserId: Long?): List<PostDto> {
+        if (posts.isEmpty()) return emptyList()
+
+        val postIds = posts.map { it.id }
+
+        // 1) Batch reaction counts: postId → (type → count)
+        val reactionCounts = postReactionRepository.countByPostIdInGroupByType(postIds).toReactionCountMap()
+
+        // 2) Batch comment counts: postId → count
+        val commentCounts = postCommentRepository.countByPostIdIn(postIds).toCommentCountMap()
+
+        // 3) Batch user reactions (liked/saved status)
+        val likedPostIds = currentUserId?.let {
+            postReactionRepository.findReactedPostIds(postIds, it, ReactionType.LIKE).toSet()
+        } ?: emptySet()
+        val savedPostIds = currentUserId?.let {
+            postReactionRepository.findReactedPostIds(postIds, it, ReactionType.SAVE).toSet()
+        } ?: emptySet()
+
+        return posts.map { post ->
+            val counts = reactionCounts[post.id] ?: emptyMap()
+            PostDto(
+                id           = post.id,
+                author       = post.author.toAuthorDto(),
+                content      = post.content,
+                type         = post.type,
+                codeLanguage = post.codeLanguage,
+                codeSnippet  = post.codeSnippet,
+                imageUrl     = post.imageUrl,
+                tags         = post.tags.toList(),
+                reactions    = ReactionsDto(
+                    likes  = counts[ReactionType.LIKE] ?: 0,
+                    saves  = counts[ReactionType.SAVE] ?: 0,
+                    shares = counts[ReactionType.SHARE] ?: 0,
+                ),
+                liked        = post.id in likedPostIds,
+                saved        = post.id in savedPostIds,
+                commentsCount = commentCounts[post.id] ?: 0,
+                comments     = emptyList(),
+                createdAt    = post.createdAt.format(ISO),
+            )
+        }
+    }
+
+    // ── Single-post mapping (for detail view) ────────────────────────────────
 
     private fun Post.toDto(currentUserId: Long?, includeComments: Boolean = false): PostDto {
         val likes        = postReactionRepository.countByPostIdAndType(id, ReactionType.LIKE)

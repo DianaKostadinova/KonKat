@@ -37,6 +37,8 @@ class SecurityConfig(private val firebaseJwtFilter: FirebaseJwtFilter) {
                     .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                     .requestMatchers("/ws/**").permitAll()
+                    // Reports: GET stats + list is admin-only (enforced in controller)
+                    // but the route itself requires authentication
                     .anyRequest().authenticated()
             }
             .addFilterBefore(firebaseJwtFilter, UsernamePasswordAuthenticationFilter::class.java)

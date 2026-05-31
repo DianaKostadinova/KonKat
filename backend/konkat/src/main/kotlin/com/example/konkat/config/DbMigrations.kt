@@ -62,6 +62,53 @@ class DbMigrations {
                 stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_visibility varchar(255) NOT NULL DEFAULT 'PUBLIC'")
                 stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS allow_dms varchar(255) NOT NULL DEFAULT 'EVERYONE'")
 
+                // ── Soft delete columns ───────────────────────────────────────────
+                stmt.execute("ALTER TABLE posts ADD COLUMN IF NOT EXISTS deleted_at timestamp")
+                stmt.execute("ALTER TABLE posts ADD COLUMN IF NOT EXISTS deleted_by_id bigint")
+                stmt.execute("ALTER TABLE post_comments ADD COLUMN IF NOT EXISTS deleted_at timestamp")
+
+                // ── Reports table (moderation) ───────────────────────────────────
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS reports (
+                        id bigserial PRIMARY KEY,
+                        reporter_id bigint NOT NULL REFERENCES users(id),
+                        target_type varchar(50) NOT NULL,
+                        target_id bigint NOT NULL,
+                        reason varchar(50) NOT NULL,
+                        description text,
+                        status varchar(50) NOT NULL DEFAULT 'PENDING',
+                        reviewed_by_id bigint REFERENCES users(id),
+                        moderator_notes text,
+                        created_at timestamp DEFAULT now(),
+                        reviewed_at timestamp,
+                        UNIQUE(reporter_id, target_type, target_id)
+                    )
+                """.trimIndent())
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status)")
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_reports_target ON reports(target_type, target_id)")
+
+                // ── Full-text search GIN indexes ─────────────────────────────────
+                stmt.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_users_fts
+                    ON users USING gin(to_tsvector('english', coalesce(display_name,'') || ' ' || coalesce(username,'') || ' ' || coalesce(bio,'')))
+                """.trimIndent())
+                stmt.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_posts_fts
+                    ON posts USING gin(to_tsvector('english', coalesce(content,'')))
+                """.trimIndent())
+                stmt.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_projects_fts
+                    ON projects USING gin(to_tsvector('english', coalesce(title,'') || ' ' || coalesce(description,'')))
+                """.trimIndent())
+                stmt.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_hackathons_fts
+                    ON hackathons USING gin(to_tsvector('english', coalesce(title,'') || ' ' || coalesce(description,'')))
+                """.trimIndent())
+                stmt.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_qa_questions_fts
+                    ON qa_questions USING gin(to_tsvector('english', coalesce(title,'') || ' ' || coalesce(content,'')))
+                """.trimIndent())
+
                 // users: drop and recreate check constraints for the enum columns
                 stmt.execute("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_profile_visibility_check")
                 stmt.execute("""

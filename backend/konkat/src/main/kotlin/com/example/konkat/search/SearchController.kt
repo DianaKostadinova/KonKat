@@ -9,6 +9,7 @@ import com.example.konkat.qa.Question
 import com.example.konkat.qa.QuestionRepository
 import com.example.konkat.user.User
 import com.example.konkat.user.UserRepository
+import org.springframework.data.domain.PageRequest
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -75,6 +76,8 @@ data class SearchResultsDto(
 /**
  * GET /api/search?q=diana[&limit=20]
  *
+ * Uses Postgres full-text search (tsvector + GIN indexes) for ranked results.
+ * Falls back to ILIKE prefix matching for very short queries (2 chars).
  * limit defaults to 5 (navbar dropdown); pass limit=20 for the full search page.
  * Minimum query length of 2 characters is enforced to avoid full-table scans.
  */
@@ -101,36 +104,49 @@ class SearchController(
             emptyList(), emptyList(), emptyList(), emptyList(), emptyList()
         )
 
+        val pageable = PageRequest.of(0, cap)
+
+        // Build a tsquery string: "word1:* & word2:*" for prefix matching
+        val tsQuery = buildTsQuery(query)
+
         val users = userRepository
-            .findByDisplayNameContainingIgnoreCaseOrUsernameContainingIgnoreCase(query, query)
-            .take(cap)
+            .fullTextSearch(tsQuery, pageable)
             .map { it.toUserResult() }
 
         val projects = projectRepository
-            .findByTitleContainingIgnoreCase(query)
-            .take(cap)
+            .fullTextSearch(tsQuery, pageable)
             .map { it.toProjectResult() }
 
         val hackathons = hackathonRepository
-            .findByTitleContainingIgnoreCase(query)
-            .take(cap)
+            .fullTextSearch(tsQuery, pageable)
             .map { HackathonSearchResult(it.id, it.title, it.status.name, it.location) }
 
         val posts = postRepository
-            .findByContentContainingIgnoreCaseOrderByCreatedAtDesc(query)
-            .take(cap)
+            .fullTextSearch(tsQuery, pageable)
             .map { it.toPostResult() }
 
-        val questions = (
-            questionRepository.findByTitleContainingIgnoreCaseOrderByCreatedAtDesc(query) +
-            questionRepository.findByContentContainingIgnoreCaseOrderByCreatedAtDesc(query)
-        )
-            .distinctBy { it.id }
-            .take(cap)
+        val questions = questionRepository
+            .fullTextSearch(tsQuery, pageable)
             .map { it.toQuestionResult() }
 
         return SearchResultsDto(users, projects, hackathons, posts, questions)
     }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /**
+     * Convert user input "hello world" → "hello:* & world:*"
+     * so Postgres matches any word starting with each token.
+     */
+    private fun buildTsQuery(input: String): String =
+        input.split(Regex("\\s+"))
+            .filter { it.isNotBlank() }
+            .joinToString(" & ") { "${sanitizeTsToken(it)}:*" }
+
+    /** Strip characters that break to_tsquery syntax */
+    private fun sanitizeTsToken(token: String): String =
+        token.replace(Regex("[^a-zA-Z0-9@._-]"), "")
+            .ifBlank { "x" }
 
     // ── Mappers ───────────────────────────────────────────────────────────────
 

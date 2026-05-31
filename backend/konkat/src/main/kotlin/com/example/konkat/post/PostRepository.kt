@@ -12,6 +12,7 @@ interface PostRepository : JpaRepository<Post, Long> {
     fun findAllByOrderByCreatedAtDesc(): List<Post>
     fun findAllByOrderByCreatedAtDesc(pageable: Pageable): Page<Post>
     fun findByAuthorIdOrderByCreatedAtDesc(authorId: Long): List<Post>
+    fun findByAuthorIdOrderByCreatedAtDesc(authorId: Long, pageable: Pageable): List<Post>
     fun countByAuthorId(authorId: Long): Long
 
     fun findByAuthorIdInOrderByCreatedAtDesc(authorIds: List<Long>): List<Post>
@@ -22,13 +23,32 @@ interface PostRepository : JpaRepository<Post, Long> {
     @Query("SELECT p FROM Post p JOIN p.tags t WHERE LOWER(t) = LOWER(:tag) ORDER BY p.createdAt DESC")
     fun findByTagIgnoreCase(@Param("tag") tag: String): List<Post>
 
+    /**
+     * Full-text search on post content using Postgres tsvector.
+     * Ranked by relevance, newest first on ties.
+     */
+    @Query(
+        value = """
+            SELECT * FROM posts
+            WHERE deleted_at IS NULL
+              AND to_tsvector('english', coalesce(content,''))
+                  @@ to_tsquery('english', :query)
+            ORDER BY ts_rank(
+                to_tsvector('english', coalesce(content,'')),
+                to_tsquery('english', :query)
+            ) DESC, created_at DESC
+        """,
+        nativeQuery = true,
+    )
+    fun fullTextSearch(@Param("query") query: String, pageable: Pageable): List<Post>
+
     @Query(
         value = """
             SELECT pt.tag AS tag,
                    COUNT(DISTINCT pt.post_id) AS postCount,
                    COUNT(pr.id) AS likeCount
             FROM post_tags pt
-            INNER JOIN posts p ON p.id = pt.post_id
+            INNER JOIN posts p ON p.id = pt.post_id AND p.deleted_at IS NULL
             LEFT JOIN post_reactions pr ON pr.post_id = pt.post_id AND pr.type = 'LIKE'
             GROUP BY pt.tag
             ORDER BY COUNT(pr.id) DESC, COUNT(DISTINCT pt.post_id) DESC

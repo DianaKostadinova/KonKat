@@ -53,39 +53,47 @@ class PostController(private val postService: PostService) {
     }
 
     /**
-     * GET /api/posts/saved
-     * Returns all posts saved by the currently authenticated user.
+     * GET /api/posts/saved?page=0&size=20
+     * Returns all posts saved by the currently authenticated user (paginated).
      */
     @GetMapping("/saved")
-    fun getSaved(request: HttpServletRequest): ResponseEntity<List<PostDto>> {
+    fun getSaved(
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int,
+        request: HttpServletRequest,
+    ): ResponseEntity<List<PostDto>> {
         val userId = request.getAttribute("userId") as Long
-        return ResponseEntity.ok(postService.getSavedPosts(userId))
+        return ResponseEntity.ok(postService.getSavedPosts(userId, page, size))
     }
 
     /**
-     * GET /api/posts/tag/{tag}
-     * Returns all posts that have the given tag, newest-first.
+     * GET /api/posts/tag/{tag}?page=0&size=20
+     * Returns all posts that have the given tag, newest-first (paginated).
      */
     @GetMapping("/tag/{tag}")
     fun getByTag(
         @PathVariable tag: String,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int,
         request: HttpServletRequest,
     ): ResponseEntity<List<PostDto>> {
         val userId = request.getAttribute("userId") as? Long
-        return ResponseEntity.ok(postService.getPostsByTag(tag, userId))
+        return ResponseEntity.ok(postService.getPostsByTag(tag, userId, page, size))
     }
 
     /**
-     * GET /api/posts/user/{authorId}
-     * Returns all posts by a specific user.
+     * GET /api/posts/user/{authorId}?page=0&size=20
+     * Returns all posts by a specific user (paginated).
      */
     @GetMapping("/user/{authorId}")
     fun getByUser(
         @PathVariable authorId: Long,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int,
         request: HttpServletRequest,
     ): ResponseEntity<List<PostDto>> {
         val userId = request.getAttribute("userId") as? Long
-        return ResponseEntity.ok(postService.getPostsByUser(authorId, userId))
+        return ResponseEntity.ok(postService.getPostsByUser(authorId, userId, page, size))
     }
 
     // ── Create / Delete ───────────────────────────────────────────────────────
@@ -131,15 +139,19 @@ class PostController(private val postService: PostService) {
         return ResponseEntity.ok(postService.toggleReaction(id, userId, body.type))
     }
 
-    // ── Comments ──────────────────────────────────────────────────────────────
+    // ── Comments (paginated) ─────────────────────────────────────────────────
 
     /**
-     * GET /api/posts/{id}/comments
-     * Returns all comments for a post, oldest-first.
+     * GET /api/posts/{id}/comments?page=0&size=50
+     * Returns comments for a post, oldest-first (paginated).
      */
     @GetMapping("/{id}/comments")
-    fun getComments(@PathVariable id: Long): ResponseEntity<List<PostCommentDto>> =
-        ResponseEntity.ok(postService.getComments(id))
+    fun getComments(
+        @PathVariable id: Long,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "50") size: Int,
+    ): ResponseEntity<List<PostCommentDto>> =
+        ResponseEntity.ok(postService.getComments(id, page, size))
 
     /**
      * POST /api/posts/{id}/comments

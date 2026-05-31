@@ -36,12 +36,29 @@ class NotificationController(
     private val userRepository: UserRepository,
 ) {
 
-    /** GET /api/notifications — all notifications for the current user, newest first */
+    /** GET /api/notifications — all notifications for the current user, newest first (paginated) */
     @GetMapping
-    fun getAll(request: HttpServletRequest): ResponseEntity<List<NotificationDto>> {
-        val userId = request.getAttribute("userId") as Long
-        val list   = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(userId)
+    fun getAll(
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "30") size: Int,
+        request: HttpServletRequest,
+    ): ResponseEntity<List<NotificationDto>> {
+        val userId   = request.getAttribute("userId") as Long
+        val pageable = org.springframework.data.domain.PageRequest.of(
+            page.coerceAtLeast(0),
+            size.coerceIn(1, 100),
+            org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"),
+        )
+        val list = notificationRepository.findByRecipientId(userId, pageable)
         return ResponseEntity.ok(list.map { it.toDto() })
+    }
+
+    /** GET /api/notifications/unread-count — efficient badge counter for the frontend */
+    @GetMapping("/unread-count")
+    fun getUnreadCount(request: HttpServletRequest): ResponseEntity<Map<String, Long>> {
+        val userId = request.getAttribute("userId") as Long
+        val count  = notificationRepository.countByRecipientIdAndReadFalse(userId)
+        return ResponseEntity.ok(mapOf("count" to count))
     }
 
     /** POST /api/notifications/{id}/read — mark one as read */
@@ -64,9 +81,7 @@ class NotificationController(
     @PostMapping("/read-all")
     fun markAllRead(request: HttpServletRequest): ResponseEntity<Void> {
         val userId = request.getAttribute("userId") as Long
-        notificationRepository.findByRecipientIdOrderByCreatedAtDesc(userId)
-            .filter { !it.read }
-            .forEach { it.read = true }
+        notificationRepository.markAllReadByRecipientId(userId)
         return ResponseEntity.noContent().build()
     }
 
