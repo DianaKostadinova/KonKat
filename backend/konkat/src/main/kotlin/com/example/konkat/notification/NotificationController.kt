@@ -1,7 +1,10 @@
 package com.example.konkat.notification
 
+import com.example.konkat.config.CacheNames
 import com.example.konkat.user.UserRepository
 import jakarta.servlet.http.HttpServletRequest
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.ResponseEntity
@@ -53,16 +56,22 @@ class NotificationController(
         return ResponseEntity.ok(list.map { it.toDto() })
     }
 
-    /** GET /api/notifications/unread-count — efficient badge counter for the frontend */
+    /** GET /api/notifications/unread-count — efficient badge counter for the frontend (cached 30s) */
     @GetMapping("/unread-count")
-    fun getUnreadCount(request: HttpServletRequest): ResponseEntity<Map<String, Long>> {
+    @Cacheable(CacheNames.UNREAD_COUNT, key = "#root.target.extractUserId(#request)")
+    fun getUnreadCount(request: HttpServletRequest): Map<String, Long> {
         val userId = request.getAttribute("userId") as Long
         val count  = notificationRepository.countByRecipientIdAndReadFalse(userId)
-        return ResponseEntity.ok(mapOf("count" to count))
+        return mapOf("count" to count)
     }
+
+    /** Helper for SpEL key expression — extracts userId from request */
+    fun extractUserId(request: HttpServletRequest): Long =
+        request.getAttribute("userId") as Long
 
     /** POST /api/notifications/{id}/read — mark one as read */
     @PostMapping("/{id}/read")
+    @CacheEvict(CacheNames.UNREAD_COUNT, key = "#root.target.extractUserId(#request)")
     fun markRead(
         @PathVariable id: Long,
         request: HttpServletRequest,
@@ -79,6 +88,7 @@ class NotificationController(
 
     /** POST /api/notifications/read-all — mark every unread notification as read */
     @PostMapping("/read-all")
+    @CacheEvict(CacheNames.UNREAD_COUNT, key = "#root.target.extractUserId(#request)")
     fun markAllRead(request: HttpServletRequest): ResponseEntity<Void> {
         val userId = request.getAttribute("userId") as Long
         notificationRepository.markAllReadByRecipientId(userId)

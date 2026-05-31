@@ -1,5 +1,6 @@
 package com.example.konkat.post
 
+import com.example.konkat.config.CacheNames
 import com.example.konkat.config.PagedResponse
 import com.example.konkat.notification.NotificationSender
 import com.example.konkat.notification.NotificationType
@@ -7,6 +8,7 @@ import com.example.konkat.social.FollowRepository
 import com.example.konkat.user.ReputationAction
 import com.example.konkat.user.ReputationService
 import com.example.konkat.user.UserRepository
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.transaction.annotation.Transactional
@@ -108,6 +110,7 @@ class PostService(
         return batchToDto(paged, currentUserId)
     }
 
+    @Cacheable(CacheNames.TRENDING_TAGS, key = "'global'")
     fun getTrendingTags(): List<TrendingTagDto> =
         postRepository.findTrendingTags().map { row ->
             TrendingTagDto(tag = row.getTag(), postCount = row.getPostCount(), likeCount = row.getLikeCount())

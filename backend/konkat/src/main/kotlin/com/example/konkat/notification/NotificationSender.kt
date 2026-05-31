@@ -1,7 +1,9 @@
 package com.example.konkat.notification
 
+import com.example.konkat.config.CacheNames
 import com.example.konkat.user.User
 import org.slf4j.LoggerFactory
+import org.springframework.cache.CacheManager
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -20,6 +22,7 @@ class NotificationSender(
     private val notificationRepository: NotificationRepository,
     private val pushService: NotificationPushService,
     private val emailService: EmailService,
+    private val cacheManager: CacheManager,
 ) {
 
     private val log = LoggerFactory.getLogger(NotificationSender::class.java)
@@ -71,6 +74,9 @@ class NotificationSender(
         }
         // Send email asynchronously (fire-and-forget, never blocks the request)
         if (shouldEmail) emailService.sendNotificationEmail(recipient, actor, type)
+
+        // Evict the unread-count cache for the recipient so their next poll gets the real number
+        cacheManager.getCache(CacheNames.UNREAD_COUNT)?.evict(recipient.id)
 
         // Push via WebSocket only after the REQUIRES_NEW transaction commits,
         // so the client's follow-up GET will always find the row.

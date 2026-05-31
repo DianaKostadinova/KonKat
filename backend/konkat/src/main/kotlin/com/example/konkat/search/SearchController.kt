@@ -1,5 +1,6 @@
 package com.example.konkat.search
 
+import com.example.konkat.config.CacheNames
 import com.example.konkat.hackathon.HackathonRepository
 import com.example.konkat.post.Post
 import com.example.konkat.post.PostRepository
@@ -9,6 +10,7 @@ import com.example.konkat.qa.Question
 import com.example.konkat.qa.QuestionRepository
 import com.example.konkat.user.User
 import com.example.konkat.user.UserRepository
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.PageRequest
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.GetMapping
@@ -93,6 +95,7 @@ class SearchController(
 ) {
 
     @GetMapping
+    @Cacheable(CacheNames.SEARCH_RESULTS, key = "#q.trim().toLowerCase() + ':' + #limit")
     fun search(
         @RequestParam q: String,
         @RequestParam(defaultValue = "5") limit: Int,

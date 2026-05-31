@@ -1,8 +1,11 @@
 package com.example.konkat.social
 
+import com.example.konkat.config.CacheNames
 import com.example.konkat.notification.NotificationSender
 import com.example.konkat.notification.NotificationType
 import com.example.konkat.user.UserRepository
+import org.springframework.cache.CacheManager
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -41,6 +44,7 @@ class FollowService(
     private val followRepository: FollowRepository,
     private val userRepository: UserRepository,
     private val notificationSender: NotificationSender,
+    private val cacheManager: CacheManager,
 ) {
 
     /**
@@ -55,7 +59,7 @@ class FollowService(
 
         val existing = followRepository.findByFollowerIdAndFollowingId(currentUserId, targetUserId)
 
-        return if (existing != null) {
+        val result = if (existing != null) {
             // Already following → unfollow
             followRepository.delete(existing)
             FollowResultDto(
@@ -77,6 +81,12 @@ class FollowService(
                 followerCount = followRepository.countByFollowingId(targetUserId),
             )
         }
+
+        // Evict cached follow counts for both users
+        cacheManager.getCache(CacheNames.FOLLOW_COUNTS)?.evict(currentUserId)
+        cacheManager.getCache(CacheNames.FOLLOW_COUNTS)?.evict(targetUserId)
+
+        return result
     }
 
     fun isFollowing(currentUserId: Long, targetUserId: Long): Boolean =
@@ -88,7 +98,10 @@ class FollowService(
         followingCount = followRepository.countByFollowerId(targetUserId),
     )
 
+    @Cacheable(CacheNames.FOLLOW_COUNTS, key = "'followers:' + #userId")
     fun getFollowerCount(userId: Long)  = followRepository.countByFollowingId(userId)
+
+    @Cacheable(CacheNames.FOLLOW_COUNTS, key = "'following:' + #userId")
     fun getFollowingCount(userId: Long) = followRepository.countByFollowerId(userId)
 
     /** Returns the list of users who follow userId */
