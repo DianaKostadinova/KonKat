@@ -49,12 +49,18 @@ class SecurityConfig(private val firebaseJwtFilter: FirebaseJwtFilter) {
     fun corsFilter(): CorsFilter = CorsFilter(corsSource())
 
     private fun corsSource(): UrlBasedCorsConfigurationSource {
+        val extraOrigins = System.getenv("CORS_ALLOWED_ORIGINS")
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?: emptyList()
         val config = CorsConfiguration().apply {
-            allowedOrigins   = listOf("http://localhost:4200", "http://localhost")
-            allowedMethods   = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-            allowedHeaders   = listOf("*")
-            allowCredentials = true
-            maxAge           = 3600L
+            allowedOrigins        = listOf("http://localhost:4200", "http://localhost") + extraOrigins
+            allowedOriginPatterns = listOf("https://*.vercel.app")
+            allowedMethods        = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+            allowedHeaders        = listOf("*")
+            allowCredentials      = true
+            maxAge                = 3600L
         }
         return UrlBasedCorsConfigurationSource().apply {
             registerCorsConfiguration("/**", config)
