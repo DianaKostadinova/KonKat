@@ -20,8 +20,18 @@ class WebSocketConfig(
     }
 
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
+        val extraOrigins = System.getenv("CORS_ALLOWED_ORIGINS")
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?.toTypedArray()
+            ?: emptyArray()
         registry.addEndpoint("/ws")
-            .setAllowedOriginPatterns("http://localhost:4200")
+            .setAllowedOriginPatterns(
+                "http://localhost:4200",
+                "https://*.vercel.app",
+                *extraOrigins,
+            )
     }
 
     override fun configureClientInboundChannel(registration: ChannelRegistration) {
