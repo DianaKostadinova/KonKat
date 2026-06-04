@@ -30,8 +30,12 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
   hasUnreadBelow = signal(false);
   private prevMessageCount = 0;
   private prevConvId: number | null = null;
-  /** Updated by the messages-container scroll listener; consulted before each render. */
-  private isAtBottom = true;
+  /**
+   * The messages container's scrollHeight on the previous view check. Used to determine
+   * whether the user was at the bottom of the *previous* render before new content was
+   * appended — race-free, unlike relying on a scroll-event flag.
+   */
+  private prevScrollHeight = 0;
   /** px from the bottom that still counts as "at bottom". */
   private static readonly STICK_THRESHOLD = 40;
 
@@ -248,7 +252,7 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
       this.prevConvId = currentId;
       this.prevMessageCount = currentCount;
       el.scrollTop = el.scrollHeight;
-      this.isAtBottom = true;
+      this.prevScrollHeight = el.scrollHeight;
       this.hasUnreadBelow.set(false);
       this.shouldScroll = false;
       return;
@@ -258,36 +262,39 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
     if (this.shouldScroll) {
       el.scrollTop = el.scrollHeight;
       this.shouldScroll = false;
-      this.isAtBottom = true;
       this.hasUnreadBelow.set(false);
       this.prevMessageCount = currentCount;
+      this.prevScrollHeight = el.scrollHeight;
       return;
     }
 
-    // New incoming message(s) since the last check.
+    // New incoming message(s)? Measure whether the user was at the bottom of the
+    // *previous* render — i.e. before the new content grew the scrollHeight.
     if (currentCount > this.prevMessageCount) {
+      const wasNearBottom =
+        el.scrollTop + el.clientHeight >= this.prevScrollHeight - Chat.STICK_THRESHOLD;
       this.prevMessageCount = currentCount;
-      if (this.isAtBottom) {
-        // User was already at the bottom → stick to it.
+      if (wasNearBottom) {
         el.scrollTop = el.scrollHeight;
         this.hasUnreadBelow.set(false);
+        const c = this.activeConv();
+        if (c && c.unread > 0) this.chatService.markAsRead(c.id, c.type);
       } else {
-        // User was scrolled up reading older messages → show the pill instead.
         this.hasUnreadBelow.set(true);
       }
     } else if (currentCount < this.prevMessageCount) {
-      // Messages reloaded / shrunk — just resync the counter.
       this.prevMessageCount = currentCount;
     }
+
+    this.prevScrollHeight = el.scrollHeight;
   }
 
-  /** Bound to the messages container's `scroll` event. */
+  /** Bound to the messages container's `scroll` event — only clears the unread pill. */
   onMessagesScroll() {
-    if (!this.messageContainer) return;
+    if (!this.messageContainer || !this.hasUnreadBelow()) return;
     const el = this.messageContainer.nativeElement as HTMLElement;
     const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    this.isAtBottom = distFromBottom < Chat.STICK_THRESHOLD;
-    if (this.isAtBottom && this.hasUnreadBelow()) {
+    if (distFromBottom < Chat.STICK_THRESHOLD) {
       this.hasUnreadBelow.set(false);
       const conv = this.activeConv();
       if (conv && conv.unread > 0) this.chatService.markAsRead(conv.id, conv.type);
@@ -299,7 +306,6 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
     if (!this.messageContainer) return;
     const el = this.messageContainer.nativeElement as HTMLElement;
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-    this.isAtBottom = true;
     this.hasUnreadBelow.set(false);
     const conv = this.activeConv();
     if (conv && conv.unread > 0) this.chatService.markAsRead(conv.id, conv.type);

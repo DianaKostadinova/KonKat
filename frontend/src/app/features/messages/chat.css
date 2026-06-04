@@ -1,6 +1,9 @@
 :host {
   display: block;
+  /* Use dynamic viewport (dvh) so the chat shrinks with the mobile soft keyboard.
+     Falls back to vh on browsers without dvh support. */
   height: calc(100vh - 60px);
+  height: calc(100dvh - 60px);
   overflow: hidden;
 }
 

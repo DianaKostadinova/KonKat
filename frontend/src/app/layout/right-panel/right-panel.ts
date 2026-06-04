@@ -27,9 +27,36 @@ export class RightPanel implements OnInit, OnDestroy {
   });
 
   // ── Draggable mobile FAB ─────────────────────────────────────────────────
+  /** User-intended position (persisted). May be clamped to the visible viewport at render time. */
   fabX = signal<number | null>(null);
   fabY = signal<number | null>(null);
   dragging = signal(false);
+
+  /**
+   * Tracks the current *visible* viewport. Shrinks when the mobile soft keyboard opens
+   * (via the visualViewport API), so we can clamp the FAB and keep it on-screen.
+   */
+  private viewportW = signal<number>(typeof window !== 'undefined' ? window.innerWidth  : 1024);
+  private viewportH = signal<number>(typeof window !== 'undefined' ? window.innerHeight : 768);
+
+  /** Position actually applied to the DOM — fabX/fabY clamped against the visible viewport. */
+  displayedFabX = computed<number | null>(() => {
+    const x = this.fabX();
+    if (x === null) return null;
+    return Math.max(
+      RightPanel.FAB_MARGIN,
+      Math.min(this.viewportW() - RightPanel.FAB_SIZE - RightPanel.FAB_MARGIN, x),
+    );
+  });
+  displayedFabY = computed<number | null>(() => {
+    const y = this.fabY();
+    if (y === null) return null;
+    return Math.max(
+      RightPanel.FAB_MARGIN,
+      Math.min(this.viewportH() - RightPanel.FAB_SIZE - RightPanel.FAB_MARGIN, y),
+    );
+  });
+
   private drag = {
     active: false,
     moved: false,
@@ -38,6 +65,7 @@ export class RightPanel implements OnInit, OnDestroy {
     offsetX: 0,
     offsetY: 0,
   };
+  private viewportResizeCleanup: (() => void) | null = null;
   private static readonly FAB_POS_KEY = 'konkat:fab-pos';
   private static readonly FAB_SIZE = 48;
   private static readonly FAB_MARGIN = 16;
@@ -85,6 +113,7 @@ export class RightPanel implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.restoreFabPosition();
+    this.installViewportListener();
 
     if (this.auth.isLoggedIn()) {
       this.profileService.loadProfile().subscribe({
@@ -118,6 +147,7 @@ export class RightPanel implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.timer)      clearInterval(this.timer);
     if (this.refreshSub) this.refreshSub.unsubscribe();
+    this.viewportResizeCleanup?.();
   }
 
   private loadSavedEvents(): void {
@@ -205,6 +235,29 @@ export class RightPanel implements OnInit, OnDestroy {
   }
 
   // ── Draggable FAB ─────────────────────────────────────────────────────────
+
+  /**
+   * Keep `viewportW`/`viewportH` in sync with the *visible* viewport. This shrinks
+   * when the mobile soft keyboard opens, and the `displayedFab*` computeds re-clamp
+   * the FAB so it can't be pushed off-screen by the keyboard.
+   */
+  private installViewportListener(): void {
+    if (typeof window === 'undefined') return;
+    const vv = window.visualViewport;
+    const sync = () => {
+      this.viewportW.set(vv?.width  ?? window.innerWidth);
+      this.viewportH.set(vv?.height ?? window.innerHeight);
+    };
+    sync();
+    window.addEventListener('resize', sync);
+    vv?.addEventListener('resize', sync);
+    vv?.addEventListener('scroll', sync);
+    this.viewportResizeCleanup = () => {
+      window.removeEventListener('resize', sync);
+      vv?.removeEventListener('resize', sync);
+      vv?.removeEventListener('scroll', sync);
+    };
+  }
 
   private restoreFabPosition(): void {
     try {
