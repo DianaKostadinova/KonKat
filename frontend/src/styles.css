@@ -23,6 +23,22 @@ body {
   color: var(--color-text);
   font-family: 'Inter', sans-serif;
 }
+
+/* ── Mobile keyboard handling ─────────────────────────────────────────────
+   On mobile, lock the document to the viewport so the browser can't scroll
+   the whole page when the soft keyboard opens (which is what was pushing the
+   fixed navbar / FAB off the top of the screen). Inner containers do their
+   own scrolling via overflow-y. The `interactive-widget=resizes-content`
+   viewport meta does the heavy lifting on Chrome/Edge; this is the fallback
+   that keeps iOS Safari well-behaved too. */
+@media (max-width: 1024px) {
+  html, body {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}
 * {
   scrollbar-width: none;
   -ms-overflow-style: none;

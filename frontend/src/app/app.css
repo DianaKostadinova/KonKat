@@ -84,6 +84,14 @@ app-right-panel {
 @media (max-width: 1024px) {
   .app-shell {
     grid-template-columns: 240px 1fr;
+    /* Body is locked to viewport on mobile (see styles.css) so the soft keyboard
+       can't push the fixed navbar off the top. The shell itself takes over as
+       the scroll container. `dvh` shrinks with the keyboard so the chat's
+       100dvh-based layout still fits perfectly. */
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   /* Right panel becomes a fixed FAB+sheet — zero out its grid footprint */
