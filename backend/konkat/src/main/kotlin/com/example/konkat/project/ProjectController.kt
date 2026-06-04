@@ -47,6 +47,15 @@ data class ProjectDto(
     val ownerRole: String?,
     val ownerAvatarUrl: String?,
     val createdAt: String,
+    /** Total number of users who have starred this project. */
+    val starCount: Long = 0,
+    /** Whether the *current* viewer has starred this project. */
+    val starred: Boolean = false,
+)
+
+data class StarResultDto(
+    val starred: Boolean,
+    val starCount: Long,
 )
 
 // ── Controller ────────────────────────────────────────────────────────────────
@@ -57,6 +66,7 @@ data class ProjectDto(
 class ProjectController(
     private val projectRepository: ProjectRepository,
     private val userRepository: UserRepository,
+    private val reactionRepository: ProjectReactionRepository,
 ) {
 
     /**
@@ -67,11 +77,15 @@ class ProjectController(
     fun getAllProjects(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int,
+        request: HttpServletRequest,
     ): ResponseEntity<PagedResponse<ProjectDto>> {
         val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
-        return ResponseEntity.ok(
-            PagedResponse.of(projectRepository.findAllByOrderByCreatedAtDesc(pageable).map { it.toDto() })
-        )
+        val viewerId = request.getAttribute("userId") as? Long
+        val pageResult = projectRepository.findAllByOrderByCreatedAtDesc(pageable)
+        val dtos = pageResult.content.map { it.toDtoForViewer(viewerId) }
+        return ResponseEntity.ok(PagedResponse.of(
+            org.springframework.data.domain.PageImpl(dtos, pageable, pageResult.totalElements)
+        ))
     }
 
     /**
@@ -102,7 +116,7 @@ class ProjectController(
         ).also { it.techStack.addAll(body.techStack) }
 
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(projectRepository.save(project).toDto())
+            .body(projectRepository.save(project).toDtoForViewer(userId))
     }
 
     /**
@@ -113,7 +127,7 @@ class ProjectController(
     fun getMyProjects(request: HttpServletRequest): ResponseEntity<List<ProjectDto>> {
         val userId = request.getAttribute("userId") as Long
         return ResponseEntity.ok(
-            projectRepository.findByOwnerId(userId).map { it.toDto() }
+            projectRepository.findByOwnerId(userId).map { it.toDtoForViewer(userId) }
         )
     }
 
@@ -122,10 +136,49 @@ class ProjectController(
      * Returns all projects owned by any user (public).
      */
     @GetMapping("/user/{userId}")
-    fun getUserProjects(@PathVariable userId: Long): ResponseEntity<List<ProjectDto>> =
-        ResponseEntity.ok(
-            projectRepository.findByOwnerId(userId).map { it.toDto() }
+    fun getUserProjects(
+        @PathVariable userId: Long,
+        request: HttpServletRequest,
+    ): ResponseEntity<List<ProjectDto>> {
+        val viewerId = request.getAttribute("userId") as? Long
+        return ResponseEntity.ok(
+            projectRepository.findByOwnerId(userId).map { it.toDtoForViewer(viewerId) }
         )
+    }
+
+    /**
+     * POST /api/projects/{id}/star
+     * Toggles a star (LIKE) for the authenticated user on this project.
+     * Returns the new starred state and updated count.
+     */
+    @PostMapping("/{id}/star")
+    fun toggleStar(
+        @PathVariable id: Long,
+        request: HttpServletRequest,
+    ): ResponseEntity<StarResultDto> {
+        val userId = request.getAttribute("userId") as Long
+        val project = projectRepository.findById(id).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found")
+        }
+        val user = userRepository.findById(userId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+        }
+        val existing = reactionRepository.findByProjectIdAndUserIdAndType(
+            id, userId, ProjectReactionType.LIKE,
+        )
+        val starred: Boolean
+        if (existing != null) {
+            reactionRepository.delete(existing)
+            starred = false
+        } else {
+            reactionRepository.save(ProjectReaction(
+                project = project, user = user, type = ProjectReactionType.LIKE,
+            ))
+            starred = true
+        }
+        val count = reactionRepository.countByProjectIdAndType(id, ProjectReactionType.LIKE)
+        return ResponseEntity.ok(StarResultDto(starred = starred, starCount = count))
+    }
 
     /**
      * DELETE /api/projects/:id
@@ -148,19 +201,31 @@ class ProjectController(
 
     // ── Mapping ───────────────────────────────────────────────────────────────
 
-    private fun Project.toDto() = ProjectDto(
-        id            = id,
-        title         = title,
-        description   = description,
-        githubUrl     = githubUrl,
-        liveUrl       = liveUrl,
-        imageUrl      = imageUrl,
-        status        = status.name,
-        techStack     = techStack.toList(),
-        ownerId       = owner.id,
-        ownerName     = owner.displayName,
-        ownerRole     = owner.title,
-        ownerAvatarUrl = owner.avatarUrl,
-        createdAt     = createdAt?.format(ISO) ?: "",
-    )
+    /**
+     * Maps a project to its DTO, including the viewer's star state and the total star count.
+     * Pass `viewerId = null` for anonymous requests — `starred` will always be false in that case.
+     */
+    private fun Project.toDtoForViewer(viewerId: Long?): ProjectDto {
+        val starCount = reactionRepository.countByProjectIdAndType(id, ProjectReactionType.LIKE)
+        val starred   = viewerId?.let {
+            reactionRepository.existsByProjectIdAndUserIdAndType(id, it, ProjectReactionType.LIKE)
+        } ?: false
+        return ProjectDto(
+            id             = id,
+            title          = title,
+            description    = description,
+            githubUrl      = githubUrl,
+            liveUrl        = liveUrl,
+            imageUrl       = imageUrl,
+            status         = status.name,
+            techStack      = techStack.toList(),
+            ownerId        = owner.id,
+            ownerName      = owner.displayName,
+            ownerRole      = owner.title,
+            ownerAvatarUrl = owner.avatarUrl,
+            createdAt      = createdAt?.format(ISO) ?: "",
+            starCount      = starCount,
+            starred        = starred,
+        )
+    }
 }

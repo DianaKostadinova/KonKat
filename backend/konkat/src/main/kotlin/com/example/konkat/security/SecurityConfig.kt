@@ -29,6 +29,8 @@ class SecurityConfig(private val firebaseJwtFilter: FirebaseJwtFilter) {
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    // Public health endpoint for uptime pingers (cron-job.org, UptimeRobot, etc.)
+                    .requestMatchers(HttpMethod.GET, "/health").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/questions", "/api/questions/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/hackathons", "/api/hackathons/**").permitAll()

@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, OnInit } from '@angular/core';
 import { Project } from './project.model';
 import { ProjectService } from './project.service';
 import { ProjectCard } from './project-card';
@@ -11,7 +11,7 @@ import { AddProjectModal } from './add-project-modal';
   templateUrl: './projects.html',
   styleUrl: './projects.css',
 })
-export class Projects {
+export class Projects implements OnInit {
   selectedTech = signal('');
   selectedSort = signal('newest');
   searchQuery = signal('');
@@ -27,6 +27,12 @@ export class Projects {
   ];
 
   constructor(private projectService: ProjectService) {}
+
+  ngOnInit(): void {
+    // Always refresh the global feed when the page is opened — otherwise the signal
+    // can be stale (e.g. holding only "my projects" from a recent profile visit).
+    this.projectService.loadAllProjects();
+  }
 
   allProjects = computed(() => this.projectService.getProjects());
 

@@ -27,6 +27,18 @@ export class ProjectService {
 
   // ── Load ──────────────────────────────────────────────────────────────────
 
+  /**
+   * Load the global projects feed (paginated on the backend; we just take the first page).
+   * Used by the /projects browse page.
+   */
+  loadAllProjects(): void {
+    this.http.get<{ content: any[] }>(`${API}/projects?page=0&size=50`)
+      .subscribe({
+        next: res => this.projects.set((res?.content ?? []).map(d => this.mapDto(d))),
+        error: err => console.error('loadAllProjects failed', err),
+      });
+  }
+
   /** Load projects for the logged-in user */
   loadMyProjects(): void {
     this.http.get<any[]>(`${API}/projects/me`)
@@ -57,6 +69,28 @@ export class ProjectService {
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────
+
+  /**
+   * Toggles a star on a project. Optimistically updates the local signal, then
+   * reconciles with the server response (in case the actual count drifted).
+   */
+  toggleStar(projectId: number): Observable<{ starred: boolean; starCount: number }> {
+    // Optimistic update so the UI feels instant.
+    this.projects.update(list => list.map(p => p.id !== projectId ? p : {
+      ...p,
+      starred: !p.starred,
+      stars: (p.starred ? p.stars - 1 : p.stars + 1),
+    }));
+    return this.http.post<{ starred: boolean; starCount: number }>(
+      `${API}/projects/${projectId}/star`, {},
+    ).pipe(
+      tap(res => {
+        this.projects.update(list => list.map(p => p.id !== projectId ? p : {
+          ...p, starred: res.starred, stars: res.starCount,
+        }));
+      }),
+    );
+  }
 
   deleteProject(projectId: number): Observable<void> {
     return this.http.delete<void>(`${API}/projects/${projectId}`).pipe(
@@ -106,7 +140,8 @@ export class ProjectService {
       githubUrl: dto.githubUrl ?? undefined,
       liveUrl:   dto.liveUrl   ?? undefined,
       status:    dto.status    ?? 'IN_PROGRESS',
-      stars:     0,
+      stars:     dto.starCount ?? 0,
+      starred:   dto.starred ?? false,
       forks:     0,
       comments:  0,
       createdAt: dto.createdAt ? this.timeAgo(dto.createdAt) : 'just now',

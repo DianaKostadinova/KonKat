@@ -13,7 +13,8 @@ export interface Project {
   githubUrl?: string;
   liveUrl?: string;
   status: string;           // IN_PROGRESS | COMPLETED | LOOKING_FOR_TEAM | ARCHIVED
-  stars: number;            // not yet tracked in backend — defaults to 0
+  stars: number;            // total star count from backend
+  starred?: boolean;        // whether the current viewer has starred it
   forks: number;
   comments: number;
   featured?: boolean;
