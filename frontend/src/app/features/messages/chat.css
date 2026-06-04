@@ -71,6 +71,38 @@
   flex-shrink: 0;
 }
 
+/* "New messages ↓" pill — floats above the input wrapper */
+.unread-pill {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%) translateY(-10px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  border: 1px solid #E8593C;
+  background-color: #E8593C;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(232, 89, 60, 0.45);
+  z-index: 5;
+  animation: unread-pill-in 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.unread-pill:hover {
+  background-color: #d14e33;
+  border-color: #d14e33;
+}
+
+@keyframes unread-pill-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(0); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(-10px); }
+}
+
 /* Empty state */
 .chat-empty {
   flex: 1;

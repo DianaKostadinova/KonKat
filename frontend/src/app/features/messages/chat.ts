@@ -25,6 +25,16 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
   private searchTimer: any;
   shouldScroll = false;
 
+  // ── Auto-scroll / unread-below indicator ──────────────────────────────────
+  /** True when new messages have arrived but the user has scrolled up. */
+  hasUnreadBelow = signal(false);
+  private prevMessageCount = 0;
+  private prevConvId: number | null = null;
+  /** Updated by the messages-container scroll listener; consulted before each render. */
+  private isAtBottom = true;
+  /** px from the bottom that still counts as "at bottom". */
+  private static readonly STICK_THRESHOLD = 40;
+
   pendingFile = signal<File | null>(null);
   pendingFilePreviewUrl = signal<string | null>(null);
   uploading = signal(false);
@@ -227,11 +237,72 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   ngAfterViewChecked() {
-    if (this.shouldScroll && this.messageContainer) {
-      const el = this.messageContainer.nativeElement;
+    if (!this.messageContainer) return;
+    const el = this.messageContainer.nativeElement as HTMLElement;
+    const conv = this.activeConv();
+    const currentCount = conv?.messages.length ?? 0;
+    const currentId = conv?.id ?? null;
+
+    // Conversation switched (or first open) — jump to bottom, reset state.
+    if (currentId !== this.prevConvId) {
+      this.prevConvId = currentId;
+      this.prevMessageCount = currentCount;
+      el.scrollTop = el.scrollHeight;
+      this.isAtBottom = true;
+      this.hasUnreadBelow.set(false);
+      this.shouldScroll = false;
+      return;
+    }
+
+    // Explicit scroll request (we just sent a message ourselves).
+    if (this.shouldScroll) {
       el.scrollTop = el.scrollHeight;
       this.shouldScroll = false;
+      this.isAtBottom = true;
+      this.hasUnreadBelow.set(false);
+      this.prevMessageCount = currentCount;
+      return;
     }
+
+    // New incoming message(s) since the last check.
+    if (currentCount > this.prevMessageCount) {
+      this.prevMessageCount = currentCount;
+      if (this.isAtBottom) {
+        // User was already at the bottom → stick to it.
+        el.scrollTop = el.scrollHeight;
+        this.hasUnreadBelow.set(false);
+      } else {
+        // User was scrolled up reading older messages → show the pill instead.
+        this.hasUnreadBelow.set(true);
+      }
+    } else if (currentCount < this.prevMessageCount) {
+      // Messages reloaded / shrunk — just resync the counter.
+      this.prevMessageCount = currentCount;
+    }
+  }
+
+  /** Bound to the messages container's `scroll` event. */
+  onMessagesScroll() {
+    if (!this.messageContainer) return;
+    const el = this.messageContainer.nativeElement as HTMLElement;
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    this.isAtBottom = distFromBottom < Chat.STICK_THRESHOLD;
+    if (this.isAtBottom && this.hasUnreadBelow()) {
+      this.hasUnreadBelow.set(false);
+      const conv = this.activeConv();
+      if (conv && conv.unread > 0) this.chatService.markAsRead(conv.id, conv.type);
+    }
+  }
+
+  /** Called when the user clicks the "New messages ↓" pill. */
+  scrollToBottom() {
+    if (!this.messageContainer) return;
+    const el = this.messageContainer.nativeElement as HTMLElement;
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    this.isAtBottom = true;
+    this.hasUnreadBelow.set(false);
+    const conv = this.activeConv();
+    if (conv && conv.unread > 0) this.chatService.markAsRead(conv.id, conv.type);
   }
 
   ngOnDestroy() {

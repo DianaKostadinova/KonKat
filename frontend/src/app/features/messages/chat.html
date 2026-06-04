@@ -185,7 +185,7 @@
       </div>
 
       <!-- Messages -->
-      <div class="messages-container" #messageContainer>
+      <div class="messages-container" #messageContainer (scroll)="onMessagesScroll()">
         @for (msg of conv.messages; track msg.id) {
           <div class="flex flex-col mb-3"
                [class.items-end]="isMe(msg.senderId)"
@@ -266,7 +266,15 @@
       </div>
 
       <!-- Input -->
-      <div class="border-t border-[#2a2a2a] bg-[#111111]">
+      <div class="border-t border-[#2a2a2a] bg-[#111111] relative">
+
+        <!-- "New messages ↓" pill — floats above the input when new msgs arrive while scrolled up -->
+        @if (hasUnreadBelow()) {
+          <button class="unread-pill" (click)="scrollToBottom()">
+            <span class="material-icons" style="font-size: 16px;">arrow_downward</span>
+            <span>New messages</span>
+          </button>
+        }
 
         <!-- Pending file preview -->
         @if (pendingFile(); as file) {
