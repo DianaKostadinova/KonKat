@@ -90,6 +90,7 @@ export class MinigamesService {
           next: (res) => {
             this.myRep.set(res.rep);
             this.profileService.rep.set(res.rep);
+            this.profileService.myRep.set(res.rep);
             const today = new Date().toISOString().slice(0, 10);
             this.solvedLocal.update((s) => {
               const next = { ...s, [game]: Array.from(new Set([...(s[game] ?? []), today])) };

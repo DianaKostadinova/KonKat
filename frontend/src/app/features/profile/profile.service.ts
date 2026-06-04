@@ -21,6 +21,15 @@ export class ProfileService {
   private profile       = signal<UserProfile>({ ...EMPTY_PROFILE });
   readonly profileSignal = this.profile.asReadonly();
   readonly rep           = signal<number>(0);
+
+  /**
+   * The authenticated user's own profile. Only written by loadProfile()/saveProfile().
+   * Use this anywhere the UI should always reflect "me" (e.g. the right-side panel),
+   * regardless of whose profile is currently being viewed on the profile page.
+   */
+  private myProfile       = signal<UserProfile>({ ...EMPTY_PROFILE });
+  readonly myProfileSignal = this.myProfile.asReadonly();
+  readonly myRep           = signal<number>(0);
   private myPosts    = signal<Post[]>([]);
   private savedPosts = signal<Post[]>([]);
   private likedPosts = signal<Post[]>([]);
@@ -45,7 +54,11 @@ export class ProfileService {
    */
   loadProfile(): Observable<UserProfile> {
     const req$ = this.http.get<any>(`${API}/users/me`).pipe(
-      tap(data => this.setFromDto(data)),
+      tap(data => {
+        this.setFromDto(data);
+        this.myProfile.set(this.profile());
+        this.myRep.set(this.rep());
+      }),
       map(() => this.profile()),
       share(),
     );
@@ -89,7 +102,11 @@ export class ProfileService {
       interests:     updates.interests    ?? undefined,
     };
     return this.http.put<any>(`${API}/users/me`, body).pipe(
-      tap(data => this.setFromDto(data)),
+      tap(data => {
+        this.setFromDto(data);
+        this.myProfile.set(this.profile());
+        this.myRep.set(this.rep());
+      }),
       map(() => this.profile()),
     );
   }

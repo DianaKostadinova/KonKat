@@ -22,9 +22,25 @@ export class RightPanel implements OnInit, OnDestroy {
 
   isOpen           = signal(false);
   profile          = computed<UserProfile | null>(() => {
-    const p = this.profileService.profileSignal();
+    const p = this.profileService.myProfileSignal();
     return p.id ? p : null;
   });
+
+  // ── Draggable mobile FAB ─────────────────────────────────────────────────
+  fabX = signal<number | null>(null);
+  fabY = signal<number | null>(null);
+  dragging = signal(false);
+  private drag = {
+    active: false,
+    moved: false,
+    pointerStartX: 0,
+    pointerStartY: 0,
+    offsetX: 0,
+    offsetY: 0,
+  };
+  private static readonly FAB_POS_KEY = 'konkat:fab-pos';
+  private static readonly FAB_SIZE = 48;
+  private static readonly FAB_MARGIN = 16;
   events           = signal<EventWithCountdown[]>([]);
   registeredEvents = signal<EventWithCountdown[]>([]);
   loading          = signal(true);
@@ -68,6 +84,8 @@ export class RightPanel implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.restoreFabPosition();
+
     if (this.auth.isLoggedIn()) {
       this.profileService.loadProfile().subscribe({
         next: ()  => this.loading.set(false),
@@ -182,7 +200,95 @@ export class RightPanel implements OnInit, OnDestroy {
   }
 
   get repLabel(): string {
-    const rep = this.profileService.rep();
+    const rep = this.profileService.myRep();
     return rep >= 1000 ? `${(rep / 1000).toFixed(1)}k` : String(rep);
+  }
+
+  // ── Draggable FAB ─────────────────────────────────────────────────────────
+
+  private restoreFabPosition(): void {
+    try {
+      const raw = localStorage.getItem(RightPanel.FAB_POS_KEY);
+      if (!raw) return;
+      const { x, y } = JSON.parse(raw);
+      if (typeof x === 'number' && typeof y === 'number') {
+        this.fabX.set(this.clampX(x));
+        this.fabY.set(this.clampY(y));
+      }
+    } catch {}
+  }
+
+  private clampX(x: number): number {
+    const max = window.innerWidth - RightPanel.FAB_SIZE - RightPanel.FAB_MARGIN;
+    return Math.max(RightPanel.FAB_MARGIN, Math.min(max, x));
+  }
+
+  private clampY(y: number): number {
+    const max = window.innerHeight - RightPanel.FAB_SIZE - RightPanel.FAB_MARGIN;
+    return Math.max(RightPanel.FAB_MARGIN, Math.min(max, y));
+  }
+
+  onFabPointerDown(e: PointerEvent): void {
+    const target = e.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    this.drag.active = true;
+    this.drag.moved = false;
+    this.drag.pointerStartX = e.clientX;
+    this.drag.pointerStartY = e.clientY;
+    this.drag.offsetX = e.clientX - rect.left;
+    this.drag.offsetY = e.clientY - rect.top;
+    target.setPointerCapture(e.pointerId);
+  }
+
+  onFabPointerMove(e: PointerEvent): void {
+    if (!this.drag.active) return;
+    if (!this.drag.moved) {
+      const dist = Math.hypot(
+        e.clientX - this.drag.pointerStartX,
+        e.clientY - this.drag.pointerStartY,
+      );
+      if (dist < 6) return;
+      this.drag.moved = true;
+      this.dragging.set(true);
+    }
+    this.fabX.set(this.clampX(e.clientX - this.drag.offsetX));
+    this.fabY.set(this.clampY(e.clientY - this.drag.offsetY));
+  }
+
+  onFabPointerUp(e: PointerEvent): void {
+    if (!this.drag.active) return;
+    this.drag.active = false;
+    const target = e.currentTarget as HTMLElement;
+    try { target.releasePointerCapture(e.pointerId); } catch {}
+
+    if (this.drag.moved) {
+      // Snap to the nearest vertical edge (left or right).
+      const x = this.fabX() ?? 0;
+      const y = this.fabY() ?? 0;
+      const centerX = x + RightPanel.FAB_SIZE / 2;
+      const snappedX = centerX < window.innerWidth / 2
+        ? RightPanel.FAB_MARGIN
+        : window.innerWidth - RightPanel.FAB_SIZE - RightPanel.FAB_MARGIN;
+      this.fabX.set(snappedX);
+      this.fabY.set(y);
+      try {
+        localStorage.setItem(
+          RightPanel.FAB_POS_KEY,
+          JSON.stringify({ x: snappedX, y }),
+        );
+      } catch {}
+      this.dragging.set(false);
+    }
+  }
+
+  onFabClick(e: MouseEvent): void {
+    if (this.drag.moved) {
+      // The pointerup completed a drag; swallow the synthetic click.
+      this.drag.moved = false;
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    this.toggle();
   }
 }

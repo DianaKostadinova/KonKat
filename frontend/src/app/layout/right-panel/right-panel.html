@@ -206,7 +206,18 @@
 <!-- ═══════════════════════  MOBILE PANEL  ════════════════════════ -->
 <div class="mobile-panel">
 
-  <button class="mobile-panel__btn" (click)="toggle()">
+  <button
+    class="mobile-panel__btn"
+    [class.mobile-panel__btn--dragging]="dragging()"
+    [class.mobile-panel__btn--floating]="fabX() !== null"
+    [style.left.px]="fabX()"
+    [style.top.px]="fabY()"
+    (pointerdown)="onFabPointerDown($event)"
+    (pointermove)="onFabPointerMove($event)"
+    (pointerup)="onFabPointerUp($event)"
+    (pointercancel)="onFabPointerUp($event)"
+    (click)="onFabClick($event)"
+  >
     <span class="material-icons" style="font-size: 20px;">{{ isOpen() ? 'close' : 'info' }}</span>
   </button>
 

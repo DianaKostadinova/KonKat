@@ -51,13 +51,31 @@
     background-color: #E8593C;
     border: none;
     color: white;
-    cursor: pointer;
+    cursor: grab;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 80;
     box-shadow: 0 4px 12px rgba(232, 89, 60, 0.4);
-    transition: transform 0.2s;
+    transition: left 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+                top 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+                transform 0.2s;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* When the user has dragged it, switch from bottom/right anchoring to left/top. */
+  .mobile-panel__btn--floating {
+    bottom: auto;
+    right: auto;
+  }
+
+  /* Suppress the snap transition while actively dragging so the button tracks the finger. */
+  .mobile-panel__btn--dragging {
+    transition: none;
+    cursor: grabbing;
+    transform: scale(1.05);
   }
 
   .mobile-panel__btn:hover {
