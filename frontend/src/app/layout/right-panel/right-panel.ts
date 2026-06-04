@@ -39,24 +39,6 @@ export class RightPanel implements OnInit, OnDestroy {
   private viewportW = signal<number>(typeof window !== 'undefined' ? window.innerWidth  : 1024);
   private viewportH = signal<number>(typeof window !== 'undefined' ? window.innerHeight : 768);
 
-  /** Position actually applied to the DOM — fabX/fabY clamped against the visible viewport. */
-  displayedFabX = computed<number | null>(() => {
-    const x = this.fabX();
-    if (x === null) return null;
-    return Math.max(
-      RightPanel.FAB_MARGIN,
-      Math.min(this.viewportW() - RightPanel.FAB_SIZE - RightPanel.FAB_MARGIN, x),
-    );
-  });
-  displayedFabY = computed<number | null>(() => {
-    const y = this.fabY();
-    if (y === null) return null;
-    return Math.max(
-      RightPanel.FAB_MARGIN,
-      Math.min(this.viewportH() - RightPanel.FAB_SIZE - RightPanel.FAB_MARGIN, y),
-    );
-  });
-
   private drag = {
     active: false,
     moved: false,
@@ -108,6 +90,23 @@ export class RightPanel implements OnInit, OnDestroy {
   ) {
     effect(() => {
       document.body.style.overflow = this.isOpen() ? 'hidden' : '';
+    });
+
+    // Re-clamp the FAB inside the visible viewport when it shrinks (mobile soft keyboard).
+    // This runs ONLY when viewport dimensions change — not while dragging — so it doesn't
+    // fight the drag handlers.
+    effect(() => {
+      const vw = this.viewportW();
+      const vh = this.viewportH();
+      const x = this.fabX();
+      const y = this.fabY();
+      if (x === null || y === null) return;
+      const maxX = vw - RightPanel.FAB_SIZE - RightPanel.FAB_MARGIN;
+      const maxY = vh - RightPanel.FAB_SIZE - RightPanel.FAB_MARGIN;
+      const clampedX = Math.max(RightPanel.FAB_MARGIN, Math.min(maxX, x));
+      const clampedY = Math.max(RightPanel.FAB_MARGIN, Math.min(maxY, y));
+      if (clampedX !== x) this.fabX.set(clampedX);
+      if (clampedY !== y) this.fabY.set(clampedY);
     });
   }
 

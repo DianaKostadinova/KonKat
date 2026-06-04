@@ -1,4 +1,4 @@
-import { Component, signal, computed, ViewChild, ElementRef, AfterViewChecked, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, signal, computed, effect, ViewChild, ElementRef, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -13,7 +13,7 @@ import { Conversation, ConversationMember, UserSearchResult } from './chat.model
   templateUrl: './chat.html',
   styleUrl: './chat.css',
 })
-export class Chat implements OnInit, AfterViewChecked, OnDestroy {
+export class Chat implements OnInit, OnDestroy {
   @ViewChild('messageContainer') messageContainer!: ElementRef;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
@@ -30,12 +30,6 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
   hasUnreadBelow = signal(false);
   private prevMessageCount = 0;
   private prevConvId: number | null = null;
-  /**
-   * The messages container's scrollHeight on the previous view check. Used to determine
-   * whether the user was at the bottom of the *previous* render before new content was
-   * appended — race-free, unlike relying on a scroll-event flag.
-   */
-  private prevScrollHeight = 0;
   /** px from the bottom that still counts as "at bottom". */
   private static readonly STICK_THRESHOLD = 40;
 
@@ -63,7 +57,54 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
 
   private queryParamSub?: Subscription;
 
-  constructor(public chatService: ChatService, private route: ActivatedRoute, private router: Router, private cdr: ChangeDetectorRef) {}
+  constructor(public chatService: ChatService, private route: ActivatedRoute, private router: Router, private cdr: ChangeDetectorRef) {
+    // ── Auto-scroll on new message ──────────────────────────────────────────
+    // Effects fire SYNCHRONOUSLY when tracked signals change — i.e. before Angular
+    // re-renders the view. At that moment the DOM still shows the previous state,
+    // so we can read scroll position to decide what to do. We then queue the actual
+    // scroll for after the render via requestAnimationFrame.
+    effect(() => {
+      const conv = this.activeConv();
+      const id = conv?.id ?? null;
+      const count = conv?.messages.length ?? 0;
+
+      const convSwitched = id !== this.prevConvId;
+      const newMessages  = !convSwitched && count > this.prevMessageCount;
+
+      if (!convSwitched && !newMessages) {
+        // Other signal changes (e.g. read flags, unrelated re-renders) — just sync count.
+        this.prevMessageCount = count;
+        return;
+      }
+
+      // Snapshot scroll state AT THE OLD RENDER, before Angular paints the new content.
+      const el = this.messageContainer?.nativeElement as HTMLElement | undefined;
+      const wasAtBottom = !el
+        ? true
+        : el.scrollTop + el.clientHeight >= el.scrollHeight - Chat.STICK_THRESHOLD;
+
+      const wantScroll = convSwitched || this.shouldScroll || wasAtBottom;
+
+      this.prevConvId = id;
+      this.prevMessageCount = count;
+
+      // Wait for the new content to be painted, then act.
+      requestAnimationFrame(() => {
+        const e = this.messageContainer?.nativeElement as HTMLElement | undefined;
+        if (!e) return;
+        if (wantScroll) {
+          e.scrollTop = e.scrollHeight;
+          this.shouldScroll = false;
+          this.hasUnreadBelow.set(false);
+          const c = this.activeConv();
+          if (c && c.unread > 0) this.chatService.markAsRead(c.id, c.type);
+        } else {
+          // User had scrolled up to read older messages — surface the pill instead of yanking them.
+          this.hasUnreadBelow.set(true);
+        }
+      });
+    });
+  }
 
   ngOnInit(): void {
     // Use queryParamMap Observable (not snapshot) so navigating to /chat?dm=X
@@ -238,55 +279,6 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
         error: () => this.searchLoading.set(false),
       });
     }, 300);
-  }
-
-  ngAfterViewChecked() {
-    if (!this.messageContainer) return;
-    const el = this.messageContainer.nativeElement as HTMLElement;
-    const conv = this.activeConv();
-    const currentCount = conv?.messages.length ?? 0;
-    const currentId = conv?.id ?? null;
-
-    // Conversation switched (or first open) — jump to bottom, reset state.
-    if (currentId !== this.prevConvId) {
-      this.prevConvId = currentId;
-      this.prevMessageCount = currentCount;
-      el.scrollTop = el.scrollHeight;
-      this.prevScrollHeight = el.scrollHeight;
-      this.hasUnreadBelow.set(false);
-      this.shouldScroll = false;
-      return;
-    }
-
-    // Explicit scroll request (we just sent a message ourselves).
-    if (this.shouldScroll) {
-      el.scrollTop = el.scrollHeight;
-      this.shouldScroll = false;
-      this.hasUnreadBelow.set(false);
-      this.prevMessageCount = currentCount;
-      this.prevScrollHeight = el.scrollHeight;
-      return;
-    }
-
-    // New incoming message(s)? Measure whether the user was at the bottom of the
-    // *previous* render — i.e. before the new content grew the scrollHeight.
-    if (currentCount > this.prevMessageCount) {
-      const wasNearBottom =
-        el.scrollTop + el.clientHeight >= this.prevScrollHeight - Chat.STICK_THRESHOLD;
-      this.prevMessageCount = currentCount;
-      if (wasNearBottom) {
-        el.scrollTop = el.scrollHeight;
-        this.hasUnreadBelow.set(false);
-        const c = this.activeConv();
-        if (c && c.unread > 0) this.chatService.markAsRead(c.id, c.type);
-      } else {
-        this.hasUnreadBelow.set(true);
-      }
-    } else if (currentCount < this.prevMessageCount) {
-      this.prevMessageCount = currentCount;
-    }
-
-    this.prevScrollHeight = el.scrollHeight;
   }
 
   /** Bound to the messages container's `scroll` event — only clears the unread pill. */
