@@ -38,6 +38,9 @@ data class Post(
     @CreationTimestamp
     val createdAt: LocalDateTime = LocalDateTime.now(),
 
+    /** Set the first time the post is edited and on every subsequent edit. Null means never edited. */
+    var editedAt: LocalDateTime? = null,
+
     /** Soft delete timestamp — null means the post is active */
     var deletedAt: LocalDateTime? = null,
 

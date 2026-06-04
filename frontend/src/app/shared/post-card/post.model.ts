@@ -34,4 +34,6 @@ export interface Post {
   liked?: boolean;
   saved?: boolean;
   comments?: Comment[];
+  /** ISO timestamp set by the backend when the author has edited this post. */
+  editedAt?: string;
 }

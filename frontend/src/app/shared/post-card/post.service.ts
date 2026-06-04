@@ -67,6 +67,25 @@ export class PostService {
     );
   }
 
+  /**
+   * Edits an existing post (author only). On success replaces the post in the
+   * feed signal so the updated content (and the "(edited)" indicator) shows up
+   * everywhere the post is rendered.
+   */
+  editPost(postId: number, updates: { content?: string; codeLanguage?: string; codeSnippet?: string; tags?: string[] }): Observable<Post> {
+    return this.http.put<any>(`${API}/posts/${postId}`, updates).pipe(
+      map(dto => this.mapPost(dto)),
+      tap(updated => this._posts.update(all => all.map(p => p.id === postId ? updated : p))),
+    );
+  }
+
+  /** Deletes a post (author only). On success removes it from the feed signal. */
+  deletePost(postId: number): Observable<void> {
+    return this.http.delete<void>(`${API}/posts/${postId}`).pipe(
+      tap(() => this._posts.update(all => all.filter(p => p.id !== postId))),
+    );
+  }
+
   toggleLike(postId: number): void {
     // Optimistic update
     this._posts.update(all =>
@@ -140,6 +159,7 @@ export class PostService {
       },
       liked: dto.liked ?? false,
       saved: dto.saved ?? false,
+      editedAt: dto.editedAt ?? undefined,
     };
   }
 

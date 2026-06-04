@@ -25,18 +25,88 @@
         </div>
         <span class="text-[#888888] text-xs truncate">
           {{ post.author.role }} • {{ post.author.location }} • {{ post.author.time }}
+          @if (post.editedAt) {
+            <span class="italic text-[#666]"> • edited</span>
+          }
         </span>
       </div>
     </div>
-    <button class="flex items-center justify-center w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all flex-shrink-0">
-      <span class="material-icons" style="font-size: 18px;">more_horiz</span>
-    </button>
+
+    <!-- Author 3-dot menu (only shown for the post's owner) -->
+    @if (isOwnPost()) {
+      <div class="relative flex-shrink-0">
+        <button
+          class="flex items-center justify-center w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all"
+          (click)="toggleMenu($event)"
+          aria-label="Post options"
+        >
+          <span class="material-icons" style="font-size: 18px;">more_horiz</span>
+        </button>
+        @if (showMenu()) {
+          <div class="absolute right-0 top-9 z-30 min-w-[140px] rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] py-1 shadow-lg"
+               (click)="$event.stopPropagation()">
+            <button
+              class="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#f0f0f0] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] text-left"
+              (click)="startEdit()"
+            >
+              <span class="material-icons-outlined" style="font-size: 16px;">edit</span>
+              Edit post
+            </button>
+            <button
+              class="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#ff5f57] bg-transparent border-none cursor-pointer hover:bg-[#2a1010] text-left"
+              (click)="askDelete()"
+            >
+              <span class="material-icons-outlined" style="font-size: 16px;">delete_outline</span>
+              Delete post
+            </button>
+          </div>
+        }
+      </div>
+    } @else {
+      <button class="flex items-center justify-center w-8 h-8 rounded-lg text-[#888888] bg-transparent border-none cursor-pointer hover:bg-[#2a2a2a] hover:text-[#f0f0f0] transition-all flex-shrink-0">
+        <span class="material-icons" style="font-size: 18px;">more_horiz</span>
+      </button>
+    }
   </div>
 
-  <!-- Content -->
-  <p class="text-[#d0d0d0] text-sm leading-relaxed m-0">{{ post.content }}</p>
+  <!-- Content (view mode) -->
+  @if (!isEditing()) {
+    <p class="text-[#d0d0d0] text-sm leading-relaxed m-0 whitespace-pre-wrap">{{ post.content }}</p>
+  }
 
-  @if (post.type === 'code' && post.code) {
+  <!-- Content (edit mode) — author only -->
+  @if (isEditing()) {
+    <div class="flex flex-col gap-2">
+      <textarea
+        class="w-full bg-[#111111] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#f0f0f0] outline-none focus:border-[#E8593C] transition-colors resize-y min-h-[80px]"
+        [value]="editText()"
+        (input)="editText.set($any($event.target).value)"
+        placeholder="Edit your post…"
+      ></textarea>
+      @if (post.type === 'code') {
+        <textarea
+          class="w-full bg-[#0d0d0d] border border-[#2a2a2a] rounded-lg px-3 py-2 text-xs text-[#f0f0f0] font-mono outline-none focus:border-[#E8593C] transition-colors resize-y min-h-[120px]"
+          [value]="editCode()"
+          (input)="editCode.set($any($event.target).value)"
+          placeholder="Code snippet…"
+        ></textarea>
+      }
+      <div class="flex items-center justify-end gap-2">
+        <button
+          class="rounded-lg border border-[#2a2a2a] bg-transparent px-3 py-1.5 text-xs text-[#888888] cursor-pointer hover:text-[#f0f0f0] hover:border-[#3a3a3a] transition-all"
+          (click)="cancelEdit()"
+          [disabled]="saving()"
+        >Cancel</button>
+        <button
+          class="rounded-lg border-none bg-[#E8593C] px-3 py-1.5 text-xs text-white font-medium cursor-pointer hover:bg-[#d14e33] transition-all disabled:opacity-50"
+          (click)="saveEdit()"
+          [disabled]="saving() || !editText().trim()"
+        >{{ saving() ? 'Saving…' : 'Save' }}</button>
+      </div>
+    </div>
+  }
+
+  @if (!isEditing() && post.type === 'code' && post.code) {
     <div class="rounded-lg border border-[#2a2a2a] overflow-hidden">
       <div class="flex items-center justify-between px-4 py-2 bg-[#111111] border-b border-[#2a2a2a]">
         <div class="flex items-center gap-2">
@@ -168,3 +238,31 @@
   }
 
 </div>
+
+<!-- ── Delete confirmation modal ─────────────────────────────────────────── -->
+@if (showDeleteConfirm()) {
+  <div class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" (click)="cancelDelete()">
+    <div class="w-full max-w-sm rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-5 flex flex-col gap-4"
+         (click)="$event.stopPropagation()">
+      <div class="flex items-center gap-3">
+        <span class="material-icons-outlined text-[#ff5f57]" style="font-size: 28px;">delete_outline</span>
+        <h3 class="text-[#f0f0f0] text-base font-semibold m-0">Delete this post?</h3>
+      </div>
+      <p class="text-[#888888] text-sm m-0">
+        This can't be undone. The post will be removed from your profile and the feed.
+      </p>
+      <div class="flex items-center justify-end gap-2">
+        <button
+          class="rounded-lg border border-[#2a2a2a] bg-transparent px-4 py-2 text-xs text-[#f0f0f0] cursor-pointer hover:border-[#3a3a3a] transition-all"
+          (click)="cancelDelete()"
+          [disabled]="deleting()"
+        >Cancel</button>
+        <button
+          class="rounded-lg border-none bg-[#ff5f57] px-4 py-2 text-xs text-white font-semibold cursor-pointer hover:bg-[#e04942] transition-all disabled:opacity-50"
+          (click)="confirmDelete()"
+          [disabled]="deleting()"
+        >{{ deleting() ? 'Deleting…' : 'Delete' }}</button>
+      </div>
+    </div>
+  </div>
+}

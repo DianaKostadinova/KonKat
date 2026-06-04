@@ -112,6 +112,21 @@ class PostController(private val postService: PostService) {
     }
 
     /**
+     * PUT /api/posts/{id}
+     * Body: { content?, codeLanguage?, codeSnippet?, tags? }
+     * Only the post's author can edit. Sets `editedAt` on the post.
+     */
+    @PutMapping("/{id}")
+    fun updatePost(
+        @PathVariable id: Long,
+        @Valid @RequestBody body: UpdatePostRequest,
+        request: HttpServletRequest,
+    ): ResponseEntity<PostDto> {
+        val userId = request.getAttribute("userId") as Long
+        return ResponseEntity.ok(postService.updatePost(id, userId, body))
+    }
+
+    /**
      * DELETE /api/posts/{id}
      * Only the post's author can delete it.
      */

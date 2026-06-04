@@ -135,6 +135,26 @@ class PostService(
         return saved.toDto(authorId)
     }
 
+    /**
+     * Updates the post's content / code / tags. Only the author can edit, and we stamp
+     * `editedAt` so the client can render an "(edited)" indicator.
+     */
+    @Transactional
+    fun updatePost(postId: Long, requestingUserId: Long, request: UpdatePostRequest): PostDto {
+        val post = postRepository.findByIdOrNull(postId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found")
+        if (post.author.id != requestingUserId)
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot edit another user's post")
+
+        request.content?.let { post.content = it }
+        if (request.codeLanguage != null) post.codeLanguage = request.codeLanguage
+        if (request.codeSnippet  != null) post.codeSnippet  = request.codeSnippet
+        if (request.tags         != null) post.tags         = request.tags.toMutableList()
+        post.editedAt = java.time.LocalDateTime.now()
+        val saved = postRepository.save(post)
+        return saved.toDto(requestingUserId)
+    }
+
     @Transactional
     fun deletePost(postId: Long, requestingUserId: Long) {
         val post = postRepository.findByIdOrNull(postId)
@@ -269,6 +289,7 @@ class PostService(
                 commentsCount = commentCounts[post.id] ?: 0,
                 comments     = emptyList(),
                 createdAt    = post.createdAt.format(ISO),
+                editedAt     = post.editedAt?.format(ISO),
             )
         }
     }
@@ -305,6 +326,7 @@ class PostService(
             commentsCount = commentCount,
             comments     = comments,
             createdAt    = createdAt.format(ISO),
+            editedAt     = editedAt?.format(ISO),
         )
     }
 
@@ -355,6 +377,7 @@ data class PostDto(
     val commentsCount: Long,
     val comments: List<PostCommentDto>,
     val createdAt: String,          // ISO-8601 string — avoids Jackson version issues
+    val editedAt: String? = null,   // Set when the author has edited the post; null otherwise.
 )
 
 data class PostCommentDto(
@@ -384,6 +407,17 @@ data class CreatePostRequest(
     val imageUrl: String? = null,
     @field:jakarta.validation.constraints.Size(max = 10, message = "At most 10 tags allowed")
     val tags: List<String> = emptyList(),
+)
+
+data class UpdatePostRequest(
+    @field:jakarta.validation.constraints.Size(max = 5000, message = "Content must be at most 5000 characters")
+    val content: String? = null,
+    @field:jakarta.validation.constraints.Size(max = 50, message = "Code language must be at most 50 characters")
+    val codeLanguage: String? = null,
+    @field:jakarta.validation.constraints.Size(max = 20000, message = "Code snippet must be at most 20000 characters")
+    val codeSnippet: String? = null,
+    @field:jakarta.validation.constraints.Size(max = 10, message = "At most 10 tags allowed")
+    val tags: List<String>? = null,
 )
 
 data class CreateCommentRequest(
